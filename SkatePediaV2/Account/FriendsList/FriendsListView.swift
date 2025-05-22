@@ -7,6 +7,9 @@
 
 import SwiftUI
 
+///
+/// Struct for displaying and manipulating data in the current user's friends list
+///
 struct FriendsListView: View {
     @StateObject var viewModel = FriendsListViewModel()
     @State var tabIndex: Int = 0
@@ -15,6 +18,7 @@ struct FriendsListView: View {
     
     var body: some View {
         VStack {
+            // Filter between accepted friends and pending friends list
             filterTabBar
             
             Divider()

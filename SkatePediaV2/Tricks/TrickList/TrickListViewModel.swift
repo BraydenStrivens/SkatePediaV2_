@@ -33,11 +33,12 @@ final class TrickListViewModel: ObservableObject {
             do {
                 if self.user == nil { self.user = try await UserManager.shared.fetchUser(withUid: uid) }
                 addListenerForAllTrickLists()
+                
+                self.failedToFetch = validateFetch()
             } catch {
                 print("ERROR FETCHING TRICK LIST: \(error)")
             }
         }
-        self.failedToFetch = validateFetch()
     }
     
     private func validateFetch() -> Bool {
@@ -71,10 +72,16 @@ final class TrickListViewModel: ObservableObject {
                 
             } receiveValue: { [weak self] trickList in
                 let sortedTrickList: [[Trick]] = TrickListManager.shared.sortTrickListByDifficulty(unsortedTrickList: trickList)
-                
                 switch stance {
+                    
                 case Stance.Stances.regular.rawValue:
+                    print("HERE")
                     self?.regularTrickList = sortedTrickList
+                    
+                    for trickList in sortedTrickList {
+                        print(trickList)
+                        print("------------------")
+                    }
                     
                 case Stance.Stances.fakie.rawValue:
                     self?.fakieTrickList = sortedTrickList

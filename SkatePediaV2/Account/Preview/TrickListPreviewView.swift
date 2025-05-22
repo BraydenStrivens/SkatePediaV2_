@@ -7,6 +7,13 @@
 
 import SwiftUI
 
+///
+/// Struct that displays a preview of a users progress of the trick list. Sorts the users trick list based on their progress and displays each trick.
+///
+///  - Parameters:
+///   - userId: The id of a user in the database.
+///   - stance: The skateboard stance of a user.
+///
 struct TrickListPreviewView: View {
     @StateObject var viewModel = TrickListPreviewViewModel()
     
@@ -25,6 +32,7 @@ struct TrickListPreviewView: View {
                         }
                         .padding(.vertical)
                     }
+                    
                     if !viewModel.twoStarTricks.isEmpty {
                         VStack {
                             TrickStarRatingView(rating: 2)
@@ -33,6 +41,7 @@ struct TrickListPreviewView: View {
                         }
                         .padding(.vertical)
                     }
+                    
                     if !viewModel.oneStarTricks.isEmpty {
                         VStack {
                             TrickStarRatingView(rating: 1)
@@ -41,6 +50,7 @@ struct TrickListPreviewView: View {
                         }
                         .padding(.vertical)
                     }
+                    
                     if !viewModel.zeroStarTricks.isEmpty {
                         VStack {
                             TrickStarRatingView(rating: 0)
@@ -49,6 +59,7 @@ struct TrickListPreviewView: View {
                         }
                         .padding(.vertical)
                     }
+                    
                     if !viewModel.unstartedStarTricks.isEmpty {
                         VStack(alignment: .leading) {
                             Text("Not Started")
@@ -75,6 +86,12 @@ struct TrickListPreviewView: View {
     }
 }
 
+///
+/// Displays three stars that are filled and colored according to a user's self rating of that trick.
+///
+/// - Parameters:
+///  - rating: an integer from [0,3] representing a user's mastery of a trick.
+///
 struct TrickStarRatingView: View {
     let rating: Int
     
@@ -100,6 +117,12 @@ struct TrickStarRatingView: View {
     }
 }
 
+///
+/// Displays a list of tricks belonging to a user.
+///
+/// - Parameters:
+///  - trickList: An array containing 'Trick' objects belonging to a user. 
+///
 struct ListViewByRating: View {
     let trickList: [Trick]
     

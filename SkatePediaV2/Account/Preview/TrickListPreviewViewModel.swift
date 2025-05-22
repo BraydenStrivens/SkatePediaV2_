@@ -8,6 +8,9 @@
 import Foundation
 import SwiftUI
 
+///
+/// A class containing functions to fetch a user's trick list and sorting it based on the user's progress on each trick.
+///
 final class TrickListPreviewViewModel: ObservableObject {
     
     @Published private(set) var trickList: [Trick] = []
@@ -17,6 +20,9 @@ final class TrickListPreviewViewModel: ObservableObject {
     @Published var zeroStarTricks: [Trick] = []
     @Published var unstartedStarTricks: [Trick] = []
     
+    ///
+    /// Fetches a user's trick list by stance and sorts it by the progress on each trick.
+    ///
     @MainActor
     func fetchTrickList(userId: String, stance: String) async throws {
         do {
@@ -27,6 +33,9 @@ final class TrickListPreviewViewModel: ObservableObject {
         }
     }
     
+    ///
+    /// Splits the fetched trick list array in to four arrays based on the user's progress on each trick.
+    /// 
     @MainActor
     func sortTricks() {
         for trick in trickList {

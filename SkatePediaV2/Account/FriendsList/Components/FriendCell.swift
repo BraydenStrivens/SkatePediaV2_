@@ -7,6 +7,13 @@
 
 import SwiftUI
 
+///
+/// Defines the layout of a friend cell in the users friends list view. Contains functionality to to remove a user from the friends list.
+///
+///  - Parameters:
+///     - friend: An object containing data about a user in the current user's friends list.
+///     - friends: A list containing all of the current user's friends.
+///
 struct FriendCell: View {
     let friend: Friend
     
@@ -16,8 +23,10 @@ struct FriendCell: View {
         
         if let user = friend.user {
             HStack(alignment: .center, spacing: 8) {
+                // Profile Photo
                 CircularProfileImageView(user: user, size: .medium)
                 
+                // Username hyperlink to the user's profile
                 UsernameHyperlink(user: user, font: .headline)
 
                 Spacer()
@@ -31,6 +40,7 @@ struct FriendCell: View {
                     )
                     .foregroundColor(.blue)
                     
+                    // Remove friend button
                     Button {
                         UserManager.shared.removeFriend(toRemoveUid: friend.userId)
                         friends.removeAll { aFriend in
@@ -55,7 +65,3 @@ struct FriendCell: View {
         }
     }
 }
-
-//#Preview {
-//    FriendCell()
-//}
