@@ -10,6 +10,10 @@ import SlidingTabView
 import FirebaseAuth
 import PhotosUI
 
+///
+/// Struct that displays information about the current user. This information includes the user's username, bio, profile image, trick list info, and posts.
+/// Contains functionality for editing the user's profile.
+///
 struct CurrentUserAccountView: View {
     @StateObject var viewModel = AccountViewModel()
     @State var tabIndex: Int = 0
@@ -45,16 +49,27 @@ struct CurrentUserAccountView: View {
                             }
                         }
                 } else {
-                    UserPostsView(viewModel: viewModel, user: user)
-                        .onFirstAppear {
-                            if viewModel.userPosts.isEmpty {
+                    //                    UserPostsView(viewModel: viewModel, user: user)
+                    //                        .onFirstAppear {
+                    //                            if viewModel.userPosts.isEmpty {
+                    //                                Task {
+                    //                                    try await viewModel.fetchPosts(userId: user.userId)
+                    //                                }
+                    //                            }
+                    //                        }
+                    if viewModel.userPosts.isEmpty {
+                        ProgressView()
+                            .onFirstAppear {
                                 Task {
                                     try await viewModel.fetchPosts(userId: user.userId)
                                 }
                             }
-                        }
+                    } else {
+                        UserPostsPreviewView(viewModel: viewModel, user: user)
+                        
+                    }
                 }
-                
+                    
                 Spacer()
                 
             } else {
@@ -76,7 +91,7 @@ struct CurrentUserAccountView: View {
                 
                 Spacer()
                 
-                // Friends List
+                // Navigate to friends list button
                 CustomNavLink(
                     destination: FriendsListView(),
                     label: {
@@ -86,9 +101,7 @@ struct CurrentUserAccountView: View {
                     }
                 )
                 
-//                Spacer()
-                
-                // Edit Profile
+                // Edit profile button
                 Button {
                     withAnimation(.easeInOut(duration: 0.5)) {
                         edit.toggle()
@@ -108,6 +121,8 @@ struct CurrentUserAccountView: View {
             HStack(alignment: .top, spacing: 20) {
                 
                 VStack {
+                    // Displays the newly selected profile image if it exists, otherwise displays the profile
+                    // photo that was fetched from the database.
                     if let image = viewModel.profileImage {
                         image
                             .resizable()
@@ -119,6 +134,7 @@ struct CurrentUserAccountView: View {
                     }
                 }
                 .overlay {
+                    // Overlay to change profile photo
                     if edit {
                         PhotosPicker(selection: $viewModel.selectedItem, matching: .images) {
                             Image(systemName: "plus")
@@ -151,10 +167,12 @@ struct CurrentUserAccountView: View {
                 
                 Spacer()
             }
+            
             if edit {
                 HStack {
                     Spacer()
                     
+                    // Save changes button
                     SPButton(title: "Save", rank: .primary, color: .blue, width: 100, height: 25) {
                         withAnimation(.easeInOut(duration: 0.5)) {
                             edit = false
@@ -163,6 +181,8 @@ struct CurrentUserAccountView: View {
                             try await viewModel.updateUserProfile()
                         }
                     }
+                    
+                    // Cancel changes button
                     SPButton(title: "Cancel", rank: .destructive, color: .red, width: 100, height: 25) {
                         viewModel.selectedItem = nil
                         viewModel.profileImage = nil

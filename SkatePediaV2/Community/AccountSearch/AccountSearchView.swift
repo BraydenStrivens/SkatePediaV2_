@@ -7,9 +7,13 @@
 
 import SwiftUI
 
+///
+/// Struct that displays the account searching feature to the user.
+///
 struct AccountSearchView: View {
     @StateObject var viewModel = AccountSearchViewModel()
     
+    // Dismisses the current view when called
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
@@ -22,6 +26,7 @@ struct AccountSearchView: View {
         }
         .padding()
         .onChange(of: viewModel.search) {
+            // Resets matched users and re-searches whenever a character is inputed or deleted
             viewModel.clearFoundUsers()
             Task {
                 try await viewModel.searchUsers()
@@ -32,12 +37,14 @@ struct AccountSearchView: View {
     
     var searchBar: some View {
         ZStack {
+            // Search bar
             TextField(viewModel.search.isEmpty ? "Search" : viewModel.search, text: $viewModel.search)
                 .autocorrectionDisabled()
                 .autocapitalization(.none)
                 .lineLimit(1)
                 .foregroundColor(.primary)
             
+            // Clear search bar button
             HStack {
                 Spacer()
                 
@@ -63,25 +70,30 @@ struct AccountSearchView: View {
         ScrollView {
             if viewModel.search.isEmpty {
                 Spacer()
+                
                 Text("Enter Username")
                     .foregroundColor(.primary)
                     .font(.subheadline)
+                
                 Spacer()
                 
             } else if viewModel.foundUsers.isEmpty {
                 Spacer()
+                
                 Text("No users matching:")
                     .foregroundColor(.primary)
                     .font(.subheadline)
                 Text("'\(viewModel.search)'")
                     .foregroundColor(.primary)
                     .font(.headline)
+                
                 Spacer()
                 
             } else {
                 LazyVStack(spacing: 10) {
                     ForEach(viewModel.foundUsers) { user in
                         AccountCell(user: user)
+                        
                         Divider()
                     }
                     Spacer()
@@ -90,7 +102,3 @@ struct AccountSearchView: View {
         }
     }
 }
-
-//#Preview {
-//    AccountSearchView()
-//}

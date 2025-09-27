@@ -7,6 +7,9 @@
 
 import SwiftUI
 
+///
+/// Struct that displays the register account screen. Users register with a username, email, password, and skateboard stance.
+///
 struct RegisterView: View {
     
     @StateObject var viewModel = RegisterViewModel()
@@ -14,20 +17,21 @@ struct RegisterView: View {
     
     var body: some View {
         VStack {
+            // Logo
+            Image(.appLogo)
+                .resizable()
+                .scaledToFill()
+                .frame(width: UIScreen.screenWidth * 0.8, height: UIScreen.screenWidth * 0.8)
             
             Text("Register")
                 .font(.largeTitle)
             
             Spacer()
             
-            Spacer()
-            
             VStack(spacing: 20) {
                 // Displays error message to user
-                if !viewModel.errorMessage.isEmpty {
-                    Text(viewModel.errorMessage)
-                        .foregroundColor(Color.red)
-                }
+                Text(viewModel.errorMessage)
+                    .foregroundColor(Color.red)
                 
                 SPTextField(
                     title: "Username",
@@ -49,9 +53,10 @@ struct RegisterView: View {
                 SPButton(
                     title: "Register",
                     rank: .primary,
-                    color: .blue,
+                    color: .orange,
                     width: UIScreen.screenWidth * 0.5,
-                    height: 50){
+                    height: 50,
+                    showLoadingAnimation: false){
                         // Attemp Registration
                         Task {
                             do {
@@ -69,7 +74,3 @@ struct RegisterView: View {
         .padding()
     }
 }
-
-//#Preview {
-//    RegisterView()
-//}

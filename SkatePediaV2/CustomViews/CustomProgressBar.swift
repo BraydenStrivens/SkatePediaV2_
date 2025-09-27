@@ -55,7 +55,7 @@ struct CustomProgressBar: View {
                         )
                         .clipShape(RoundedRectangle(cornerRadius: height, style: .continuous))
                     )
-                
+                    .brightness(0.2)
                     .foregroundColor(.clear)
             }
             
@@ -69,6 +69,6 @@ struct CustomProgressBar: View {
     }
 }
 
-#Preview {
-    CustomProgressBar(header: "Switch", totalTricks: 30, learnedTricks: 20)
-}
+//#Preview {
+//    CustomProgressBar(header: "Switch", totalTricks: 30, learnedTricks: 20)
+//}

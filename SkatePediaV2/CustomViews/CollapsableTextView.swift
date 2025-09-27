@@ -70,5 +70,5 @@ struct CollapsableTextView: View {
 }
 
 #Preview {
-    CollapsableTextView("Hello this is brayden strivens, im tryna make an app but kinda suck, we still tryin anyways so fuck it. We'll see how it goes", lineLimit: 1)
+    CollapsableTextView("Hello this is brayden strivens, im tryna make an app but kinda suck, we still tryin anyways so fuck it. We'll see how it goes", lineLimit: 2)
 }

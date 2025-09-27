@@ -7,15 +7,20 @@
 
 import SwiftUI
 
+///
+/// Struct that displays information about a user's trick list.
+///
 struct UserTrickListView: View {
     
     @ObservedObject var viewModel: AccountViewModel
     let user: User
     
     var body: some View {
+        // Verifies the trick list data was fetched.
         if let trickListInfo = viewModel.userTrickListInfo {
             ScrollView {
                 VStack(alignment: .leading, spacing: 15) {
+                    
                     // Total trick progress
                     VStack(alignment: .leading) {
                         Text("Total:")
@@ -28,15 +33,17 @@ struct UserTrickListView: View {
                             width: UIScreen.screenWidth * 0.65
                         )
                     }
-                    Divider()
-                        .foregroundColor(.primary)
                     
-                    // Regular stance tricks progress
+                    Divider()
+                    
+                    // Regular stance progress
                     VStack(alignment: .leading) {
                         HStack {
                             Text("Regular:")
                                 .foregroundColor(.gray)
+                            
                             Spacer()
+                            
                             CustomNavLink(
                                 destination: TrickListPreviewView(userId: user.userId, stance: "Regular"),
                                 label: {
@@ -45,6 +52,7 @@ struct UserTrickListView: View {
                                 }
                             )
                         }
+                        
                         CustomProgressBar(
                             header: "",
                             totalTricks: trickListInfo.totalRegularTricks,
@@ -52,15 +60,17 @@ struct UserTrickListView: View {
                             width: UIScreen.screenWidth * 0.7
                         )
                     }
-                    Divider()
-                        .foregroundColor(.primary)
                     
-                    // Fakie stance tricks progress
+                    Divider()
+                    
+                    // Fakie stance progress
                     VStack(alignment: .leading) {
                         HStack {
                             Text("Fakie:")
                                 .foregroundColor(.gray)
+                            
                             Spacer()
+                            
                             CustomNavLink(
                                 destination: TrickListPreviewView(userId: user.userId, stance: "Fakie"),
                                 label: {
@@ -69,6 +79,7 @@ struct UserTrickListView: View {
                                 }
                             )
                         }
+                        
                         CustomProgressBar(
                             header: "",
                             totalTricks: trickListInfo.totalFakieTricks,
@@ -76,15 +87,17 @@ struct UserTrickListView: View {
                             width: UIScreen.screenWidth * 0.7
                         )
                     }
-                    Divider()
-                        .foregroundColor(.primary)
                     
-                    // Switch stance tricks progress
+                    Divider()
+                    
+                    // Switch stance progress
                     VStack(alignment: .leading) {
                         HStack {
                             Text("Switch:")
                                 .foregroundColor(.gray)
+                            
                             Spacer()
+                            
                             CustomNavLink(
                                 destination: TrickListPreviewView(userId: user.userId, stance: "Switch"),
                                 label: {
@@ -93,6 +106,7 @@ struct UserTrickListView: View {
                                 }
                             )
                         }
+                        
                         CustomProgressBar(
                             header: "",
                             totalTricks: trickListInfo.totalSwitchTricks,
@@ -100,15 +114,17 @@ struct UserTrickListView: View {
                             width: UIScreen.screenWidth * 0.7
                         )
                     }
+                    
                     Divider()
-                        .foregroundColor(.primary)
                     
                     // Nollie stance tricks progress
                     VStack(alignment: .leading) {
                         HStack {
                             Text("Nollie:")
                                 .foregroundColor(.gray)
+                            
                             Spacer()
+                            
                             CustomNavLink(
                                 destination: TrickListPreviewView(userId: user.userId, stance: "Nollie"),
                                 label: {
@@ -117,6 +133,7 @@ struct UserTrickListView: View {
                                 }
                             )
                         }
+                        
                         CustomProgressBar(
                             header: "",
                             totalTricks: trickListInfo.totalNollieTricks,

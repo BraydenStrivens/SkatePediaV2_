@@ -11,6 +11,9 @@ import FirebaseAuth
 import PhotosUI
 import AVKit
 
+///
+/// Struct that displays user information about users other than the current user. Contains functionality to send friend request and direct message. 
+///
 struct UserAccountView: View {
     @StateObject var viewModel = AccountViewModel()
     @State var tabIndex: Int = 0
@@ -70,7 +73,7 @@ struct UserAccountView: View {
         HStack(alignment: .center, spacing: 20) {
             Spacer()
             
-            // Add Friend
+            // Send friend request button
             Button {
                 Task {
                     try await viewModel.sendFriendRequest(toAddUserId: user.userId)
@@ -81,7 +84,7 @@ struct UserAccountView: View {
                     .foregroundColor(.primary)
             }
             
-            // Send Message
+            // Navigate to direct message button
             CustomNavLink(
                 destination: ChatMessagesView(chattingWith: user),
                 label: {
@@ -119,7 +122,3 @@ struct UserAccountView: View {
         }
     }
 }
-
-//#Preview {
-//    AccountView(userId: "")
-//}

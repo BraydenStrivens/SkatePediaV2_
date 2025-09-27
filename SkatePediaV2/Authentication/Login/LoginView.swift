@@ -6,7 +6,10 @@
 //
 
 import SwiftUI
-
+import Kingfisher
+///
+/// Struct that display the login screen. Contains functionality to log in, register, and reset password.
+///
 struct LoginView: View {
     
     @StateObject var viewModel = LoginViewModel()
@@ -14,43 +17,39 @@ struct LoginView: View {
     
     var body: some View {
         VStack {
-            Image(systemName: "figure.skateboarding")
+            // Logo
+            Image(.appLogo)
                 .resizable()
-                .scaledToFit()
-                .frame(width: 250)
-            
-            Text("SkatePedia")
-                .font(.largeTitle)
-            
+                .scaledToFill()
+                .frame(width: UIScreen.screenWidth * 0.85, height: UIScreen.screenWidth * 0.85)
+
             Text("Login")
-                .font(.title)
+                .font(.largeTitle)
                         
             Spacer()
             
             VStack(spacing: 20) {
                 
-                // Displays error message to user
-                if !viewModel.errorMessage.isEmpty {
-                    Text(viewModel.errorMessage)
-                        .foregroundColor(Color.red)
-                }
+                Text(viewModel.errorMessage)
+                    .foregroundColor(Color.red)
                 
                 SPTextField(
                     title: "Email",
-                    borderColor: .green,
+                    borderColor: .blue,
                     text: $viewModel.email)
                 
                 SPSecureField(
                     title: "Password",
-                    borderColor: .green,
+                    borderColor: .blue,
                     text: $viewModel.password)
                 
                 SPButton(
                     title: "Login",
                     rank: .primary,
-                    color: .blue,
+                    color: .orange,
                     width: UIScreen.screenWidth * 0.5,
-                    height: 50) {
+                    height: 50,
+                    showLoadingAnimation: false) {
                         // Attempt Login
                         Task {
                             do {
@@ -66,6 +65,7 @@ struct LoginView: View {
             
             Spacer()
             
+            // Forgot password popup
             Button {
                 toggleForgotPassword.toggle()
             } label: {
@@ -74,6 +74,7 @@ struct LoginView: View {
                     .font(.body)
             }
             
+            // Nagivation to register view
             NavigationLink(
                 destination: RegisterView(),
                 label: {

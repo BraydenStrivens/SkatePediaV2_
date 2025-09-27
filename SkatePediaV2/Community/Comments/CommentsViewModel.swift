@@ -10,6 +10,9 @@ import FirebaseFirestore
 import FirebaseAuth
 import Combine
 
+///
+/// Class containing functions for fetching and updating comments stored in the database.
+///
 final class CommentsViewModel: ObservableObject {
     
     @Published var currentUser: User? = nil
@@ -27,6 +30,9 @@ final class CommentsViewModel: ObservableObject {
         loadCurrentUser()
     }
     
+    ///
+    /// Fetches the current user from the databse and stores in a local User object.
+    ///
     @MainActor
     func loadCurrentUser() {
         Task {
@@ -40,6 +46,12 @@ final class CommentsViewModel: ObservableObject {
         }
     }
     
+    ///
+    /// Uploads a comment to the database.
+    ///
+    /// - Parameters:
+    ///  - postId: The ID of the post the comment is being commented on.
+    ///
     @MainActor
     func uploadComment(postId: String) async throws {
         guard let currentUid = Auth.auth().currentUser?.uid else { return }
@@ -63,14 +75,21 @@ final class CommentsViewModel: ObservableObject {
             try await fetchComments(postId: postId)
         }
         
-        // Clears the comment text box and resets the user
+        // Clears the comment text box and resets the 'replying-to' user
         self.newContent = ""
         self.toggleReply = false
         self.replyToComment = nil
     }
     
+    ///
+    /// Fetches comments in batches of 10 starting from the last fetched comment from the database.
+    ///
+    /// - Parameters:
+    ///  - postId: The ID of a post in the database whose comments are to be fetched.
+    ///
     @MainActor
     func fetchComments(postId: String) async throws {
+        // Fetches 10 comments starting from the last fetched comment and sets the last fetched comment
         let (newComments, lastDocument) = try await CommentManager.shared.getComments(postId: postId, count: 10, lastDocument: self.lastDocument)
         
         // Adds the contents of the query to the comments array and fetches data for each comment
@@ -89,6 +108,9 @@ final class CommentsViewModel: ObservableObject {
         }
     }
     
+    ///
+    /// Fetches user data for each comment being to a post.
+    ///
     @MainActor
     func fetchDataForComments() async throws {
         // Loops through newly fetched comments and fetches then sets its user property
@@ -99,6 +121,15 @@ final class CommentsViewModel: ObservableObject {
         }
     }
     
+    ///
+    /// Creates a comment object with different properties based off of whether it is a base comment or a reply.
+    ///
+    /// - Parameters:
+    ///  - postId: The ID of a post the comment is being commented on.
+    ///  - userId: The ID of the user posting the comment.
+    ///
+    ///  - Returns: An object containing information about a comment that is to be uploaded to the database.
+    ///
     private func createCommentObject(postId: String, userId: String) -> Comment {
         var comment: Comment
         
@@ -132,11 +163,17 @@ final class CommentsViewModel: ObservableObject {
         return comment
     }
     
+    ///
+    /// Sends a notification to the owner of the post being commented on or the owner of the comment being replied to.
+    ///
+    /// - Parameters:
+    ///  - comment: An object containing information about a comment that is to be uploaded.
+    ///
     private func sendNotification(comment: Comment) async throws {
         var notification: Notification? = nil
         
         if comment.isReply {
-            // Fetches reply to comment UID and creates notification object with this ID
+            // Fetches reply-to-comment UID and creates notification object with this ID
             let replyingTo = try await CommentManager.shared.getComment(commentId: comment.replyToCommentId!)
             
             if let reply = replyingTo {
@@ -154,6 +191,7 @@ final class CommentsViewModel: ObservableObject {
         } else {
             // Fetches post owner UID and creates notification object with this ID
             let post = try await PostManager.shared.fetchPost(postId: comment.postId)
+            
             if let post = post {
                 notification = Notification(
                     id: "",

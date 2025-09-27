@@ -9,7 +9,9 @@ import Foundation
 import FirebaseFirestore
 import FirebaseAuth
 
+///
 /// Defines a class that contains functions for registering new users to the database.
+///
 @MainActor
 final class RegisterViewModel: ObservableObject {
     
@@ -19,8 +21,15 @@ final class RegisterViewModel: ObservableObject {
     @Published var stance = "Regular"
     @Published var errorMessage = ""
     
+    ///
+    /// Creates a new user in Firebase's Authentication. Creates a new user document in the database, and generates a trick list for the user.
+    ///
     @MainActor
     func createUser() async throws {
+        guard validate() else {
+            return
+        }
+        
         try await AuthenticationManager.shared.createUser(
             withEmail: email,
             password: password,
@@ -29,11 +38,13 @@ final class RegisterViewModel: ObservableObject {
         )
     }
     
+    ///
     /// Validates the register view text fields aren't empty,
     /// also verifies the email contains '@' and '.' characters,
     /// also verifies the password is at least 6 characters long.
     ///
     /// - Returns: whether or not the inputted account information meets the required critera
+    /// 
     private func validate() -> Bool {
         errorMessage = ""
         

@@ -7,34 +7,24 @@
 
 import SwiftUI
 
+///
+/// Struct that displays a user's posts in their account view.
+///
 struct UserPostsView:  View {
     
     @ObservedObject var viewModel: AccountViewModel
     let user: User
     
     var body: some View {
-        if viewModel.userPosts.isEmpty {
-            VStack(alignment: .center) {
-                Spacer()
-                HStack {
-                    Spacer()
-                    Text("'\(user.username)' has no posts.")
-                        .font(.title3)
-                        .foregroundColor(.primary)
-                    Spacer()
+        
+        ScrollView(showsIndicators: false) {
+            LazyVStack(alignment: .center) {
+                ForEach(viewModel.userPosts) { post in
+                    PostCell(posts: $viewModel.userPosts,
+                             post: post
+                    )
+                    .padding(.horizontal, 15)
                 }
-                Spacer()
-            }
-        } else {
-            ScrollView(showsIndicators: false) {
-                VStack {
-                    ForEach(viewModel.userPosts) { post in
-                        PostCell(posts: $viewModel.userPosts,
-                                 post: post
-                        )
-                    }
-                }
-                .padding(.horizontal)
             }
         }
     }

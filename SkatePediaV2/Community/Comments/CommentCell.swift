@@ -9,6 +9,12 @@ import SwiftUI
 import FirebaseAuth
 import FirebaseFirestore
 
+///
+/// Struct that displays a user's comment on a post. Contains information about the user as well as the contents of their comment.
+///
+/// - Parameters:
+///  - comment: An object containing information about a comment stored in the database.
+///
 struct CommentCell: View {
     @StateObject var viewModel = CommentCellViewModel()
     
@@ -20,16 +26,17 @@ struct CommentCell: View {
     var comment: Comment
     
     var body: some View {
+        // Verifies the commenter's user document was fetched
         if let user = comment.user {
             VStack {
                 HStack(alignment: .center, spacing: 10) {
-                    // Profile picture
+                    // Commenter's profile picture
                     CircularProfileImageView(user: user, size: .large)
                     
-                    // Commenter username, content, date upload, reply button
+                    // Commenter's username, content, date upload, reply button
                     commentBody
                     
-                    // Comment options, only available if current user == comment owner
+                    // Comment options, only available if the current user is the owner of the comment
                     commentOptions
                     
                     Spacer()
@@ -39,9 +46,6 @@ struct CommentCell: View {
                 
                 // Shows replies if toggled and the comment has replies
                 if viewModel.showReplies {
-//                    if !comment.replies.isEmpty {
-//                        commentReplies
-//                    }
                     if !viewModel.replies.isEmpty {
                         commentReplies
                     }
@@ -61,7 +65,6 @@ struct CommentCell: View {
                     .foregroundColor(.gray)
                 
                 Divider()
-                
             }
         }
     }
@@ -70,10 +73,9 @@ struct CommentCell: View {
         VStack(alignment: .leading, spacing: 5) {
             if let user = comment.user {
                 // Username links to account view
-//                UsernameHyperlink(user: user, font: .headline)
-                Text("@\(user.username)")
+                UsernameHyperlink(user: user, font: .headline)
                 
-                // If the comment is a reply, adds username of the repliee
+                // If the comment is a reply, adds username of the user being replied to
                 if let repliee = comment.replyToCommentUsername {
                     HStack {
                         Text("@\(repliee) \(comment.content)")
@@ -111,6 +113,7 @@ struct CommentCell: View {
                             }
                         }
                     }
+                    
                     Spacer()
                 }
                 .font(.caption)
@@ -125,13 +128,14 @@ struct CommentCell: View {
                 Spacer()
                 
                 Menu {
+                    // Delete comment reply button
                     Button(role: .destructive) {
+                        // Deletes comment from database and decrements the post's reply count
                         viewModel.deleteComment(comment: comment)
+                        // If a the deleted comment has replies, all of its replies are also deleted
                         postCommentCount -= 1 + comment.replyCount
-//                        self.comment.replies.removeAll { aComment in
-//                            comment.commentId == aComment.commentId
-//                        }
                         
+                        // Removes the comment from the screen
                         withAnimation(.easeInOut(duration: 0.5)) {
                             if !comment.isReply {
                                 comments.removeAll { com in

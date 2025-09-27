@@ -87,7 +87,19 @@ struct SPButton: View {
     let color: Color
     let width: CGFloat
     let height: CGFloat
+    let showLoadingAnimation: Bool
     let action: () -> Void
+    
+    init(title: String, rank: ButtonRank, color: Color, width: CGFloat, height: CGFloat, showLoadingAnimation: Bool = true, action: @escaping () -> Void, isLoading: Bool = false) {
+        self.title = title
+        self.rank = rank
+        self.color = color
+        self.width = width
+        self.height = height
+        self.showLoadingAnimation = showLoadingAnimation
+        self.action = action
+        self.isLoading = isLoading
+    }
     
     @State var isLoading = false
     
@@ -95,13 +107,13 @@ struct SPButton: View {
         Button {
             isLoading = true
             
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                 isLoading = false
             }
             action()
             
         } label: {
-            if isLoading {
+            if isLoading && showLoadingAnimation {
                 ProgressView()
                     .tint(.primary)
             } else {

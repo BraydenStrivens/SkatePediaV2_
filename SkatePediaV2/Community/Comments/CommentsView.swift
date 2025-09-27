@@ -7,14 +7,22 @@
 
 import SwiftUI
 
+///
+/// Struct that displays comments for a post.
+///
+/// - Parameters:
+///  - post: An object containing information about a post in the database.
+///
 struct CommentsView: View {
     @StateObject var viewModel = CommentsViewModel()
-    @Environment(\.dismiss) var dismiss
     @State var isUploading: Bool = false
     @State var toggleReply: Bool = false
     
     var post: Post
+    
+    // Updates the post's comment count locally rather than using listener
     @Binding var postCommentCount: Int
+    @Environment(\.dismiss) var dismiss
 
     var body: some View {
         NavigationStack {
@@ -117,15 +125,16 @@ struct CommentsView: View {
                     }
                 }
             }
+            
             HStack {
-                // Comment text field, changes if adding base comment or reply
+                // Comment text field, changes if a adding base comment or a reply
                 TextField(viewModel.toggleReply ? "Reply" : "Add Comment", text: $viewModel.newContent, axis: .vertical)
                     .lineLimit(1...5)
                     .autocorrectionDisabled()
                 
                 Spacer()
                 
-                // Upload button
+                // Upload comment button
                 Button {
                     Task {
                         isUploading = true
@@ -154,7 +163,3 @@ struct CommentsView: View {
         }
     }
 }
-
-//#Preview {
-//    CommentsView()
-//}

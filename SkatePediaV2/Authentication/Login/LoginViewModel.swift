@@ -7,7 +7,9 @@
 
 import Foundation
 
+///
 /// Defines a class that contains functions for logging in a user to the app.
+///
 @MainActor
 final class LoginViewModel: ObservableObject {
     
@@ -16,7 +18,9 @@ final class LoginViewModel: ObservableObject {
     @Published var errorMessage = ""
     @Published var resetEmail = ""
 
+    ///
     /// Signs in and validates the user with the inputted email and password.
+    ///
     func signIn() async throws {
         guard validate() else {
             return
@@ -28,18 +32,19 @@ final class LoginViewModel: ObservableObject {
         )
     }
     
-    /// Resets the users password
     ///
-    /// - Parameters:
-    ///     - email: The email connected to the account.
+    /// Resets the users password with the email inputed into a text field
+    ///
     func resetPassword() {
         AuthenticationManager.shared.resetPassword(email: resetEmail)
     }
     
+    ///
     /// Validates that the email and password textfields are not empty,
     /// also verifies the email contains both '@' and '.' symbols.
     ///
     /// - Returns: whether or not both the email and password textfields contain characters.
+    ///
     private func validate() -> Bool {
         errorMessage = ""
         
@@ -49,7 +54,7 @@ final class LoginViewModel: ObservableObject {
             errorMessage = "Please fill in all fields."
             return false
         }
-        
+
         guard email.contains("@") && email.contains(".") else {
             errorMessage = "Please enter valid email."
             return false
