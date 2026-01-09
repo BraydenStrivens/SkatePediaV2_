@@ -72,4 +72,18 @@ struct User: Codable, Identifiable {
         try container.encode(self.bio, forKey: .bio)
         try container.encode(self.dateCreated, forKey: .dateCreated)
     }
+    
+    static func ==(lhs: User, rhs: User) -> Bool {
+        return lhs.id == rhs.id
+    }
+}
+
+extension User {
+    static var emptyStruct = User(
+        userId: "",
+        email: "",
+        username: "",
+        stance: "",
+        dateCreated: Date()
+    )
 }

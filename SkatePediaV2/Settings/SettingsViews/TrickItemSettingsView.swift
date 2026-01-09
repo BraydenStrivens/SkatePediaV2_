@@ -10,16 +10,21 @@ import SwiftUI
 struct TrickItemSettingsView: View {
     var body: some View {
         VStack {
-            Spacer()
-            HStack {
-                Spacer()
-                Text("Currently Unavailable")
-                Spacer()
+            List {
+                Section("Trick List") {
+                    
+                }
+                
+                Section("Trick Items") {
+                    
+                }
             }
-            Spacer()        }
-        .customNavBarItems(title: "Trick Item Settings", subtitle: "", backButtonHidden: false)
+        }
+        .customNavBarItems(title: "Trick Settings", subtitle: "", backButtonHidden: false)
     }
 }
+
+
 
 #Preview {
     TrickItemSettingsView()

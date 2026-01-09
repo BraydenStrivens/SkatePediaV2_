@@ -19,6 +19,7 @@ final class AddTrickItemViewModel: ObservableObject {
     @Published var selectedAVideo = false
     @Published var loadState = LoadState.unknown
     @Published var selectedItem: PhotosPickerItem?
+    @Published var trickItemUploadState: RequestState = .idle
     
     var previewThumbnail: UIImage? = nil
 
@@ -64,21 +65,41 @@ final class AddTrickItemViewModel: ObservableObject {
     /// - Parameters:
     ///  - userId: The id of an account in the database.
     ///  - data: A 'JsonTrick' object containing information about the trick the trick item is for.
-    func addTrickItem(userId: String, trick: Trick) async throws -> TrickItem? {
-        guard let item = selectedItem else { return nil }
-        guard let videoData = try await item.loadTransferable(type: Data.self) else { return nil }
+    @MainActor
+    func addTrickItem(userId: String, trick: Trick) async -> TrickItem? {
+        do {
+            self.trickItemUploadState = .loading
             
-        let trickItem = TrickItem(
-            id: "",
-            trickId: trick.id,
-            trickName: trick.name,
-            dateCreated: Date(),
-            stance: trick.stance,
-            notes: notes,
-            progress: progress,
-            videoData: VideoData(videoUrl: "", width: 0, height: 0)
-        )
-        
-        return try await TrickItemManager.shared.uploadTrickItem(userId: userId, videoData: videoData, trickItem: trickItem)
+            guard let item = selectedItem else {
+                throw FirestoreError.unknown
+            }
+            guard let videoData = try await item.loadTransferable(type: Data.self) else {
+                throw FirestoreError.unknown
+            }
+            
+            let trickItem = TrickItem(
+                id: "",
+                trickId: trick.id,
+                trickName: trick.name,
+                dateCreated: Date(),
+                stance: trick.stance,
+                notes: notes,
+                progress: progress,
+                videoData: VideoData(videoUrl: "", width: 0, height: 0)
+            )
+                        
+            let newTrickItem = try await TrickItemManager.shared.uploadTrickItem(userId: userId, videoData: videoData, trickItem: trickItem)
+            
+            self.trickItemUploadState = .success
+            return newTrickItem
+            
+        } catch let error as FirestoreError {
+            self.trickItemUploadState = .failure(error)
+            return nil
+            
+        } catch {
+            self.trickItemUploadState = .failure(.unknown)
+            return nil
+        }
     }
 }

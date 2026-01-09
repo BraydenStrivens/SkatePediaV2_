@@ -31,7 +31,7 @@ struct trickListViewByStance: View {
                         Text("Add Trick")
                             .foregroundColor(.primary)
                         Image(systemName: "plus.square")
-                            .tint(.blue)
+                            .tint(Color("buttonColor"))
                     }
                     .padding()
                 }

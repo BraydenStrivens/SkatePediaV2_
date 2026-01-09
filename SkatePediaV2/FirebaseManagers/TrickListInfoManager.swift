@@ -39,9 +39,9 @@ final class TrickListInfoManager {
     }
     
     func fetchTrickListInfo(userId: String) async throws -> TrickListInfo {
-        return try await trickListInfoCollection
-            .whereField(TrickListInfo.CodingKeys.ownerId.rawValue, isEqualTo: userId)
-            .getDocument(as: TrickListInfo.self)
+            return try await trickListInfoCollection
+                .whereField(TrickListInfo.CodingKeys.ownerId.rawValue, isEqualTo: userId)
+                .getDocument(as: TrickListInfo.self)
     }
     
     func addListenerForTrickListInfo(userId: String) -> AnyPublisher<[TrickListInfo], Error> {

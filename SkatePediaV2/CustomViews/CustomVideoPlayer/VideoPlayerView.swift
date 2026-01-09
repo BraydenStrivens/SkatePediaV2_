@@ -31,8 +31,6 @@ struct VideoPlayerView: View {
                     userPlayer: player2,
                     frameSize: frameSize,
                     videoSize: size,
-                    fullScreenSize: size,
-                    safeArea: safeArea,
                     showButtons: false
                 )
             }

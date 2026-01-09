@@ -10,9 +10,7 @@ import FirebaseAuth
 
 /// Defines the layout of items in the 'SettingsView'
 struct SettingsView: View {
-    
     @StateObject private var viewModel = SettingsViewModel()
-        
     @State private var toggleUpdatePassword: Bool = false
     @State private var toggleDeleteAccountVerifyer: Bool = false
     @State private var errorMessage: String = ""
@@ -90,6 +88,7 @@ struct SettingsView: View {
                                 }
                             }
                         }
+                        .tint(Color("textAccentColor"))
                     }
                     .padding(3)
                     
@@ -102,6 +101,7 @@ struct SettingsView: View {
                         Button("Update Password") {
                             toggleUpdatePassword.toggle()
                         }
+                        .tint(Color("textAccentColor"))
                         .alert("Update Password", isPresented: $toggleUpdatePassword) {
                             updatePasswordPopupView
                         } message: {

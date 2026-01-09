@@ -8,115 +8,114 @@
 import SwiftUI
 
 struct SelectCompareVideoSheet: View {
-//    @EnvironmentObject private var compareViewModel: CompareViewModel
-
     let trickId: String
     let initialSelection: CompareVideo?
+    let defaultTabIndex: Int
     let onContinue: (CompareVideo) -> Void
     let onCancel: () -> Void
     
-    @Environment(\.dismiss) private var dismiss
     @StateObject var viewModel = SelectCompareVideoSheetViewModel()
     @State private var tabIndex: Int = 0
-    
     @State private var selectedVideo: CompareVideo?
     
-    init(trickId: String,
-         initialSelection: CompareVideo?,
-         onContinue: @escaping (CompareVideo) -> Void,
-         onCancel: @escaping () -> Void
+    init(
+        trickId: String,
+        initialSelection: CompareVideo?,
+        defaultTabIndex: Int,
+        onContinue: @escaping (CompareVideo) -> Void,
+        onCancel: @escaping () -> Void
     ) {
         self.trickId = trickId
         self.initialSelection = initialSelection
+        self.defaultTabIndex = defaultTabIndex
         self.onContinue = onContinue
         self.onCancel = onCancel
         _selectedVideo = State(initialValue: initialSelection)
+        _tabIndex = State(initialValue: defaultTabIndex)
     }
     
     var body: some View {
-        VStack {
-            switch viewModel.currentUserFetchState {
-            case .idle:
-                VStack { }
-                
-            case .loading:
-                CustomProgressView(placement: .center)
-                
-            case .success:
-                VStack {
-                    ScrollView {
-                        tabSelector
-                        
-                        switch tabIndex {
-                        case 0:
-                            trickItemSelectionView
-                                .onAppear {
-                                    if case .idle = viewModel.trickItemsFetchState {
-                                        Task {
-                                            await viewModel.fetchTrickItemsForTrick(trickId: trickId)
+        NavigationStack {
+            VStack {
+                switch viewModel.currentUserFetchState {
+                case .idle:
+                    VStack { }
+                    
+                case .loading:
+                    CustomProgressView(placement: .center)
+                    
+                case .success:
+                    VStack {
+                        ScrollView {
+                            tabSelector
+                            
+                            switch tabIndex {
+                            case 0:
+                                trickItemSelectionView
+                                    .onAppear {
+                                        if case .idle = viewModel.trickItemsFetchState {
+                                            Task {
+                                                await viewModel.fetchTrickItemsForTrick(trickId: trickId)
+                                            }
                                         }
                                     }
-                                }
-                            
-                        case 1:
-                            proVideoSelectionView
-                                .onAppear {
-                                    if case .idle = viewModel.proVideosFetchState {
-                                        Task {
-                                            await viewModel.fetchProVideosForTrick(trickId: trickId)
+                            case 1:
+                                proVideoSelectionView
+                                    .onAppear {
+                                        if case .idle = viewModel.proVideosFetchState {
+                                            Task {
+                                                await viewModel.fetchProVideosForTrick(trickId: trickId)
+                                            }
                                         }
                                     }
+                            default:
+                                VStack {
+                                    Text("Error...")
                                 }
-                            
-                        default:
-                            VStack {
-                                Text("Error...")
                             }
                         }
                     }
+                    .padding()
+                    
+                case .failure(let firestoreError):
+                    Text("Error fetching user")
+                    Text(firestoreError.errorDescription ?? "ERROR...")
                 }
-                .padding()
                 
-            case .failure(let firestoreError):
-                Text("Error fetching user")
-                Text(firestoreError.errorDescription ?? "ERROR...")
             }
-            
+            .navigationTitle("Select Video")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        onCancel()
+                    } label: {
+                        Text("Cancel")
+                            .foregroundColor(.primary)
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        if let selectedVideo {
+                            onContinue(selectedVideo)
+                        }
+                    } label: {
+                        Text("Continue")
+                            .foregroundColor(selectedVideo == nil ? .gray : Color("accentColor"))
+                    }
+                    .disabled(selectedVideo == nil)
+                }
+            }
         }
-        .navigationTitle(tabIndex == 0 ? "Select Trick Item" : "Select Pro Video")
-        .navigationBarTitleDisplayMode(.inline)
-//        .toolbar {
-//            ToolbarItem(placement: .topBarLeading) {
-//                Button {
-//                    dismiss()
-//                } label: {
-//                    Text("Cancel")
-//                        .foregroundColor(.primary)
-//                }
-//            }
-//            ToolbarItem(placement: .topBarTrailing) {
-//                Button {
-//                    dismiss()
-//                } label: {
-//                    Text("Continue")
-////                        .foregroundColor(.primary.opacity(dummySelectedTrickItem == nil ? 0.4 : 1))
-//                }
-////                .disabled(dummySelectedTrickItem == nil)
-//            }
-//        }
     }
     
     @ViewBuilder
     var tabSelector: some View {
         HStack {
-            Button("Cancel") {
-                onCancel()
-            }
-            
             HStack(spacing: 0) {
                 Text("Trick Items")
                     .fontWeight(tabIndex == 0 ? .medium : .regular)
-                    .frame(width: 120, height: 40)
+                    .frame(width: 150, height: 50)
                     .background {
                         if tabIndex == 0 {
                             Rectangle()
@@ -132,7 +131,7 @@ struct SelectCompareVideoSheet: View {
                 
                 Text("Pro Videos")
                     .fontWeight(tabIndex == 1 ? .medium : .regular)
-                    .frame(width: 120, height: 40)
+                    .frame(width: 150, height: 50)
                     .background {
                         if tabIndex == 1 {
                             Rectangle()
@@ -150,15 +149,6 @@ struct SelectCompareVideoSheet: View {
                 Rectangle()
                     .stroke(.primary, lineWidth: 1)
             }
-            
-            Button {
-                if let selectedVideo { onContinue(selectedVideo) }
-                
-            } label: {
-                Text("Continue")
-                    .foregroundColor(selectedVideo == nil ? .gray : Color("buttonColor"))
-            }
-            .disabled(selectedVideo == nil)
         }
     }
     

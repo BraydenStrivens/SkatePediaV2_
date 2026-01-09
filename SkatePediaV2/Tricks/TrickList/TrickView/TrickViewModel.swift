@@ -12,46 +12,61 @@ import FirebaseAuth
 final class TrickViewModel: ObservableObject {
     @Published var trickItems: [TrickItem] = []
     @Published var proVideos: [ProSkaterVideo] = []
-    @Published var fetchingTrickItems: Bool = false
-    @Published var fetchingProVideos: Bool = false
+
+    @Published var trickItemFetchState: RequestState = .idle
+    @Published var proVideosFetchState: RequestState = .idle
+    @Published var deleteTrickItemState: RequestState = .idle
     
-    var fetchedTrickItems: Bool = false
-    var fetchedProVideos: Bool = false
+    @MainActor
+    func fetchTrickItems(trickId: String) async {
+        do {
+            self.trickItemFetchState = .loading
+            
+            guard let currentUid = Auth.auth().currentUser?.uid else { throw FirestoreError.unknown }
+            
+            let items = try await TrickItemManager.shared.getTrickItems(userId: currentUid, trickId: trickId)
+            self.trickItems.append(contentsOf: items)
+
+            self.trickItemFetchState = .success
+            
+        } catch let error as FirestoreError {
+            self.trickItemFetchState = .failure(error)
+            
+        } catch {
+            self.proVideosFetchState = .failure(.unknown)
+        }
+    }
+    
+    @MainActor
+    func fetchProVideosForTrick(trickId: String) async {
+        do {
+            self.proVideosFetchState = .loading
+            
+            let fetchedVideos = try await ProManager.shared.getProVideosByTrick(trickId: trickId)
+            print("FETCHED VIDEOS: ", fetchedVideos)
+            self.proVideos.append(contentsOf: fetchedVideos)
+                                    
+            self.proVideosFetchState = .success
+            
+        } catch let error as FirestoreError {
+            self.proVideosFetchState = .failure(error)
+            
+        } catch {
+            self.proVideosFetchState = .failure(.unknown)
+        }
+    }
     
     func deleteTrickItem(userId: String, trickItem: TrickItem) async throws {
-        try await TrickItemManager.shared.deleteTrickItem(userId: userId, trickItem: trickItem)
-    }
-    
-    @MainActor
-    func fetchTrickItems(trickId: String) async throws {
-        guard let currentUid = Auth.auth().currentUser?.uid else { return }
-        self.fetchingTrickItems = true
-        
-        let items = try await TrickItemManager.shared.getTrickItems(userId: currentUid, trickId: trickId)
-        self.trickItems.append(contentsOf: items)
-        
-        self.fetchingTrickItems = false
-        self.fetchedTrickItems = true
-    }
-    
-    @MainActor
-    func fetchProVideosForTrick(trickId: String) async throws {
-        self.fetchingProVideos = true
-        
-        let fetchedVideos = try await ProManager.shared.getProVideosByTrick(trickId: trickId)
-        self.proVideos.append(contentsOf: fetchedVideos)
-        
-        try await fetchDataForProVideos()
-        
-        self.fetchingProVideos = false
-        self.fetchedProVideos = true
-    }
-    
-    @MainActor
-    func fetchDataForProVideos() async throws {
-        for index in 0 ..< proVideos.count {
-            let video = self.proVideos[index]
-            self.proVideos[index].proSkater = try await ProManager.shared.getPro(proId: video.proId)
+        do {
+            self.deleteTrickItemState = .loading
+            try await TrickItemManager.shared.deleteTrickItem(userId: userId, trickItem: trickItem)
+            self.deleteTrickItemState = .success
+            
+        } catch let error as FirestoreError {
+            self.deleteTrickItemState = .failure(error)
+            
+        } catch {
+            self.deleteTrickItemState = .failure(.unknown)
         }
     }
 }

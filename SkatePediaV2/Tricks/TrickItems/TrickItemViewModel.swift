@@ -13,6 +13,7 @@ import PhotosUI
 @MainActor
 final class TrickItemViewModel: ObservableObject {
     
+    @Published var edit: Bool = false
     @Published var newNotes: String = ""
     @Published var newRating: Int = 0
     @Published var savingTrickItem: Bool = false
@@ -25,14 +26,42 @@ final class TrickItemViewModel: ObservableObject {
         }
     }
     
-    func updateTrickItem(userId: String, trickItemId: String) async throws {
-        self.savingTrickItem = true
-        try await TrickItemManager.shared.updateTrickItemNotes(userId: userId, trickItemId: trickItemId, newNotes: newNotes)
-        self.savingTrickItem = false
+    @Published var updateTrickItemState: RequestState = .idle
+    @Published var deleteTrickItemState: RequestState = .idle
+    
+    func updateTrickItem(userId: String, trickItemId: String) async {
+        do {
+            self.updateTrickItemState = .loading
+            
+            try await TrickItemManager.shared.updateTrickItemNotes(userId: userId, trickItemId: trickItemId, newNotes: newNotes)
+            
+            self.updateTrickItemState = .success
+            
+            withAnimation(.easeInOut(duration: 0.3)) {
+                self.edit = false
+            }
+        } catch let error as FirestoreError {
+            self.updateTrickItemState = .failure(error)
+            
+        } catch {
+            self.updateTrickItemState = .failure(.unknown)
+        }
     }
     
-    func deleteTrickItem(userId: String, trickItem: TrickItem) async throws {
-        try await TrickItemManager.shared.deleteTrickItem(userId: userId, trickItem: trickItem)
+    func deleteTrickItem(userId: String, trickItem: TrickItem) async {
+        do {
+            self.deleteTrickItemState = .loading
+                        
+            try await TrickItemManager.shared.deleteTrickItem(userId: userId, trickItem: trickItem)
+            self.deleteTrickItemState = .success
+            self.edit = false
+            
+        } catch let error as FirestoreError {
+            self.deleteTrickItemState = .failure(error)
+            
+        } catch {
+            self.deleteTrickItemState = .failure(.unknown)
+        }
     }
     
     @MainActor

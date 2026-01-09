@@ -7,9 +7,25 @@
 
 import SwiftUI
 
+class SPAlertManager: ObservableObject {
+    @Published var showAlert = false
+    @Published var alertTitle = ""
+    @Published var alertMessage = ""
+    
+    func triggerAlert(title: String, message: String) {
+        alertTitle = title
+        alertMessage = message
+        showAlert = true
+    }
+}
+
 struct SPAlertPopup: View {
+    @StateObject private var alertManager = SPAlertManager()
+    
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        VStack {
+            
+        }
     }
 }
 

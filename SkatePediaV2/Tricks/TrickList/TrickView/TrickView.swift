@@ -13,6 +13,8 @@ struct TrickView: View {
     let userId: String
     let trick: Trick
     
+    @State private var cellWidth: CGFloat = 0
+    
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 20) {
@@ -32,11 +34,11 @@ struct TrickView: View {
         .customNavBarItems(title: trick.name, subtitle: "", backButtonHidden: false)
         .onFirstAppear {
             Task {
-                if !viewModel.fetchedTrickItems {
-                    try await viewModel.fetchTrickItems(trickId: trick.id)
+                if case .idle = viewModel.trickItemFetchState {
+                    await viewModel.fetchTrickItems(trickId: trick.id)
                 }
-                if !viewModel.fetchedProVideos {
-                    try await viewModel.fetchProVideosForTrick(trickId: trick.id)
+                if case .idle = viewModel.proVideosFetchState {
+                    await viewModel.fetchProVideosForTrick(trickId: trick.id)
                 }
             }
         }
@@ -44,19 +46,18 @@ struct TrickView: View {
     }
     
     var learnFirstSection: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("Learn First:")
-                .font(.footnote)
-                .foregroundColor(.gray)
-            Text(trick.learnFirst)
-                .font(.headline)
-            HStack {
-                Spacer()
+        Section(header: Text("Learn First:").foregroundColor(.gray)) {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack { Spacer() }
+
+                Text(trick.learnFirst)
+                    .font(.headline)
+                    .fontWeight(.medium)
             }
+            .padding()
+            .background(Color(uiColor: UIColor.systemBackground))
+            .shadow(color: .primary.opacity(0.2), radius: 5, x: 0, y: 2)
         }
-        .padding()
-        .background(Color(uiColor: UIColor.systemBackground))
-        .shadow(color: .gray.opacity(0.25), radius: 5, x: 0, y: 2)
     }
     
     var addTrickItemSection: some View {
@@ -64,14 +65,18 @@ struct TrickView: View {
             Spacer()
             
             CustomNavLink(
-                destination: AddTrickItemView(userId: userId, trick: trick, trickItems: $viewModel.trickItems)
+                destination: AddTrickItemView(
+                    userId: userId,
+                    trick: trick,
+                    trickItems: $viewModel.trickItems
+                )
                     .customNavBarItems(title: "Add Trick Item", subtitle: "\(trick.name)", backButtonHidden: false)
             ) {
                 Text("Add Trick Item")
                     .font(.body)
                     .foregroundColor(.primary)
                 Image(systemName: "plus.square")
-                    .foregroundColor(.blue)
+                    .foregroundColor(Color("buttonColor"))
                     .frame(width: 20, height: 20)
             }
         }
@@ -81,9 +86,14 @@ struct TrickView: View {
     var trickItemsSection: some View {
         Section(header: Text("Trick Items:").foregroundColor(.gray)) {
             VStack {
-                if viewModel.fetchingTrickItems {
+                switch viewModel.trickItemFetchState {
+                case .idle:
+                    VStack { }
+                    
+                case .loading:
                     CustomProgressView(placement: .center)
-                } else {
+                    
+                case .success:
                     if viewModel.trickItems.isEmpty {
                         VStack(alignment: .center) {
                             HStack { Spacer() }
@@ -98,22 +108,50 @@ struct TrickView: View {
                             TrickItemCell(userId: userId, trickItem: trickItem, trickItems: $viewModel.trickItems)
                         }
                     }
+                case .failure(let error):
+                    VStack(alignment: .center) {
+                        HStack { Spacer() }
+                        
+                        Text(error.errorDescription ?? "")
+                            .font(.headline)
+                            .fontWeight(.medium)
+                            .multilineTextAlignment(.center)
+                        
+                        Button {
+                            Task {
+                                await viewModel.fetchTrickItems(trickId: trick.id)
+                            }
+                        } label: {
+                            Text("Try Again")
+                        }
+                        .foregroundColor(Color("buttonColor"))
+                        .padding(10)
+                        .background {
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color("buttonColor"))
+                        }
+                    }
                 }
             }
             .padding()
             .background {
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(.gray.opacity(0.06))
+                    .fill(.primary.opacity(0.05))
             }
         }
     }
     
     var proPreviewsSection: some View {
         Section(header: Text("Pro Videos:").foregroundColor(.gray)) {
-            if viewModel.fetchingProVideos {
-                CustomProgressView(placement: .center)
+            switch viewModel.proVideosFetchState {
                 
-            } else {
+            case .idle:
+                VStack { }
+                
+            case .loading:
+                CustomProgressView(placement: .center)
+
+            case .success:
                 if viewModel.proVideos.isEmpty {
                     HStack {
                         Spacer()
@@ -125,23 +163,58 @@ struct TrickView: View {
                     .padding()
                     .background {
                         RoundedRectangle(cornerRadius: 10)
-                            .fill(.gray.opacity(0.06))
+                            .fill(.primary.opacity(0.06))
                     }
-                    
                 } else {
                     ScrollView(.horizontal) {
-                        HStack(spacing: 10) {
+                        LazyHStack(spacing: 0) {
                             ForEach(viewModel.proVideos) { proVideo in
-                                ProTrickPreview(video: proVideo, cellSize: CGSize(width: 300, height: 500))
+                                ProTrickPreview(video: proVideo)
+                                    .frame(width: cellWidth)
+                                    .scrollTargetLayout()
                             }
                         }
-                        .padding()
-                        .background {
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(.gray.opacity(0.06))
-                        }
+                        
+                    }
+                    .scrollTargetBehavior(.paging)
+                    .background {
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(.primary.opacity(0.05))
                     }
                 }
+            case .failure(let error):
+                VStack(alignment: .center) {
+                    HStack { Spacer() }
+                    
+                    Text(error.errorDescription ?? "")
+                        .font(.headline)
+                        .fontWeight(.medium)
+                        .multilineTextAlignment(.center)
+                    
+                    Button {
+                        Task {
+                            await viewModel.fetchProVideosForTrick(trickId: trick.id)
+                        }
+                    } label: {
+                        Text("Try Again")
+                    }
+                    .foregroundColor(Color("buttonColor"))
+                    .padding(10)
+                    .background {
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color("buttonColor"))
+                    }
+                }
+            }
+        }
+        .background {
+            GeometryReader { proxy in
+                Color.clear
+                    .preference(key: WidthPreferenceKey.self, value: proxy.size.width)
+                    .onPreferenceChange(WidthPreferenceKey.self) { width in
+                        guard width > 0 else { return }
+                        cellWidth = width
+                    }
             }
         }
     }

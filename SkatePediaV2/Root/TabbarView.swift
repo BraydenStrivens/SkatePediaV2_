@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct TabbarView: View {
+    @EnvironmentObject var authViewModel: AuthenticationViewModel
+    
     var body: some View {
         // Creates a tab bar to navigate between 'Tricks', 'Pros', 'Community', 'Profile', and 'Settings' views
         TabView {
@@ -52,9 +54,6 @@ struct TabbarView: View {
                 Label("Settings", systemImage: "gear")
             }
         }
+        .tint(Color("tabbarItemColor"))
     }
 }
-
-//#Preview {
-//    TabbarView()
-//}

@@ -14,9 +14,6 @@ final class SelectCompareVideoSheetViewModel: ObservableObject {
 
     @Published var proVideos: [ProSkaterVideo] = []
     @Published var trickItems: [TrickItem] = []
-    
-    @Published var selectedTrickItem: TrickItem? = nil
-    @Published var selectedProVideo: ProSkaterVideo? = nil
 
     @Published var currentUserFetchState: RequestState = .idle
     @Published var proVideosFetchState: RequestState = .idle
@@ -83,13 +80,5 @@ final class SelectCompareVideoSheetViewModel: ObservableObject {
         } catch {
             self.proVideosFetchState = .failure(.unknown)
         }
-    }
-    
-    func createAVPlayer(videoUrl: String) -> AVPlayer? {
-        guard let url = URL(string: videoUrl) else {
-            return nil
-        }
-        
-        return AVPlayer(url: url)
     }
 }

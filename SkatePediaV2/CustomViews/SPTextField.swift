@@ -43,7 +43,7 @@ struct SPTextField: View {
             Text(title)
                 .padding(.horizontal, 5)
                 .foregroundColor(isTyping ? borderColor : Color.primary)
-                .background(Color(uiColor: UIColor.systemBackground).opacity(isTyping || !text.isEmpty ? 1 : 0))
+                .background(Color("backgroundColor").opacity(isTyping || !text.isEmpty ? 1 : 0))
                 .overlay {
                     RoundedRectangle(cornerRadius: 5)
                         .stroke(isTyping ? borderColor.opacity(isTyping || !text.isEmpty ? 1 : 0) : .primary.opacity(isTyping || !text.isEmpty ? 1 : 0), lineWidth: 1.0)

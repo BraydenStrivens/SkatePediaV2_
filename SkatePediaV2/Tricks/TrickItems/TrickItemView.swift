@@ -15,7 +15,6 @@ struct TrickItemView: View {
     @Binding var trickItems: [TrickItem]
     
     @StateObject var viewModel = TrickItemViewModel()
-    @State private var edit: Bool = false
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -42,6 +41,24 @@ struct TrickItemView: View {
             .onDisappear {
                 viewModel.videoPlayer?.pause()
             }
+            .alert("Error Editing Trick Item",
+                   isPresented: .constant(viewModel.updateTrickItemState.hasError)
+            ) {
+                Button("OK", role: .cancel) {
+                    viewModel.updateTrickItemState = .idle
+                }
+            } message: {
+                Text(viewModel.updateTrickItemState.error?.localizedDescription ?? "")
+            }
+            .alert("Error Deleting Trick Item",
+                   isPresented: .constant(viewModel.deleteTrickItemState.hasError)
+            ) {
+                Button("OK", role: .cancel) {
+                    viewModel.deleteTrickItemState = .idle
+                }
+            } message: {
+                Text(viewModel.deleteTrickItemState.error?.localizedDescription ?? "")
+            }
         }
         
     }
@@ -49,18 +66,24 @@ struct TrickItemView: View {
     @ViewBuilder
     var editTrickItemOptionsSection: some View {
         HStack(spacing: 20) {
-            if edit {
+            if viewModel.edit {
                 Button {
                     Task {
-                        try await viewModel.deleteTrickItem(userId: userId, trickItem: trickItem)
-                        self.trickItems.removeAll { aTrickItem in
-                            trickItem.id == aTrickItem.id
+                        await viewModel.deleteTrickItem(userId: userId, trickItem: trickItem)
+                        
+                        if case .success = viewModel.deleteTrickItemState {
+                            self.trickItems.removeAll { aTrickItem in
+                                trickItem.id == aTrickItem.id
+                            }
+                            dismiss()
                         }
-                        edit.toggle()
-                        dismiss()
                     }
                 } label: {
-                    Text("Delete")
+                    if case .loading = viewModel.deleteTrickItemState {
+                        ProgressView()
+                    } else {
+                        Text("Delete")
+                    }
                 }
                 .foregroundColor(.red)
                 .frame(width: UIScreen.screenWidth * 0.2, height: 20)
@@ -69,31 +92,31 @@ struct TrickItemView: View {
                 
                 Button {
                     Task {
-                        try await viewModel.updateTrickItem(userId: userId, trickItemId: trickItem.id)
-                        trickItem.notes = viewModel.newNotes
-                    }
-                    withAnimation(.easeInOut(duration: 0.5)) {
-                        edit.toggle()
+                        await viewModel.updateTrickItem(userId: userId, trickItemId: trickItem.id)
+                        
+                        if case .success = viewModel.updateTrickItemState {
+                            trickItem.notes = viewModel.newNotes
+                        }
                     }
                 } label: {
-                    if viewModel.savingTrickItem {
+                    if case .loading = viewModel.updateTrickItemState {
                         ProgressView()
                     } else {
                         Text("Save")
                     }
                 }
-                .foregroundColor(.blue)
+                .foregroundColor(Color("buttonColor"))
                 .frame(width: UIScreen.screenWidth * 0.2, height: 20)
                 .padding(6)
                 .padding(.horizontal, 8)
                 .background {
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(.blue)
+                        .stroke(Color("buttonColor"))
                 }
                 
                 Button {
                     withAnimation(.easeInOut(duration: 0.5)) {
-                        edit.toggle()
+                        viewModel.edit.toggle()
                     }
                 } label: {
                     Text("Cancel")
@@ -109,11 +132,11 @@ struct TrickItemView: View {
                     label: {
                         ZStack {
                             RoundedRectangle(cornerRadius: 8)
-                                .stroke(.primary)
+                                .stroke(Color("buttonColor"))
                                 .frame(height: 30)
                                 .padding()
                             Text("Compare with Pro")
-                                .tint(Color.primary)
+                                .foregroundColor(Color("buttonColor"))
                                 .font(.headline)
                         }
                     }
@@ -125,7 +148,7 @@ struct TrickItemView: View {
                 
                 Button {
                     withAnimation(.easeInOut(duration: 0.5)) {
-                        edit.toggle()
+                        viewModel.edit.toggle()
                     }
                 } label: {
                     Text("Edit")
@@ -142,7 +165,7 @@ struct TrickItemView: View {
     var notesSection: some View {
         Section(header: Text("Notes").foregroundColor(.gray)) {
             HStack {
-                if !edit {
+                if !viewModel.edit {
                     Text(trickItem.notes)
                         .lineLimit(2...5)
                     
@@ -158,52 +181,34 @@ struct TrickItemView: View {
             .background(Color(uiColor: UIColor.systemBackground))
             .shadow(color: .gray.opacity(0.25), radius: 5, x: 0, y: 2)
         }
+        .padding(.horizontal)
     }
     
     @ViewBuilder
     var videoPlayerSection: some View {
-        GeometryReader { proxy in
-            
-            //            VideoPlayerView(frameSize: proxy.size, videoData: trickItem.videoData, safeArea: proxy.safeAreaInsets)
-            
-            VStack {
-                if let player = viewModel.videoPlayer {
-                    // Displays the trick item's video
-                    let size = CustomVideoPlayer.getNewAspectRatio(
-                        baseWidth: trickItem.videoData.width,
-                        baseHeight: trickItem.videoData.height,
-                        maxWidth: proxy.size.width,
-                        maxHeight: proxy.size.height
+        VStack {
+            if let player = viewModel.videoPlayer {
+                
+                let frameSize = CGSize(width: UIScreen.screenWidth, height: UIScreen.screenHeight * 0.7)
+                let videoSize =  CustomVideoPlayer.getNewAspectRatio(
+                    baseWidth: trickItem.videoData.width,
+                    baseHeight: trickItem.videoData.height,
+                    maxWidth: UIScreen.screenWidth,
+                    maxHeight: UIScreen.screenHeight * 0.7
+                )
+                
+                if let videoSize = videoSize {
+                    SPVideoPlayer(
+                        userPlayer: player,
+                        frameSize: frameSize,
+                        videoSize: videoSize,
+                        showButtons: true
                     )
-                    let fullScreenSize = CustomVideoPlayer.getNewAspectRatio(
-                        baseWidth: trickItem.videoData.width,
-                        baseHeight: trickItem.videoData.height,
-                        maxWidth: UIScreen.screenWidth,
-                        maxHeight: UIScreen.screenHeight
-                    )
-                    let safeArea = proxy.safeAreaInsets
-                    
-                    if let size = size, let fullScreenSize = fullScreenSize {
-                        SPVideoPlayer(
-                            userPlayer: player,
-                            frameSize: proxy.size,
-                            videoSize: size,
-                            fullScreenSize: fullScreenSize,
-                            safeArea: safeArea,
-                            showButtons: true
-                        )
-                        .ignoresSafeArea()
-                        .scaledToFit()
-                    }
-                } else {
-                    ProgressView()
+                    .ignoresSafeArea()
+                    .scaledToFit()
                 }
             }
         }
-        .frame(width: UIScreen.screenWidth * 0.95, height: UIScreen.screenHeight * 0.7)
+        .padding(.vertical, 10)
     }
 }
-
-//#Preview {
-//    TrickItemView()
-//}

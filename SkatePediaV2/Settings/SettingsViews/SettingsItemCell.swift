@@ -8,11 +8,24 @@
 import SwiftUI
 
 struct SettingsItemCell: View {
+    var settingHeader: String
+    @Binding var buttonState: Bool
+    
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        HStack {
+            Toggle(settingHeader, isOn: $buttonState)
+                .tint(Color("buttonColor"))
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 10)
+        
+        Divider()
     }
 }
 
-#Preview {
-    SettingsItemCell()
-}
+//#Preview {
+//    SettingsItemCell(
+//        settingHeader: "Use trick abbreviations:",
+//        buttonState: false
+//    )
+//}

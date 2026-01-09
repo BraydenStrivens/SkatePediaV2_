@@ -35,8 +35,6 @@ struct AddTrickItemView: View {
             
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 20) {
-                    
-                    
                     // Notes section
                     notesSection
                     
@@ -66,6 +64,15 @@ struct AddTrickItemView: View {
                 })
             }
         }
+        .alert("Error Uploading Trick Item",
+               isPresented: .constant(viewModel.trickItemUploadState.hasError)
+        ) {
+            Button("OK", role: .cancel) {
+                viewModel.trickItemUploadState = .idle
+            }
+        } message: {
+            Text(viewModel.trickItemUploadState.error?.localizedDescription ?? "")
+        }
     }
     
     var uploadButton: some View {
@@ -80,14 +87,14 @@ struct AddTrickItemView: View {
                 }
                 
                 Task {
-                    isUploading = true
-                    let newTrickItem = try await viewModel.addTrickItem(userId: userId, trick: trick)
-                    if let newItem = newTrickItem { self.trickItems.insert(newItem, at: 0) }
-                    isUploading = false
-                    dismiss()
+                    let newTrickItem = await viewModel.addTrickItem(userId: userId, trick: trick)
+                    if let newItem = newTrickItem {
+                        self.trickItems.insert(newItem, at: 0)
+                        dismiss()
+                    }
                 }
             } label: {
-                if isUploading {
+                if case .loading = viewModel.trickItemUploadState {
                     ProgressView()
                 } else {
                     Text("Upload")
@@ -111,7 +118,7 @@ struct AddTrickItemView: View {
                     .autocorrectionDisabled()
             }
             .background(Color(uiColor: UIColor.systemBackground))
-            .shadow(color: .gray.opacity(0.25), radius: 5, x: 0, y: 2)
+            .shadow(color: .primary.opacity(0.1), radius: 2, x: 0, y: 2)
         }
     }
     
@@ -156,7 +163,7 @@ struct AddTrickItemView: View {
             }
             .padding()
             .background(Color(uiColor: UIColor.systemBackground))
-            .shadow(color: .gray.opacity(0.25), radius: 5, x: 0, y: 2)
+            .shadow(color: .primary.opacity(0.2), radius: 5, x: 0, y: 2)
         }
     }
     
@@ -173,10 +180,10 @@ struct AddTrickItemView: View {
                     
                     if viewModel.selectedAVideo {
                         Text("Change")
-                            .foregroundColor(.blue)
+                            .foregroundColor(Color("buttonColor"))
                     } else {
                         Image(systemName: "plus")
-                            .foregroundColor(.blue)
+                            .foregroundColor(Color("buttonColor"))
                     }
                 }
             }
@@ -255,18 +262,10 @@ struct AddTrickItemView: View {
                     } label: {
                         Text("Continue")
                     }
-                    .foregroundColor(.primary)
+                    .foregroundColor(Color("buttonColor"))
                 }
             }
         }
         
     }
 }
-
-//#Preview {
-//    AddTrickItemView(
-//        userId: "",
-//        trick: Trick(id: "00000011", name: "Backside Kickflip", stance: "Regular", abbreviation: "BS Flip", learnFirst: "Backside 180, Kickflip", learnFirstAbbreviation: "BS Flip, Kickflip", difficulty: "Intermediate", learned: false, inProgress: false
-//                    )
-//    )
-//}

@@ -16,9 +16,9 @@ struct CustomProgressBar: View {
     var width: CGFloat
     var height: CGFloat = 20
     
-    var backgroundColor: Color = Color.gray.opacity(0.2)
-    var startColor: Color = Color.blue
-    var endColor: Color = Color.teal
+    var backgroundColor: Color = Color.primary.opacity(0.15)
+    var startColor: Color = Color(hex: 0xb14604)
+    var endColor: Color = Color(hex: 0xf3aa0c)
     
     init(header: String, totalTricks: Int, learnedTricks: Int, width: CGFloat = UIScreen.screenWidth / 2) {
         self.header = header

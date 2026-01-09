@@ -103,4 +103,25 @@ struct TrickListInfo: Identifiable, Codable {
         try container.encode(self.totalNollieTricks, forKey: .totalNollieTricks)
         try container.encode(self.learnedNollieTricks, forKey: .learnedNollieTricks)
     }
+    
+    static func ==(lhs: TrickListInfo, rhs: TrickListInfo) -> Bool {
+        return lhs.id == rhs.id
+    }
+}
+
+extension TrickListInfo {
+    static let emptyStruct = TrickListInfo(
+        ownerId: "",
+        totalTricks: 0,
+        learnedTricks: 0,
+        totalInProgressTricks: 0,
+        totalRegularTricks: 0,
+        learnedRegularTricks: 0,
+        totalFakieTricks: 0,
+        learnedFakieTricks: 0,
+        totalSwitchTricks: 0,
+        learnedSwitchTricks: 0,
+        totalNollieTricks: 0,
+        learnedNollieTricks: 0
+    )
 }

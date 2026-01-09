@@ -11,9 +11,6 @@ import Kingfisher
 
 struct CompareView: View {
     @StateObject var viewModel = CompareViewModel()
-    @State var toggleSelectTrickItemSheet: Bool = false
-    @State var toggleSelectProVideoSheet: Bool = false
-    @State var toggleSelectSecondTrickItemSheet: Bool = false
     @State var toggleEditNotes: Bool = false
     
     let trickId: String
@@ -22,134 +19,160 @@ struct CompareView: View {
     
     var body: some View {
         VStack {
-            ScrollView {
-                VStack {
-                    if viewModel.loading {
-                        HStack {
-                            Spacer()
-                            ProgressView()
-                            Spacer()
+            switch viewModel.trickFetchState {
+            case .idle:
+                VStack {}
+                
+            case .loading:
+                CustomProgressView(placement: .center)
+                
+            case .success:
+                VStack(spacing: 15) {
+                    selectVideoView
+                    
+                    Divider()
+                    
+                    if let leftVideo = viewModel.leftVideo {
+                        if case .trickItem = leftVideo {
+                            editTrickItemView
+                            
+                            Divider()
                         }
-                    } else {
-                        if let _ = viewModel.trick {
-                            VStack(spacing: 15) {
-                                selectVideoView
-                                
-                                Divider()
-                                
-                                if let _ = viewModel.selectedTrickItem {
-                                    editTrickItemView
-                                    
-                                    Divider()
-                                }
-                                
-                                HStack(alignment: .bottom, spacing: 20) {
-                                    VStack {
-                                        videoPlayer1View
-                                    }
-                                    
-                                    VStack {
-                                        if let pro = viewModel.selectedProVideo?.proSkater {
-                                            HStack {
-                                                KFImage(URL(string: pro.photoUrl)!)
-                                                    .resizable()
-                                                    .scaledToFill()
-                                                    .frame(width: 30, height: 30)
-                                                    .clipShape(Circle())
-                                                
-                                                Text(pro.name)
-                                                
-                                                Spacer()
-                                            }
-                                        }
-                                        videoPlayer2View
-                                    }
-                                }
-                                
-                                if let _ = viewModel.videoPlayer1, let _ = viewModel.videoPlayer2 {
-                                    DualPlayBackControlsView(player1: viewModel.videoPlayer1, player2: viewModel.videoPlayer2)
-                                }
-                            }
-                        } else {
-                            HStack {
-                                Spacer()
-                                Text("ERROR: Couldnt fetch trick").font(.title2)
-                                Spacer()
-                            }
-                            .padding()
-                            .padding(.top, 30)
+                    }
+                    
+                    VStack {
+                        HStack(alignment: .bottom, spacing: 10) {
+                            videoPlayer1View
+                            
+                            videoPlayer2View
+                        }
+                        
+                        Spacer()
+                        
+                        if let _ = viewModel.leftVideo, let _ = viewModel.rightVideo {
+                            DualPlayBackControlsView(player1: viewModel.videoPlayer1, player2: viewModel.videoPlayer2)
                         }
                     }
                 }
+                
+            case .failure(let error):
+                failedToFetchTrickView(error)
             }
         }
         .customNavBarItems(title: "Compare", subtitle: "\(viewModel.trick?.name ?? "")", backButtonHidden: false)
         .onFirstAppear {
             if viewModel.trick == nil {
                 Task {
-                    try await viewModel.fetchTrick(trickId: trickId)
-                    viewModel.setSelectedItem(trickItem: trickItem, proVideo: proVideo)
+                    await viewModel.fetchTrick(trickId: trickId)
+                    viewModel.initialVideoSetup(trickItem: trickItem, proVideo: proVideo)
                 }
+                
             }
         }
         .padding(8)
         .frame(width: UIScreen.screenWidth)
-        .sheet(isPresented: $toggleSelectProVideoSheet) {
-            SelectProVideoView(selectedProVideo: $viewModel.selectedProVideo, trickId: trickId)
+        .onChange(of: viewModel.leftVideo) { (oldValue: CompareVideo?, newValue: CompareVideo?) in
+            if let newValue = newValue {
+                viewModel.videoPlayer1 = AVPlayer(url: URL(string: newValue.videoData.videoUrl)!)
+            } else {
+                viewModel.videoPlayer1 = nil
+            }
         }
-        .sheet(isPresented: $toggleSelectTrickItemSheet) {
-            SelectTrickItemView(selectedTrickItem: $viewModel.selectedTrickItem, trickId: trickId)
+        .onChange(of: viewModel.rightVideo) { (oldValue: CompareVideo?, newValue: CompareVideo?) in
+            if let newValue = newValue {
+                viewModel.videoPlayer2 = AVPlayer(url: URL(string: newValue.videoData.videoUrl)!)
+            } else {
+                viewModel.videoPlayer2 = nil
+            }
         }
-        .sheet(isPresented: $toggleSelectSecondTrickItemSheet) {
-            SelectTrickItemView(selectedTrickItem: $viewModel.selectedSecondTrickItem, trickId: trickId)
+        .sheet(item: $viewModel.activeSlot) { slot in
+            SelectCompareVideoSheet(
+                trickId: trickId,
+                initialSelection: viewModel.activeSlot == .left ? viewModel.leftVideo : viewModel.rightVideo,
+                defaultTabIndex: viewModel.activeSlot == .left ? 0 : 1,
+                onContinue: { selectedVideo in
+                    switch slot {
+                    case .left:
+                        viewModel.leftVideo = selectedVideo
+                    case .right:
+                        viewModel.rightVideo = selectedVideo
+                    }
+                    viewModel.activeSlot = nil
+                },
+                onCancel: {
+                    viewModel.activeSlot = nil
+                })
         }
     }
     
-    var selectVideoView: some View {
-        HStack(alignment: .top, spacing: 20) {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack { Spacer() }
-                Text("Video 1:")
-                
-                Button {
-                    toggleSelectTrickItemSheet = true
-                } label: {
-                    if viewModel.selectedTrickItem == nil {
-                        Text("Select Trick Item")
-                    } else {
-                        Text("Change Trick Item")
-                    }
+    
+    func failedToFetchTrickView(_ error: FirestoreError) -> some View {
+        VStack(alignment: .center) {
+            Spacer()
+            HStack { Spacer() }
+            
+            Text(error.errorDescription ?? "Error...")
+                .padding()
+                .multilineTextAlignment(.center)
+            
+            Button {
+                Task {
+                    await viewModel.fetchTrick(trickId: trickId)
                 }
-                .offset(x: 10)
+            } label: {
+                Text("Try Again")
+            }
+            .foregroundColor(Color("buttonColor"))
+            .padding()
+            .background {
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color("buttonColor"))
             }
             
-            VStack(alignment: .leading, spacing: 10) {
-                HStack { Spacer() }
-                Text("Video 2:")
-                
-                Button {
-                    toggleSelectProVideoSheet = true
-                } label: {
-                    if viewModel.selectedProVideo == nil {
-                        Text("Select Pro Video")
-                    } else {
-                        Text("Change Pro Video")
-                    }
-                }
-                .offset(x: 10)
-                
-                Button {
-                    toggleSelectSecondTrickItemSheet = true
-                } label: {
-                    if viewModel.selectedSecondTrickItem == nil {
-                        Text("Select Trick Item")
-                    } else {
-                        Text("Change Trick Item")
-                    }
-                }
-                .offset(x: 10)
-            }
+            Spacer()
         }
+        .padding()
+    }
+    
+    var selectVideoView: some View {
+        HStack {
+            VStack(alignment: .leading) {
+                HStack {
+                    Text("Video 1:")
+                    Spacer()
+                    Button {
+                        viewModel.activeSlot = .left
+                    } label: {
+                        if viewModel.leftVideo == nil {
+                            Image(systemName: "plus")
+                        } else {
+                            Text("Change")
+                        }
+                    }
+                }
+            }
+            .padding()
+            
+            Divider()
+            
+            VStack(alignment: .leading) {
+                HStack {
+                    Text("Video 2:")
+                    Spacer()
+                    Button {
+                        viewModel.activeSlot = .right
+                    } label: {
+                        if viewModel.rightVideo == nil {
+                            Image(systemName: "plus")
+                        } else {
+                            Text("Change")
+                        }
+                    }
+                }
+            }
+            .padding()
+        }
+        .frame(height: 50)
     }
     
     var editTrickItemView: some View {
@@ -162,7 +185,9 @@ struct CompareView: View {
                     HStack(spacing: 15) {
                         Button {
                             toggleEditNotes = false
-                            viewModel.updateTrickItemNotes(trickItemId: viewModel.selectedTrickItem?.id ?? "")
+                            // TODO: FINISH
+                            viewModel.updateTrickItemNotes(trickItemId: viewModel.leftVideo?.id ?? "")
+
                         } label: {
                             Text("Save")
                         }
@@ -171,6 +196,7 @@ struct CompareView: View {
                             viewModel.updatedTrickItemNotes = ""
                         } label: {
                             Text("Cancel")
+                                .foregroundColor(.primary)
                         }
                     }
                 } else {
@@ -187,46 +213,39 @@ struct CompareView: View {
                     .lineLimit(1...3)
                     .offset(x: 10)
             } else {
-                CollapsableTextView(viewModel.selectedTrickItem?.notes ?? "", lineLimit: 3)
+                CollapsableTextView(viewModel.leftVideo?.trickItem?.notes ?? "", lineLimit: 3)
                     .offset(x: 10)
             }
         }
+        .padding(.horizontal)
     }
     
     var videoPlayer1View: some View {
         GeometryReader { proxy in
-            if viewModel.settingPlayer1 {
-                HStack {
-                    Spacer()
-                    ProgressView()
-                    Spacer()
-                }
-            } else if let _ = viewModel.videoPlayer1 {
-                let size = viewModel.getNewAspectRatio(
-                    baseWidth: viewModel.selectedTrickItem?.videoData.width,
-                    baseHeight: viewModel.selectedTrickItem?.videoData.height,
+            if let videoData = viewModel.leftVideo?.videoData {
+                
+                let size = CustomVideoPlayer.getNewAspectRatio(
+                    baseWidth: videoData.width,
+                    baseHeight: videoData.height,
                     maxWidth: proxy.size.width,
                     maxHeight: proxy.size.height
                 )
-                let safeArea = proxy.safeAreaInsets
                 
                 if let size = size {
                     SPVideoPlayer(
                         userPlayer: viewModel.videoPlayer1,
                         frameSize: proxy.size,
                         videoSize: size,
-                        fullScreenSize: size,
-                        safeArea: safeArea,
-                        showButtons: false
+                        showButtons: true
                     )
                 }
-                
             } else {
                 VStack {
                     Spacer()
                     HStack {
                         Spacer()
-                        Text("Select trick item")
+                        Text("Please select trick item or pro video")
+                            .multilineTextAlignment(.center)
                         Spacer()
                     }
                     Spacer()
@@ -238,69 +257,34 @@ struct CompareView: View {
             }
         }
         .frame(width: UIScreen.screenWidth * 0.45, height: UIScreen.screenHeight * 0.45)
-        .onChange(of: viewModel.selectedTrickItem) { oldValue, newValue in
-            viewModel.setSelectedItem(trickItem: viewModel.selectedTrickItem)
-        }
     }
     
     var videoPlayer2View: some View {
         GeometryReader { proxy in
-            //                if var _ = viewModel.videoPlayer2 {{
-            let safeArea = proxy.safeAreaInsets
-            
-            if viewModel.settingPlayer2 {
-                HStack {
-                    Spacer()
-                    ProgressView()
-                    Spacer()
-                }
-            } else if let player2 = viewModel.videoPlayer2 {
+            if let videoData = viewModel.rightVideo?.videoData {
                 
-                if let proVideo = viewModel.selectedProVideo {
-                    let size = viewModel.getNewAspectRatio(
-                        baseWidth: proVideo.videoData.width,
-                        baseHeight: proVideo.videoData.height,
-                        maxWidth: proxy.size.width,
-                        maxHeight: proxy.size.height
+                let size = CustomVideoPlayer.getNewAspectRatio(
+                    baseWidth: videoData.width,
+                    baseHeight: videoData.height,
+                    maxWidth: proxy.size.width,
+                    maxHeight: proxy.size.height
+                )
+                
+                if let size = size {
+                    SPVideoPlayer(
+                        userPlayer: viewModel.videoPlayer2,
+                        frameSize: proxy.size,
+                        videoSize: size,
+                        showButtons: true
                     )
-                    
-                    if let size = size {
-                        SPVideoPlayer(
-                            userPlayer: player2,
-                            frameSize: proxy.size,
-                            videoSize: size,
-                            fullScreenSize: size,
-                            safeArea: safeArea,
-                            showButtons: false
-                        )
-                    }
-                } else {
-                    if let secondTrickItem = viewModel.selectedSecondTrickItem {
-                        
-                        let size = viewModel.getNewAspectRatio(
-                            baseWidth: viewModel.selectedSecondTrickItem?.videoData.width,
-                            baseHeight: viewModel.selectedSecondTrickItem?.videoData.height,
-                            maxWidth: proxy.size.width,
-                            maxHeight: proxy.size.height
-                        )
-                        
-                        if let size = size {
-                            SPVideoPlayer(
-                                userPlayer: player2,
-                                frameSize: proxy.size,
-                                videoSize: size,
-                                fullScreenSize: size,
-                                safeArea: safeArea
-                            )
-                        }
-                    }
                 }
             } else {
                 VStack {
                     Spacer()
                     HStack {
                         Spacer()
-                        Text("Select pro video or another trick item")
+                        Text("Please select trick item or pro video")
+                            .multilineTextAlignment(.center)
                         Spacer()
                     }
                     Spacer()
@@ -309,20 +293,8 @@ struct CompareView: View {
                     Rectangle()
                         .fill(.gray.opacity(0.15))
                 }
-                
             }
         }
         .frame(width: UIScreen.screenWidth * 0.45, height: UIScreen.screenHeight * 0.45)
-        .onChange(of: viewModel.selectedProVideo) { oldValue, newValue in
-            viewModel.setSelectedItem(proVideo: viewModel.selectedProVideo)
-        }
-        .onChange(of: viewModel.selectedSecondTrickItem) { oldValue, newValue in
-            viewModel.setSelectedItem(secondTrickItem: viewModel.selectedSecondTrickItem)
-        }
     }
 }
-    
-    
-    
-    
-    

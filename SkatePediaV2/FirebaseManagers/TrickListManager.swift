@@ -40,13 +40,13 @@ final class TrickListManager {
         var data: [String : Any]
         
         if addingNewItem {
-             data = [
+            data = [
                 Trick.CodingKeys.progress.rawValue : FieldValue.arrayUnion([newProgressRating]),
             ]
         } else {
             data = [
-               Trick.CodingKeys.progress.rawValue : FieldValue.arrayRemove([newProgressRating]),
-           ]
+                Trick.CodingKeys.progress.rawValue : FieldValue.arrayRemove([newProgressRating]),
+            ]
         }
         
         try await trickListCollection(userId: userId).document(trickId)
@@ -102,35 +102,22 @@ final class TrickListManager {
                         difficulty: jsonTrick.difficulty,
                         progress: []
                     )
-                    
                     try await uploadTrick(userId: userId, trick: trick)
                 }
             } catch {
-                print("DEBUG: Error uploading trick list: \(error)")
+                throw error
             }
         }
         
         try await TrickListInfoManager.shared.uploadTrickListInfo(userId: userId)
     }
-    
-    private var trickListListener: ListenerRegistration? = nil
-
-    func addListenerForTrickList(userId: String, stance: String) -> AnyPublisher<[Trick], Error> {
-        let (publisher, listener) = trickListCollection(userId: userId)
-            .whereField(Trick.CodingKeys.stance.rawValue, isEqualTo: stance)
-            .order(by: Trick.CodingKeys.id.rawValue, descending: false)
-            .addSnapshotListenerToCollection(as: Trick.self)
         
-        self.trickListListener = listener
-        return publisher
-    }
-    
     private func queryTrickListByStance(userId: String, stance: String) -> Query {
         trickListCollection(userId: userId)
             .whereField(Trick.CodingKeys.stance.rawValue, isEqualTo: stance)
             .order(by: Trick.CodingKeys.id.rawValue, descending: false)
     }
-
+    
     private func queryTrickListByName(userId: String, trickNameList: [String]) -> Query {
         trickListCollection(userId: userId)
             .whereField(Trick.CodingKeys.name.rawValue, in: trickNameList)
@@ -140,11 +127,13 @@ final class TrickListManager {
     func fetchTricksByStance(userId: String, stance: String) async throws -> [Trick] {
         return try await queryTrickListByStance(userId: userId, stance: stance)
             .getDocuments(as: Trick.self)
+        
     }
     
     func fetchTricksById(userId: String, trickId: String) async throws -> Trick {
         return try await trickListCollection(userId: userId).document(trickId)
             .getDocument(as: Trick.self)
+        
     }
     
     func fetchTricksByName(userId: String, trickNameList: [String]) async throws -> [Trick] {

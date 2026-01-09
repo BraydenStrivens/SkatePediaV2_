@@ -39,11 +39,10 @@ struct CustomNavBarView: View {
             .accentColor(.white)
             .foregroundColor(.primary)
             .font(.headline)
-            .background(
-                LinearGradient(gradient: Gradient(colors: [Color.blue.opacity(0.5), Color.clear]), startPoint: .top, endPoint: .bottom)
-                    .ignoresSafeArea(edges: .top)
-                //            Color.blue.ignoresSafeArea(edges: .top)
-            )
+//            .background(
+//                LinearGradient(gradient: Gradient(colors: [Color.blue.opacity(0.5), Color.clear]), startPoint: .top, endPoint: .bottom)
+//                    .ignoresSafeArea(edges: .top)
+//            )
         }
     }
     

@@ -8,34 +8,37 @@
 import Foundation
 import FirebaseFirestore
 import FirebaseAuth
+import SwiftUI
 
 ///
 /// Defines a class that contains functions for registering new users to the database.
 ///
 @MainActor
 final class RegisterViewModel: ObservableObject {
-    
     @Published var username = ""
     @Published var email = ""
     @Published var password = ""
     @Published var stance = "Regular"
-    @Published var errorMessage = ""
+    @Published var createUserError: AuthError?
+    @Published var uploadUserDocError: FirestoreError?
     
     ///
     /// Creates a new user in Firebase's Authentication. Creates a new user document in the database, and generates a trick list for the user.
     ///
     @MainActor
     func createUser() async throws {
-        guard validate() else {
-            return
+        do {
+            try validateInputFields()
+            
+            try await AuthenticationService.shared.createUser(
+                email: email,
+                password: password,
+                username: username,
+                stance: stance
+            )
+        } catch {
+            throw error
         }
-        
-        try await AuthenticationManager.shared.createUser(
-            withEmail: email,
-            password: password,
-            username: username,
-            stance: stance
-        )
     }
     
     ///
@@ -45,26 +48,21 @@ final class RegisterViewModel: ObservableObject {
     ///
     /// - Returns: whether or not the inputted account information meets the required critera
     /// 
-    private func validate() -> Bool {
-        errorMessage = ""
-        
-        guard !username.trimmingCharacters(in: .whitespaces).isEmpty,
-              !email.trimmingCharacters(in: .whitespaces).isEmpty,
-              !password.trimmingCharacters(in: .whitespaces).isEmpty else {
-            errorMessage = "Please fill in all fields."
-            return false
+    private func validateInputFields() throws {
+        guard !username.trimmingCharacters(in: .whitespaces).isEmpty else {
+            throw AuthError.emptyUsername
         }
         
-        guard email.contains("@") && email.contains(".") else {
-            errorMessage = "Not a valid email address."
-            return false
+        guard username.count <= 15 else {
+            throw AuthError.invalidUsername
         }
         
-        guard password.count >= 6 else {
-            errorMessage = "Password must be at least six characters."
-            return false
+        guard !email.trimmingCharacters(in: .whitespaces).isEmpty else {
+            throw AuthError.emptyEmail
         }
         
-        return true
+        guard !password.trimmingCharacters(in: .whitespaces).isEmpty else {
+            throw AuthError.emptyPassword
+        }
     }
 }

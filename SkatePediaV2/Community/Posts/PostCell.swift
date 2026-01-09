@@ -115,8 +115,6 @@ struct PostCell: View {
                         userPlayer: player,
                         frameSize: proxy.size,
                         videoSize: size,
-                        fullScreenSize: fullScreenSize,
-                        safeArea: safeArea,
                         showButtons: true
                     )
                     .ignoresSafeArea()

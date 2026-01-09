@@ -13,7 +13,7 @@ struct SelectProVideoCell: View {
     let video: ProSkaterVideo
     @Binding var currentSelection: CompareVideo?
     
-    private let cellSize = CGSize(width: UIScreen.screenWidth * 0.9, height: UIScreen.screenHeight * 0.7)
+    private let cellSize = CGSize(width: UIScreen.screenWidth * 0.9, height: UIScreen.screenHeight * 0.68)
     
     var body: some View {
         VStack(spacing: 10) {

@@ -9,62 +9,50 @@ import Foundation
 import FirebaseAuth
 import AVKit
 
+enum CompareVideoSlot: Identifiable {
+    case left
+    case right
+    
+    var id: Self {
+        self
+    }
+}
+
 final class CompareViewModel: ObservableObject {
     @Published var trick: Trick? = nil
-    @Published var loading: Bool = false
-    @Published var updatedTrickItemNotes: String = ""
+    @Published var trickFetchState: RequestState = .idle
+
+    @Published var leftVideo: CompareVideo?
+    @Published var rightVideo: CompareVideo?
+    @Published var activeSlot: CompareVideoSlot?
     
     @Published var videoPlayer1: AVPlayer? = nil
     @Published var videoPlayer2: AVPlayer? = nil
-    @Published var settingPlayer1: Bool = false
-    @Published var settingPlayer2: Bool = false
     
-    @Published var selectedTrickItem: TrickItem? = nil
-    @Published var selectedProVideo: ProSkaterVideo? = nil
-    @Published var selectedSecondTrickItem: TrickItem? = nil
-    
+    @Published var updatedTrickItemNotes: String = ""
+
     @MainActor
-    func fetchTrick(trickId: String) async throws {
-        self.loading = true
-        self.trick = try await TrickListManager.shared.getTrick(trickId: trickId)
-        self.loading = false
+    func fetchTrick(trickId: String) async {
+        do {
+            self.trickFetchState = .loading
+            self.trick = try await TrickListManager.shared.getTrick(trickId: trickId)
+            self.trickFetchState = .success
+            
+        } catch let error as FirestoreError {
+            self.trickFetchState = .failure(error)
+            
+        } catch {
+            self.trickFetchState = .failure(.unknown)
+        }
     }
     
     @MainActor
-    func setSelectedItem(trickItem: TrickItem? = nil, proVideo: ProSkaterVideo? = nil, secondTrickItem: TrickItem? = nil) {
+    func initialVideoSetup(trickItem: TrickItem? = nil, proVideo: ProSkaterVideo? = nil) {
         if let trickItem = trickItem {
-            self.settingPlayer1 = true
-            
-            self.selectedTrickItem = trickItem
-            self.videoPlayer1 = AVPlayer(url: URL(string: trickItem.videoData.videoUrl)!)
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                self.settingPlayer1 = false
-            }
+            self.leftVideo = .trickItem(trickItem)
         }
-        
         if let proVideo = proVideo {
-            self.settingPlayer2 = true
-            
-            self.selectedProVideo = proVideo
-            self.selectedSecondTrickItem = nil
-            self.videoPlayer2 = AVPlayer(url: URL(string: proVideo.videoData.videoUrl)!)
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                self.settingPlayer2 = false
-            }
-        }
-        
-        if let secondTrickItem = secondTrickItem {
-            self.settingPlayer2 = true
-            
-            self.selectedSecondTrickItem = secondTrickItem
-            self.selectedProVideo = nil
-            self.videoPlayer2 = AVPlayer(url: URL(string: secondTrickItem.videoData.videoUrl)!)
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                self.settingPlayer2 = false
-            }
+            self.rightVideo = .proVideo(proVideo)
         }
     }
     
@@ -73,26 +61,6 @@ final class CompareViewModel: ObservableObject {
         
         Task {
             try await TrickItemManager.shared.updateTrickItemNotes(userId: currentUid, trickItemId: trickItemId, newNotes: updatedTrickItemNotes)
-        }
-    }
-    
-    func getNewAspectRatio(baseWidth: CGFloat?, baseHeight: CGFloat?, maxWidth: CGFloat, maxHeight: CGFloat) -> CGSize? {
-        guard let baseWidth = baseWidth, let baseHeight = baseHeight else {
-            print("NO BASE ASPECT RATIO")
-            return nil
-        }
-        
-        let widthRatio = maxWidth / baseWidth
-        let heightRatio = maxHeight / baseHeight
-        
-        if widthRatio < heightRatio {
-            let newWidth = (baseWidth * widthRatio).rounded()
-            let newHeight = (baseHeight * widthRatio).rounded()
-            return CGSize(width: newWidth, height: newHeight)
-        } else {
-            let newWidth = (baseWidth * heightRatio).rounded()
-            let newHeight = (baseHeight * heightRatio).rounded()
-            return CGSize(width: newWidth, height: newHeight)
         }
     }
 }

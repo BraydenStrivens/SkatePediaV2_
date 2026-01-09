@@ -6,19 +6,20 @@
 //
 
 import Foundation
+import SwiftUI
 import FirebaseAuth
 
 /// Defines a class that contains functions for the 'SettingsView'
 @MainActor
 final class SettingsViewModel: ObservableObject {
-    
     @Published var user: User? = nil
     @Published var errorMessage: String = ""
     @Published var isDeleting: Bool = false
     
     init() {
         guard let uid = Auth.auth().currentUser?.uid else {
-            return }
+            return
+        }
         
         Task {
             self.user = try await UserManager.shared.fetchUser(withUid: uid)
@@ -27,7 +28,7 @@ final class SettingsViewModel: ObservableObject {
     
     /// Signs out the current user
     func signOut() throws {
-        AuthenticationManager.shared.signOut()
+        try AuthenticationService.shared.signOut()
     }
     
     /// Updates the password of the current user's account.
@@ -35,7 +36,7 @@ final class SettingsViewModel: ObservableObject {
     /// - Parameters:
     ///  - password: The new password to update to the account.
     func updatePassword(password: String) async throws {
-        try await AuthenticationManager.shared.updatePassword(password: password)
+        try await AuthenticationService.shared.updatePassword(password: password)
     }
     
     /// Deletes the user account from the database and storage.
@@ -48,7 +49,7 @@ final class SettingsViewModel: ObservableObject {
         
         do {
             // Deletes the users account
-            try await AuthenticationManager.shared.deleteUser()
+            try await AuthenticationService.shared.deleteUser()
         } catch {
             self.errorMessage = "\(error)"
             print("COULDNT DELETE AUTH USER: \(error)")

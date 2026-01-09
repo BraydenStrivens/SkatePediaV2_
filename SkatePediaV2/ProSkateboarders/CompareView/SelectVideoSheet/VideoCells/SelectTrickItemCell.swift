@@ -9,13 +9,11 @@ import SwiftUI
 import AVKit
 
 struct SelectTrickItemCell: View {
-//    @EnvironmentObject private var viewModel: CompareViewModel
-    
     let user: User?
     let trickItem: TrickItem
     @Binding var currentSelection: CompareVideo?
     
-    private let cellSize = CGSize(width: UIScreen.screenWidth * 0.9, height: UIScreen.screenHeight * 0.7)
+    private let cellSize = CGSize(width: UIScreen.screenWidth * 0.9, height: UIScreen.screenHeight * 0.8)
     
     var body: some View {
         VStack(spacing: 10) {

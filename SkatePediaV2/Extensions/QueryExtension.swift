@@ -22,13 +22,26 @@ extension Query {
     ///
     /// - Returns: An object of any type containing the data from the database.
     func getDocument<T>(as type: T.Type) async throws -> T where T : Decodable {
-        let snapshot = try await self.getDocuments()
-        
-        let decodedData = try snapshot.documents.map({ document in
-            try document.data(as: T.self)
-        })
-        
-        return decodedData[0]
+        do {
+            let snapshot = try await self.getDocuments()
+            
+            guard let document = snapshot.documents.first else {
+                throw FirestoreError.noDocument
+            }
+            
+            do {
+                return try document.data(as: T.self)
+            } catch {
+                throw FirestoreError.decodingFailed
+            }
+//            let decodedData = try snapshot.documents.map({ document in
+//                try document.data(as: T.self)
+//            })
+            
+//            return decodedData[0]
+        } catch {
+            throw error
+        }
     }
     
     /// Fetches documents from a collection and converts to on object of any type. Also saves the last fetched document.

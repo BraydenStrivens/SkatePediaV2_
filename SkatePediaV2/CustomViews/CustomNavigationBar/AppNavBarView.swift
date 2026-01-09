@@ -20,8 +20,6 @@ struct AppNavBarView: View {
                         Text("Navigate")
                     })
             }
-//            .customNavigationTitle("Custom Title")
-//            .customNavigationBackButtonHidden(true)
             .customNavBarItems(title: "New Title!", subtitle: "", backButtonHidden: true)
         }
     }

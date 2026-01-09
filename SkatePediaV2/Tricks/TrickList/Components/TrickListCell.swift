@@ -27,7 +27,7 @@ struct TrickListCell: View {
                 if trick.progress.isEmpty {
                     Image(systemName: "circle")
                         .resizable()
-                        .foregroundColor(.primary)
+                        .foregroundColor(Color("buttonColor"))
                         .frame(width: 20, height: 20)
                 } else {
                     let maxRating = trick.progress.max()!
@@ -35,22 +35,22 @@ struct TrickListCell: View {
                     if maxRating == 0 {
                         Image(systemName: "circle")
                             .resizable()
-                            .foregroundColor(.blue)
+                            .foregroundColor(Color("buttonColor"))
                             .frame(width: 20, height: 20)
                     } else if maxRating == 1 {
                         Image(systemName: "circle.circle")
                             .resizable()
-                            .foregroundColor(.blue)
+                            .foregroundColor(Color("buttonColor"))
                             .frame(width: 20, height: 20)
                     } else if maxRating == 2 {
                         Image(systemName: "circle.circle.fill")
                             .resizable()
-                            .foregroundColor(.blue)
+                            .foregroundColor(Color("buttonColor"))
                             .frame(width: 20, height: 20)
                     } else {
                         Image(systemName: "checkmark.circle")
                             .resizable()
-                            .foregroundColor(.teal)
+                            .foregroundColor(Color("accentColor"))
                             .frame(width: 20, height: 20)
                     }
                 }

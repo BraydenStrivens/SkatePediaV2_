@@ -52,10 +52,9 @@ struct TrickItemCell: View {
             .cornerRadius(15)
             .background {
                 RoundedRectangle(cornerRadius: 15)
-//                    .fill(Color(uiColor: UIColor.systemBackground))
                     .fill(
                         LinearGradient(
-                            colors: [Color(uiColor: UIColor.systemBackground), .blue.opacity(0.1)], startPoint: .leading, endPoint: .trailing
+                            colors: [Color(uiColor: UIColor.systemBackground), .orange.opacity(0.2)], startPoint: .leading, endPoint: .trailing
                         )
                     )
                     .stroke(Color.primary.opacity(0.5))

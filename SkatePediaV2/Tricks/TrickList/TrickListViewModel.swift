@@ -14,125 +14,96 @@ import Combine
 @MainActor
 final class TrickListViewModel: ObservableObject {
     
-    @Published var user: User? = nil
-    @Published var trickListInfo: TrickListInfo? = nil
+    @Published var user: User = .emptyStruct
+    @Published var trickListInfo: TrickListInfo = .emptyStruct
     
     @Published var regularTrickList: [[Trick]] = []
     @Published var fakieTrickList: [[Trick]] = []
     @Published var switchTrickList: [[Trick]] = []
     @Published var nollieTrickList: [[Trick]] = []
-    
-    @Published private var cancellables = Set<AnyCancellable>()
-    @Published var fetched: Bool = false
-    @Published var failedToFetch: Bool = false
+        
+    @Published var requestState: RequestState = .idle
+    @Published var error: FirestoreError? = nil
     
     init() {
-        guard let uid = Auth.auth().currentUser?.uid else { return }
+        guard let uid = Auth.auth().currentUser?.uid else {
+            self.requestState = .failure(FirestoreError.unknown)
+            return
+        }
         
         Task {
-            do {
-                if self.user == nil { self.user = try await UserManager.shared.fetchUser(withUid: uid) }
-                addListenerForAllTrickLists()
-                
-                self.failedToFetch = validateFetch()
-            } catch {
-                print("ERROR FETCHING TRICK LIST: \(error)")
-            }
+            try await loadTrickListView(userId: uid)
         }
     }
     
-    private func validateFetch() -> Bool {
-        if trickListInfo == nil { return true }
-        if regularTrickList.isEmpty { return true }
-        if fakieTrickList.isEmpty { return true }
-        if switchTrickList.isEmpty { return true }
-        if nollieTrickList.isEmpty { return true }
-
-        return false
-    }
-    
-    private func addListenerForAllTrickLists() {
-        if let user = user {
-            self.fetched = false
-            addListenerForTrickListInfo(userId: user.userId)
+    func loadTrickListView(userId: String) async throws {
+        do {
+            self.requestState = .loading
             
-            addListenerForTrickList(userId: user.userId, stance: Stance.Stances.regular.rawValue)
-            addListenerForTrickList(userId: user.userId, stance: Stance.Stances.fakie.rawValue)
-            addListenerForTrickList(userId: user.userId, stance: Stance.Stances._switch.rawValue)
-            addListenerForTrickList(userId: user.userId, stance: Stance.Stances.nollie.rawValue)
-            self.fetched = true
-        } else {
-            print("Couldnt fetch user")
+            if self.user == .emptyStruct {
+                self.user = try await UserManager.shared.fetchUser(withUid: userId) ?? .emptyStruct
+            }
+            
+            try await fetchTrickListInfo(userId: userId)
+            try await fetchUserTrickLists(userId: userId)
+            
+            if fetchFailed() {
+                throw FirestoreError.unknown
+            }
+
+            self.requestState = .success
+            
+        } catch let error as FirestoreError {
+            self.requestState = .failure(error)
+            
+        } catch {
+            self.requestState = .failure(.unknown)
         }
     }
     
-    func addListenerForTrickList(userId: String, stance: String) {
-        TrickListManager.shared.addListenerForTrickList(userId: userId, stance: stance)
-            .sink { completion in
-                
-            } receiveValue: { [weak self] trickList in
-                let sortedTrickList: [[Trick]] = TrickListManager.shared.sortTrickListByDifficulty(unsortedTrickList: trickList)
-                switch stance {
-                    
-                case Stance.Stances.regular.rawValue:
-                    print("HERE")
-                    self?.regularTrickList = sortedTrickList
-                    
-                    for trickList in sortedTrickList {
-                        print(trickList)
-                        print("------------------")
-                    }
-                    
-                case Stance.Stances.fakie.rawValue:
-                    self?.fakieTrickList = sortedTrickList
-                    
-                case Stance.Stances._switch.rawValue:
-                    self?.switchTrickList = sortedTrickList
-                    
-                case Stance.Stances.nollie.rawValue:
-                    self?.nollieTrickList = sortedTrickList
-                    
-                default:
-                    print("NO STANCE FOUND")
-                }
-            }
-            .store(in: &cancellables)
+    func fetchUserTrickLists(userId: String) async throws {
+        do {
+            self.regularTrickList = try await fetchAndSortTrickListByStance(userId: userId, stance: Stance.Stances.regular.rawValue)
+            
+            self.fakieTrickList = try await fetchAndSortTrickListByStance(userId: userId, stance: Stance.Stances.fakie.rawValue)
+            
+            self.switchTrickList = try await fetchAndSortTrickListByStance(userId: userId, stance: Stance.Stances._switch.rawValue)
+            
+            self.nollieTrickList = try await fetchAndSortTrickListByStance(userId: userId, stance: Stance.Stances.nollie.rawValue)
+        } catch {
+            throw error
+        }
     }
     
-    func addListenerForTrickListInfo(userId: String) {
-        TrickListInfoManager.shared.addListenerForTrickListInfo(userId: userId)
-            .sink { completion in
-                
-            } receiveValue: { [weak self] trickListInfo in
-                if !trickListInfo.isEmpty { self?.trickListInfo = trickListInfo[0] }
-            }
-            .store(in: &cancellables)
-    }
-    
-    func fetchTrickListInfo(userId: String) {
-        Task {
+    func fetchTrickListInfo(userId: String) async throws {
+        do {
             self.trickListInfo = try await TrickListInfoManager.shared.fetchTrickListInfo(userId: userId)
+        } catch {
+            throw error
         }
     }
     
-    func fetchTrickList(userId: String, stance: String) {
-        Task {
+    func fetchAndSortTrickListByStance(userId: String, stance: String) async throws -> [[Trick]] {
+        do {
             let trickList = try await TrickListManager.shared.fetchTricksByStance(userId: userId, stance: stance)
             
             let sortedTrickList = TrickListManager.shared.sortTrickListByDifficulty(unsortedTrickList: trickList)
             
-            switch stance {
-            case Stance.Stances.regular.rawValue:
-                self.regularTrickList = sortedTrickList
-            case Stance.Stances.fakie.rawValue:
-                self.fakieTrickList = sortedTrickList
-            case Stance.Stances._switch.rawValue:
-                self.switchTrickList = sortedTrickList
-            case Stance.Stances.nollie.rawValue:
-                self.nollieTrickList = sortedTrickList
-            default:
-                print("NO STANCE FOUND")
-            }
+            return sortedTrickList
+            
+        } catch {
+            throw FirestoreError.mapFirebaseError(error)
         }
+    }
+    
+    private func fetchFailed() -> Bool {
+        if user == .emptyStruct { return true }
+        if trickListInfo == .emptyStruct { return true }
+        if regularTrickList[0].isEmpty { return true }
+        if fakieTrickList[0].isEmpty { return true }
+        if switchTrickList[0].isEmpty { return true }
+        if nollieTrickList[0].isEmpty { return true }
+        
+        return false
     }
 }

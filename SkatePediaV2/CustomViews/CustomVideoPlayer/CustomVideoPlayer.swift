@@ -28,17 +28,20 @@ struct CustomVideoPlayer: UIViewControllerRepresentable {
         controller.allowsVideoFrameAnalysis = true
         controller.videoGravity = .resizeAspectFill
         
+        controller.view.isUserInteractionEnabled = false
+        
         return controller
     }
     
     func updateUIViewController(_ uiViewController: AVPlayerViewController, context: Context) {
-        
+        if uiViewController.player !== player {
+            uiViewController.player = player
+        }
     }
 
     
     @MainActor
     static func getVideoResolution(url: String) async throws -> CGSize? {
-        
         do {
             let url = URL(string: url)
             let track = try await AVURLAsset(url: url!).loadTracks(withMediaType: AVMediaType.video).first

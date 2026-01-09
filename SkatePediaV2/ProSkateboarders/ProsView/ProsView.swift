@@ -11,14 +11,18 @@ struct ProsView: View {
     @StateObject var viewModel = ProViewModel()
     
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 10) {
-                ScrollView(.horizontal, showsIndicators: true) {
-                    HStack(alignment: .center, spacing: 10) {
-                        if viewModel.proSkaters.isEmpty {
-                            ProgressView()
-                            
-                        } else {
+        switch viewModel.fetchState {
+        case .idle:
+            VStack {}
+            
+        case .loading:
+            CustomProgressView(placement: .center)
+            
+        case .success:
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 10) {
+                    ScrollView(.horizontal, showsIndicators: true) {
+                        HStack(alignment: .center, spacing: 10) {
                             ForEach(viewModel.proSkaters) { pro in
                                 let isSelected = viewModel.proSkaters.firstIndex(of: pro) == viewModel.selectedProIndex
                                 
@@ -32,19 +36,41 @@ struct ProsView: View {
                             }
                         }
                     }
-                }
-                
-                Divider()
+                    
+                    Divider()
 
-                ForEach(viewModel.proSkaters) { pro in
-                    if viewModel.selectedProIndex == viewModel.proSkaters.firstIndex(of: pro)! {
-                        ProVideosListView(proSkater: viewModel.proSkaters[viewModel.selectedProIndex])
+                    ForEach(viewModel.proSkaters) { pro in
+                        if viewModel.selectedProIndex == viewModel.proSkaters.firstIndex(of: pro)! {
+                            ProVideosListView(proSkater: viewModel.proSkaters[viewModel.selectedProIndex])
+                        }
                     }
                 }
+                
+                Spacer()
             }
+            .padding()
             
-            Spacer()
+        case .failure(let firestoreError):
+            VStack {
+                Spacer()
+                Text(firestoreError.errorDescription ?? "Error...")
+                
+                Button {
+                    Task {
+                        await viewModel.fetchProSkaters()
+                    }
+                } label: {
+                    Text("Try Again")
+                }
+                .foregroundColor(Color("buttonColor"))
+                .padding()
+                .background {
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color("buttonColor"))
+                }
+                Spacer()
+            }
         }
-        .padding()
+        
     }
 }

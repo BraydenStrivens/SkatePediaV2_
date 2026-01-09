@@ -109,6 +109,25 @@ final class UserManager {
         return users.filter({ $0.userId != currentUid })
     }
     
+    @MainActor
+    func uploadUserData(id: String, withEmail email: String, username: String, stance: String) async throws {
+        let user = User(
+            userId: id,
+            email: email,
+            username: username,
+            stance: stance,
+            dateCreated: Date()
+        )
+        
+        guard let userData = try? Firestore.Encoder().encode(user) else { return }
+        
+        // Creates a new user document and uploads the users data to it
+        try await Firestore.firestore().collection("users").document(id).setData(userData)
+        
+        // Sets the current logged in user
+        UserManager.shared.currentUser = user
+    }
+    
     func updateUserBio(newBio: String) async throws {
         guard let currentUid = Auth.auth().currentUser?.uid else { return }
         

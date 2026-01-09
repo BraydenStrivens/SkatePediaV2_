@@ -9,24 +9,21 @@ import SwiftUI
 
 /// Defines the layout of items in the 'MainMenuView'.
 struct RootView: View {
-    @StateObject var viewModel = RootViewModel()
+    @EnvironmentObject var authViewModel: AuthenticationViewModel
     
     var body: some View {
-        
-        
         Group {
-            if viewModel.userSession != nil {
-//                let _ = AuthenticationManager.shared.signOut()
-
+            if authViewModel.isLoading {
+                ProgressView()
+                
+            } else if authViewModel.userSession != nil {
                 TabbarView()
             } else {
-                LoginView()
+                NavigationView {
+                    LoginView()
+                }
+                .tint(Color("accentColor"))
             }
         }
     }
 }
-
-
-//#Preview {
-//    RootView()
-//}

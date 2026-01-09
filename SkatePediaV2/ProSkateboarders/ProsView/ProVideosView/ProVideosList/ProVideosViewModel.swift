@@ -7,38 +7,31 @@
 
 import Foundation
 
-final class ProVideosViewModel: ObservableObject {
+final class ProVideosListViewModel: ObservableObject {
     @Published var videos: [ProSkaterVideo] = []
-    @Published var isLoading: Bool = false
+    @Published var fetchState: RequestState = .idle
     
     init() { }
     
     @MainActor
-    func fetchProVideos(proId: String) {
-        Task {
-            do {
-                self.isLoading = true
-                let proVideos = try await ProManager.shared.getProVideos(proId: proId)
-                self.videos.append(contentsOf: proVideos)
-//                try await self.fetchDataForVideos()
-                self.isLoading = false
-                
-            } catch {
-                print("ERROR: COULDNT FETCH PRO VIDEOS: \(error)")
-            }
+    func fetchProVideos(proId: String) async {
+        do {
+            self.fetchState = .loading
+            
+            let proVideos = try await ProManager.shared.getProVideos(proId: proId)
+            self.videos.append(contentsOf: proVideos)
+                        
+            self.fetchState = .success
+            
+        } catch let error as FirestoreError {
+            self.fetchState = .failure(error)
+            
+        } catch {
+            self.fetchState = .failure(.unknown)
         }
+        
     }
-//    
-//    @MainActor
-//    func fetchDataForVideos() async throws {
-//        for index in 0 ..< videos.count {
-//            let video = self.videos[index]
-//            
-////            self.videos[index].proSkater = try await ProManager.shared.getPro(proId: video.proId)
-//            self.videos[index].trick = try await TrickListManager.shared.getTrick(trickId: video.trickId)
-//        }
-//    }
-    
+
     func getSortedVideoList() -> [[ProSkaterVideo]] {
         var regular: [ProSkaterVideo] = []
         var fakie: [ProSkaterVideo] = []
