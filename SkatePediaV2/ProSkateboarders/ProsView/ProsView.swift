@@ -21,29 +21,48 @@ struct ProsView: View {
         case .success:
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 10) {
+                    searchBar
+                    
                     ScrollView(.horizontal, showsIndicators: true) {
                         HStack(alignment: .center, spacing: 10) {
-                            ForEach(viewModel.proSkaters) { pro in
-                                let isSelected = viewModel.proSkaters.firstIndex(of: pro) == viewModel.selectedProIndex
+                            if viewModel.filteredProSkaters.isEmpty {
+                                HStack {
+                                    Spacer()
+                                    Text("No pro skaters matching '\(viewModel.proSearchText)'")
+                                    Spacer()
+                                }
+                                .frame(width: UIScreen.screenWidth, height: 100)
                                 
-                                ProSkaterCell(
-                                    pro: pro,
-                                    borderColor: isSelected ? .primary : .gray
-                                )
-                                .onTapGesture {
-                                    viewModel.selectedProIndex = viewModel.proSkaters.firstIndex(of: pro)!
+                            } else {
+                                ForEach(viewModel.filteredProSkaters) { pro in
+                                    let isSelected = viewModel.selectedPro == pro
+                                    
+                                    ProSkaterCell(
+                                        pro: pro,
+                                        borderColor: isSelected ? .primary : .gray
+                                    )
+                                    .environmentObject(viewModel)
+                                    .onTapGesture {
+                                        viewModel.selectedPro = pro
+                                    }
                                 }
                             }
                         }
                     }
                     
                     Divider()
-
-                    ForEach(viewModel.proSkaters) { pro in
-                        if viewModel.selectedProIndex == viewModel.proSkaters.firstIndex(of: pro)! {
-                            ProVideosListView(proSkater: viewModel.proSkaters[viewModel.selectedProIndex])
+                    
+                    ZStack {
+                        if let selectedPro = viewModel.selectedPro {
+                            ProVideosListView(proSkater: selectedPro)
+                                .id(selectedPro.id)
+                                .transition(.asymmetric(
+                                    insertion: .slide.combined(with: .opacity),
+                                    removal: .slide.combined(with: .opacity)))
                         }
                     }
+                    .animation(.easeInOut(duration: 0.5), value: viewModel.selectedPro)
+
                 }
                 
                 Spacer()
@@ -71,6 +90,21 @@ struct ProsView: View {
                 Spacer()
             }
         }
-        
+    }
+    
+    var searchBar: some View {
+        HStack {
+            Image(systemName: "magnifyingglass")
+                .foregroundColor(viewModel.proSearchText.isEmpty ? .gray : .primary)
+            
+            TextField("Search pros", text: $viewModel.proSearchText)
+                .textFieldStyle(PlainTextFieldStyle())
+                .disableAutocorrection(true)
+                .textContentType(.none)
+                .lineLimit(1)
+        }
+        .onChange(of: viewModel.proSearchText) { _, _ in
+            viewModel.filterProsArray()
+        }
     }
 }

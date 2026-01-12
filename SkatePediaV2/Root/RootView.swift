@@ -22,7 +22,7 @@ struct RootView: View {
                 NavigationView {
                     LoginView()
                 }
-                .tint(Color("accentColor"))
+                .tint(Color("AccentColor"))
             }
         }
     }

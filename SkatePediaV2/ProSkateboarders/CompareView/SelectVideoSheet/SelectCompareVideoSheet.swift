@@ -101,7 +101,7 @@ struct SelectCompareVideoSheet: View {
                         }
                     } label: {
                         Text("Continue")
-                            .foregroundColor(selectedVideo == nil ? .gray : Color("accentColor"))
+                            .foregroundColor(selectedVideo == nil ? .gray : Color("AccentColor"))
                     }
                     .disabled(selectedVideo == nil)
                 }

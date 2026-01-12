@@ -9,14 +9,16 @@ import SwiftUI
 import Kingfisher
 
 struct ProSkaterCell: View {
+    @EnvironmentObject var viewModel: ProViewModel
     let pro: ProSkater
     let borderColor: Color
     
     var body: some View {
         VStack(alignment: .leading) {
-            Text(pro.name)
+            boldSearchMatchesCharacters(name: pro.name, searchText: viewModel.proSearchText)
                 .font(.title3)
                 .fontWeight(.semibold)
+                .kerning(0.2)
             
             HStack {
                 Text(pro.stance)
@@ -53,6 +55,27 @@ struct ProSkaterCell: View {
                 .stroke(borderColor, lineWidth: 1)
         }
         .padding()
+    }
+    
+    func boldSearchMatchesCharacters(name: String, searchText: String) -> Text {
+        let trimmedSearch = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        guard !trimmedSearch.isEmpty else {
+            return Text(pro.name)
+        }
+        
+        let lowercaseName = pro.name.lowercased()
+        let lowercaseSearch = trimmedSearch.lowercased()
+        
+        guard let range = lowercaseName.range(of: lowercaseSearch) else {
+            return Text(pro.name)
+        }
+        
+        let start = pro.name[..<range.lowerBound]
+        let match = pro.name[range]
+        let end = pro.name[range.upperBound...]
+        
+        return Text(start) + Text(match).fontWeight(.heavy) + Text(end)
     }
 }
 

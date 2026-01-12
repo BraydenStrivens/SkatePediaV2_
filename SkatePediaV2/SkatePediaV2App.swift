@@ -42,7 +42,7 @@ struct SkatePediaV2App: App {
 //                RootView()
 //                    .environmentObject(authViewModel)
 //            }
-//            .tint(Color("accentColor"))
+//            .tint(Color("AccentColor"))
         }
     }
 }

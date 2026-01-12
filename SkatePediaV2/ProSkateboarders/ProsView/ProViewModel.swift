@@ -9,8 +9,9 @@ import Foundation
 
 final class ProViewModel: ObservableObject {
     @Published var proSkaters: [ProSkater] = []
-    @Published var selectedProIndex: Int = 0
+    @Published var filteredProSkaters: [ProSkater] = []
     @Published var selectedPro: ProSkater? = nil
+    @Published var proSearchText: String = ""
     
     @Published var fetchState: RequestState = .idle
     
@@ -29,7 +30,8 @@ final class ProViewModel: ObservableObject {
                         
             let pros = try await ProManager.shared.getPros()
             self.proSkaters.append(contentsOf: pros)
-            self.selectedPro = self.proSkaters[0]
+            self.filteredProSkaters.append(contentsOf: pros)
+            self.selectedPro = self.filteredProSkaters[0]
             
             self.fetchState = .success
             
@@ -38,6 +40,22 @@ final class ProViewModel: ObservableObject {
             
         } catch {
             self.fetchState = .failure(.unknown)
+        }
+    }
+    
+    @MainActor
+    func filterProsArray() {
+        let searchText = proSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        guard !searchText.isEmpty else {
+            self.filteredProSkaters = proSkaters
+            return
+        }
+        
+        let lowercasedSearchText = searchText.lowercased()
+        
+        self.filteredProSkaters = proSkaters.filter { pro in
+            pro.name.lowercased().contains(lowercasedSearchText)
         }
     }
 }

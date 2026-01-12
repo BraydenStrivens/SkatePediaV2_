@@ -22,7 +22,8 @@ struct ProVideosListView: View {
                 VStack { }
                 
             case .loading:
-                CustomProgressView(placement: .center)
+//                CustomProgressView(placement: .center)
+                VStack {}
                 
             case .success:
                 if viewModel.videos.isEmpty {

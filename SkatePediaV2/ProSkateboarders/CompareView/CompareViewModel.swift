@@ -56,6 +56,16 @@ final class CompareViewModel: ObservableObject {
         }
     }
     
+    @MainActor
+    func updateAVPlayer(slot: CompareVideoSlot, url: String) {
+        switch slot {
+        case .left:
+            self.videoPlayer1 = AVPlayer(url: URL(string: url)!)
+        case .right:
+            self.videoPlayer2 = AVPlayer(url: URL(string: url)!)
+        }
+    }
+    
     func updateTrickItemNotes(trickItemId: String) {
         guard let currentUid = Auth.auth().currentUser?.uid else { return }
         

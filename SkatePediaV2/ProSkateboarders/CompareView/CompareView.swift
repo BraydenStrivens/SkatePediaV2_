@@ -73,16 +73,12 @@ struct CompareView: View {
         .frame(width: UIScreen.screenWidth)
         .onChange(of: viewModel.leftVideo) { (oldValue: CompareVideo?, newValue: CompareVideo?) in
             if let newValue = newValue {
-                viewModel.videoPlayer1 = AVPlayer(url: URL(string: newValue.videoData.videoUrl)!)
-            } else {
-                viewModel.videoPlayer1 = nil
+                viewModel.updateAVPlayer(slot: .left, url: newValue.videoData.videoUrl)
             }
         }
         .onChange(of: viewModel.rightVideo) { (oldValue: CompareVideo?, newValue: CompareVideo?) in
             if let newValue = newValue {
-                viewModel.videoPlayer2 = AVPlayer(url: URL(string: newValue.videoData.videoUrl)!)
-            } else {
-                viewModel.videoPlayer2 = nil
+                viewModel.updateAVPlayer(slot: .right, url: newValue.videoData.videoUrl)
             }
         }
         .sheet(item: $viewModel.activeSlot) { slot in
@@ -223,7 +219,7 @@ struct CompareView: View {
     var videoPlayer1View: some View {
         GeometryReader { proxy in
             if let videoData = viewModel.leftVideo?.videoData {
-                
+                                                
                 let size = CustomVideoPlayer.getNewAspectRatio(
                     baseWidth: videoData.width,
                     baseHeight: videoData.height,
@@ -262,6 +258,8 @@ struct CompareView: View {
     var videoPlayer2View: some View {
         GeometryReader { proxy in
             if let videoData = viewModel.rightVideo?.videoData {
+                
+//                let player = AVPlayer(url: URL(string: videoData.videoUrl)!)
                 
                 let size = CustomVideoPlayer.getNewAspectRatio(
                     baseWidth: videoData.width,

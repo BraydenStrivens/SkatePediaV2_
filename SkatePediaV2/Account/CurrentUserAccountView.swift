@@ -33,7 +33,7 @@ struct CurrentUserAccountView: View {
                     selection: $tabIndex,
                     tabs: ["Tricks", "Posts"],
                     animation: .easeInOut,
-                    activeAccentColor: .blue,
+                    activeAccentColor: Color("AccentColor"),
                     activeTabColor: .gray.opacity(0.2)
                 )
                 .foregroundColor(.primary)

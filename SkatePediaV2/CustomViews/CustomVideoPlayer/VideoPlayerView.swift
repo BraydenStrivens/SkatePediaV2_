@@ -13,7 +13,6 @@ import AVKit
 struct VideoPlayerView: View {
     let frameSize: CGSize
     let videoData: VideoData
-    let safeArea: EdgeInsets
     
     var body: some View {
         VStack {

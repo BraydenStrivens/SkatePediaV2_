@@ -60,7 +60,7 @@ struct CollapsableTextView: View {
             } label: {
                 Text(moreLessText)
                     .font(.body)
-                    .foregroundColor(.blue.opacity(0.8))
+                    .foregroundColor(Color("AccentColor").opacity(0.8))
             }
             .opacity(showViewButton ? 1.0 : 0)
             .disabled(!showViewButton)

@@ -114,7 +114,7 @@ struct NotificationView: View {
             } else {
                 ScrollView {
                     ForEach(viewModel.notifications) { notification in
-                        if let user = notification.fromUser {
+                        if let _ = notification.fromUser {
                             NotificationCell(
                                 notifications: $viewModel.notifications,
                                 notification: notification

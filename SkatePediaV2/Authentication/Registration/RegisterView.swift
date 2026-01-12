@@ -32,17 +32,17 @@ struct RegisterView: View {
             VStack(spacing: 20) {
                 SPTextField(
                     title: "Username",
-                    borderColor: Color("accentColor"),
+                    borderColor: Color("AccentColor"),
                     text: $viewModel.username)
                 
                 SPTextField(
                     title: "Email",
-                    borderColor: Color("accentColor"),
+                    borderColor: Color("AccentColor"),
                     text: $viewModel.email)
                 
                 SPSecureField(
                     title: "Password",
-                    borderColor: Color("accentColor"),
+                    borderColor: Color("AccentColor"),
                     text: $viewModel.password)
                 
                 CustomDropDownView(title: "Stance:", prompt: "", options: ["Regular", "Goofy"], selection: $viewModel.stance)

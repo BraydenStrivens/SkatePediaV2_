@@ -98,19 +98,14 @@ struct PostCell: View {
         GeometryReader { proxy in
 //            if let player = viewModel.videoPlayer {
                 let player = AVPlayer(url: URL(string: post.videoData.videoUrl)!)
-                let safeArea = proxy.safeAreaInsets
                 let size = viewModel.getNewAspectRatio(
                     baseWidth: post.videoData.width,
                     baseHeight: post.videoData.height,
                     maxWidth: proxy.size.width,
                     maxHeight: proxy.size.height)
-                let fullScreenSize = viewModel.getNewAspectRatio(
-                    baseWidth: post.videoData.width,
-                    baseHeight: post.videoData.height,
-                    maxWidth: UIScreen.screenWidth,
-                    maxHeight: UIScreen.screenHeight)
+
                 
-                if let size = size, let fullScreenSize = fullScreenSize {
+                if let size = size {
                     SPVideoPlayer(
                         userPlayer: player,
                         frameSize: proxy.size,

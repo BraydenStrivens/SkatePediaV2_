@@ -33,12 +33,12 @@ struct LoginView: View {
             VStack(spacing: 20) {
                 SPTextField(
                     title: "Email",
-                    borderColor: Color("accentColor"),
+                    borderColor: Color("AccentColor"),
                     text: $viewModel.email)
                 
                 SPSecureField(
                     title: "Password",
-                    borderColor: Color("accentColor"),
+                    borderColor: Color("AccentColor"),
                     text: $viewModel.password)
                 
                 SPButton(
@@ -118,7 +118,7 @@ struct ResetPasswordView: View {
                 .fontWeight(.semibold)
                 .kerning(1.5)
             
-            SPTextField(title: "Email", borderColor: Color("accentColor"), text: $viewModel.resetEmail)
+            SPTextField(title: "Email", borderColor: Color("AccentColor"), text: $viewModel.resetEmail)
             
             HStack {
                 Spacer()
@@ -149,7 +149,7 @@ struct ResetPasswordView: View {
                 .padding(.vertical, 10)
                 .background {
                     RoundedRectangle(cornerRadius: 10)
-                        .stroke(Color("accentColor"), lineWidth: 1)
+                        .stroke(Color("AccentColor"), lineWidth: 1)
                 }
                 
                 Spacer()

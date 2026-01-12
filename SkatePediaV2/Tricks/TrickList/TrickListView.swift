@@ -43,10 +43,10 @@ struct TrickListView: View {
                                         .frame(width: UIScreen.screenWidth * 0.23, height: 50)
                                         .background {
                                             Rectangle()
-                                                .fill(Color("accentColor").opacity(isCurrentTab ? 0.15 : 0.0))
+                                                .fill(Color("AccentColor").opacity(isCurrentTab ? 0.15 : 0.0))
                                                 .overlay(alignment: .bottom) {
                                                     Rectangle()
-                                                        .fill(isCurrentTab ? Color("accentColor") : Color.clear)
+                                                        .fill(isCurrentTab ? Color("AccentColor") : Color.clear)
                                                         .frame(height: 2)
                                                 }
                                         }

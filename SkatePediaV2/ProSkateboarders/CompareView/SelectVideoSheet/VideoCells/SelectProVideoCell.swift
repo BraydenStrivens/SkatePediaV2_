@@ -26,7 +26,7 @@ struct SelectProVideoCell: View {
         .padding()
         .background {
             RoundedRectangle(cornerRadius: 10)
-                .stroke(video.id == (currentSelection?.id ?? "") ? Color("accentColor") : .primary, lineWidth: 1)
+                .stroke(video.id == (currentSelection?.id ?? "") ? Color("AccentColor") : .primary, lineWidth: 1)
         }
         .padding()
         .onTapGesture {
@@ -62,7 +62,7 @@ struct SelectProVideoCell: View {
             Image(systemName: video.id == (currentSelection?.id ?? "") ? "circle.fill" : "circle")
                 .resizable()
                 .frame(width: 25, height: 25)
-                .foregroundColor(video.id == (currentSelection?.id ?? "") ? Color("accentColor") : .primary)
+                .foregroundColor(video.id == (currentSelection?.id ?? "") ? Color("AccentColor") : .primary)
         }
     }
     

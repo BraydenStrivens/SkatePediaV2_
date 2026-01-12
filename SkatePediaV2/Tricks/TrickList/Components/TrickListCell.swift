@@ -50,7 +50,7 @@ struct TrickListCell: View {
                     } else {
                         Image(systemName: "checkmark.circle")
                             .resizable()
-                            .foregroundColor(Color("accentColor"))
+                            .foregroundColor(Color("AccentColor"))
                             .frame(width: 20, height: 20)
                     }
                 }

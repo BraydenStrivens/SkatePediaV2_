@@ -43,7 +43,6 @@ final class TrickViewModel: ObservableObject {
             self.proVideosFetchState = .loading
             
             let fetchedVideos = try await ProManager.shared.getProVideosByTrick(trickId: trickId)
-            print("FETCHED VIDEOS: ", fetchedVideos)
             self.proVideos.append(contentsOf: fetchedVideos)
                                     
             self.proVideosFetchState = .success
