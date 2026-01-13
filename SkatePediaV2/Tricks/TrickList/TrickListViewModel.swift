@@ -22,23 +22,26 @@ final class TrickListViewModel: ObservableObject {
     @Published var switchTrickList: [[Trick]] = []
     @Published var nollieTrickList: [[Trick]] = []
         
-    @Published var requestState: RequestState = .idle
+    @Published var getTrickListFetchState: RequestState = .idle
+    @Published var deleteTrickState: RequestState = .idle
     @Published var error: FirestoreError? = nil
     
     init() {
         guard let uid = Auth.auth().currentUser?.uid else {
-            self.requestState = .failure(FirestoreError.unknown)
+            self.getTrickListFetchState = .failure(SPError.unknown)
             return
         }
         
-        Task {
-            try await loadTrickListView(userId: uid)
+        if case .idle = getTrickListFetchState {
+            Task {
+                await loadTrickListView(userId: uid)
+            }
         }
     }
     
-    func loadTrickListView(userId: String) async throws {
+    func loadTrickListView(userId: String) async {
         do {
-            self.requestState = .loading
+            self.getTrickListFetchState = .loading
             
             if self.user == .emptyStruct {
                 self.user = try await UserManager.shared.fetchUser(withUid: userId) ?? .emptyStruct
@@ -51,13 +54,21 @@ final class TrickListViewModel: ObservableObject {
                 throw FirestoreError.unknown
             }
 
-            self.requestState = .success
+            self.getTrickListFetchState = .success
             
         } catch let error as FirestoreError {
-            self.requestState = .failure(error)
+            self.getTrickListFetchState = .failure(.firestore(error))
             
         } catch {
-            self.requestState = .failure(.unknown)
+            self.getTrickListFetchState = .failure(.unknown)
+        }
+    }
+    
+    func fetchTrickListInfo(userId: String) async throws {
+        do {
+            self.trickListInfo = try await TrickListInfoManager.shared.fetchTrickListInfo(userId: userId)
+        } catch {
+            throw error
         }
     }
     
@@ -70,14 +81,6 @@ final class TrickListViewModel: ObservableObject {
             self.switchTrickList = try await fetchAndSortTrickListByStance(userId: userId, stance: Stance.Stances._switch.rawValue)
             
             self.nollieTrickList = try await fetchAndSortTrickListByStance(userId: userId, stance: Stance.Stances.nollie.rawValue)
-        } catch {
-            throw error
-        }
-    }
-    
-    func fetchTrickListInfo(userId: String) async throws {
-        do {
-            self.trickListInfo = try await TrickListInfoManager.shared.fetchTrickListInfo(userId: userId)
         } catch {
             throw error
         }
@@ -105,5 +108,29 @@ final class TrickListViewModel: ObservableObject {
         if nollieTrickList[0].isEmpty { return true }
         
         return false
+    }
+    
+    func addTrick() async {
+        
+    }
+    
+    func deleteTrick(userId: String, trick: Trick) async {
+        do {
+            deleteTrickState = .loading
+            
+            try await TrickListManager.shared
+                .deleteTrick(userId: userId,trick: trick)
+            
+            deleteTrickState = .success
+            
+            // Re-fetch trick list to update the view
+            await loadTrickListView(userId: userId)
+            
+        } catch let error as FirestoreError {
+            deleteTrickState = .failure(.firestore(error))
+            
+        } catch {
+            deleteTrickState = .failure(.unknown)
+        }
     }
 }

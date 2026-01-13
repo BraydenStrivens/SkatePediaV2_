@@ -6,3 +6,10 @@
 //
 
 import Foundation
+
+enum StorageError: LocalizedError {
+    
+    var errorDescription: String? {
+        return ""
+    }
+}

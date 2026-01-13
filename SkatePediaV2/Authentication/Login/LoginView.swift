@@ -27,7 +27,6 @@ struct LoginView: View {
                 .font(.system(size: UIScreen.screenWidth * 0.12))
                 .fontWeight(.semibold)
                 .kerning(1.5)
-                .foregroundColor(Color("textColor"))
                 .padding([.bottom], 20)
             
             VStack(spacing: 20) {
@@ -86,10 +85,8 @@ struct LoginView: View {
         // Reset password sheet
         .sheet(isPresented: $toggleForgotPassword, content: {
             ResetPasswordView(viewModel: viewModel)
-                .presentationDetents([.height(250)])
-                .presentationBackground(Color("backgroundColor"))
+                .presentationDetents([.height(300)])
         })
-        // Error message popup
         .alert("Error",
                isPresented: Binding(
                 get: { viewModel.error != nil },
@@ -102,7 +99,16 @@ struct LoginView: View {
                 Text("OK")
             }
         } message: {
-            Text(viewModel.error?.localizedDescription ?? "")
+            Text(viewModel.error?.errorDescription ?? "Error")
+        }
+        .alert("Reset Email Sent", isPresented: $viewModel.passwordResetSent) {
+            Button(role: .cancel) {
+                
+            } label: {
+                Text("OK")
+            }
+        } message: {
+            Text("Please check the inputted email address for the password reset link.")
         }
     }
 }
@@ -112,48 +118,59 @@ struct ResetPasswordView: View {
     @ObservedObject var viewModel: LoginViewModel
     
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 10) {
             Text("Reset Password")
                 .font(.largeTitle)
                 .fontWeight(.semibold)
                 .kerning(1.5)
             
-            SPTextField(title: "Email", borderColor: Color("AccentColor"), text: $viewModel.resetEmail)
+            Text("Enter the email registered with your account to change your password.")
+                .font(.body)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 20)
             
-            HStack {
+            Divider()
+            
+            SPTextField(
+                title: "Email",
+                borderColor: Color("AccentColor"),
+                text: $viewModel.resetEmail
+            )
+            .padding(.vertical, 10)
+            
+            HStack() {
                 Spacer()
                 
-                Button("Cancel", role: .destructive) {
+                SPButton(
+                    title: "Cancel",
+                    rank: .secondary,
+                    color: .primary,
+                    width: 100,
+                    height: 40
+                ) {
                     dismiss()
                 }
-                .padding(.horizontal)
-                .padding(.vertical, 10)
-                .background {
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(Color.red, lineWidth: 1)
-                }
                 
                 Spacer()
                 
-                Button("Send") {
+                SPButton(
+                    title: "Send",
+                    rank: .primary,
+                    color: Color("buttonColor")
+                        .opacity(viewModel.resetEmail.isEmpty ? 0.5 : 1),
+                    width: 100,
+                    height: 40
+                ) {
                     Task {
-                        do {
-                            try await viewModel.resetPassword()
-                            dismiss()
-                        } catch let error as AuthError {
-                            viewModel.error = error
-                        }
+                        await viewModel.resetPassword()
+                        dismiss()
                     }
                 }
-                .padding(.horizontal)
-                .padding(.vertical, 10)
-                .background {
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(Color("AccentColor"), lineWidth: 1)
-                }
+                .disabled(viewModel.resetEmail.isEmpty)
                 
                 Spacer()
             }
+            .padding(.vertical, 10)
         }
         .padding()
     }

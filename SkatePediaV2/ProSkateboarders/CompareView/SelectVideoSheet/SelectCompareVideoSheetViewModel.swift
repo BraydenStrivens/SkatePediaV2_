@@ -33,7 +33,7 @@ final class SelectCompareVideoSheetViewModel: ObservableObject {
                 self.currentUserFetchState = .success
                 
             } catch let error as FirestoreError {
-                self.currentUserFetchState = .failure(error)
+                self.currentUserFetchState = .failure(.firestore(error))
                 
             } catch {
                 self.currentUserFetchState = .failure(.unknown)
@@ -57,7 +57,7 @@ final class SelectCompareVideoSheetViewModel: ObservableObject {
             self.trickItemsFetchState = .success
             
         } catch let error as FirestoreError {
-            self.trickItemsFetchState = .failure(error)
+            self.trickItemsFetchState = .failure(.firestore(error))
             
         } catch {
             self.trickItemsFetchState = .failure(.unknown)
@@ -75,7 +75,7 @@ final class SelectCompareVideoSheetViewModel: ObservableObject {
             self.proVideosFetchState = .success
             
         } catch let error as FirestoreError {
-            self.proVideosFetchState = .failure(error)
+            self.proVideosFetchState = .failure(.firestore(error))
             
         } catch {
             self.proVideosFetchState = .failure(.unknown)

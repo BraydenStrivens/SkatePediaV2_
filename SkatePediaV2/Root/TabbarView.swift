@@ -40,7 +40,8 @@ struct TabbarView: View {
             }
             
             CustomNavView {
-                CurrentUserAccountView()
+//                CurrentUserAccountView()
+                UserAccountView()
                     .customNavBarItems(title: "Profile", subtitle: "", backButtonHidden: true)
             }
             .tabItem {

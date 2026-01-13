@@ -30,7 +30,7 @@ final class TrickViewModel: ObservableObject {
             self.trickItemFetchState = .success
             
         } catch let error as FirestoreError {
-            self.trickItemFetchState = .failure(error)
+            self.trickItemFetchState = .failure(.firestore(error))
             
         } catch {
             self.proVideosFetchState = .failure(.unknown)
@@ -48,7 +48,7 @@ final class TrickViewModel: ObservableObject {
             self.proVideosFetchState = .success
             
         } catch let error as FirestoreError {
-            self.proVideosFetchState = .failure(error)
+            self.proVideosFetchState = .failure(.firestore(error))
             
         } catch {
             self.proVideosFetchState = .failure(.unknown)
@@ -62,7 +62,7 @@ final class TrickViewModel: ObservableObject {
             self.deleteTrickItemState = .success
             
         } catch let error as FirestoreError {
-            self.deleteTrickItemState = .failure(error)
+            self.deleteTrickItemState = .failure(.firestore(error))
             
         } catch {
             self.deleteTrickItemState = .failure(.unknown)

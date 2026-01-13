@@ -12,7 +12,7 @@ import SwiftUI
 ///
 struct UserPostsView:  View {
     
-    @ObservedObject var viewModel: AccountViewModel
+    @ObservedObject var viewModel: UserAccountViewModel
     let user: User
     
     var body: some View {

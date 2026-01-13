@@ -11,11 +11,11 @@ enum RequestState {
     case idle
     case loading
     case success
-    case failure(FirestoreError)
+    case failure(SPError)
 }
 
 extension RequestState {
-    var error: FirestoreError? {
+    var error: SPError? {
         if case .failure(let error) = self {
             return error
         }

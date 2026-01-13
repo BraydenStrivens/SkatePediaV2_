@@ -39,7 +39,7 @@ struct ProsView: View {
                                     
                                     ProSkaterCell(
                                         pro: pro,
-                                        borderColor: isSelected ? .primary : .gray
+                                        borderColor: isSelected ? Color("buttonColor") : .gray
                                     )
                                     .environmentObject(viewModel)
                                     .onTapGesture {
@@ -72,7 +72,7 @@ struct ProsView: View {
         case .failure(let firestoreError):
             VStack {
                 Spacer()
-                Text(firestoreError.errorDescription ?? "Error...")
+                Text(firestoreError.errorDescription ?? "Something went wrong...")
                 
                 Button {
                     Task {

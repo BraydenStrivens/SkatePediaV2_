@@ -102,12 +102,12 @@ struct CompareView: View {
     }
     
     
-    func failedToFetchTrickView(_ error: FirestoreError) -> some View {
+    func failedToFetchTrickView(_ error: SPError) -> some View {
         VStack(alignment: .center) {
             Spacer()
             HStack { Spacer() }
             
-            Text(error.errorDescription ?? "Error...")
+            Text(error.errorDescription ?? "Something went wrong...")
                 .padding()
                 .multilineTextAlignment(.center)
             
@@ -180,7 +180,9 @@ struct CompareView: View {
                 if toggleEditNotes {
                     HStack(spacing: 15) {
                         Button {
-                            toggleEditNotes = false
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                toggleEditNotes = false
+                            }
                             // TODO: FINISH
                             viewModel.updateTrickItemNotes(trickItemId: viewModel.leftVideo?.id ?? "")
 
@@ -188,7 +190,9 @@ struct CompareView: View {
                             Text("Save")
                         }
                         Button {
-                            toggleEditNotes = false
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                toggleEditNotes = false
+                            }
                             viewModel.updatedTrickItemNotes = ""
                         } label: {
                             Text("Cancel")
@@ -197,7 +201,9 @@ struct CompareView: View {
                     }
                 } else {
                     Button {
-                        toggleEditNotes = true
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            toggleEditNotes = true
+                        }
                     } label: {
                         Text("Edit")
                     }

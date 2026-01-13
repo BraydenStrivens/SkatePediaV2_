@@ -33,17 +33,17 @@ struct ProVideosListView: View {
                         Spacer()
                     }
                 } else {
-                    // Sorts the videos by stance if the pro has over 12 videos
+                    // Separates the videos by stance into different views if the pro has over 12 videos
                     if viewModel.videos.count < 12 {
-                        unsortedTrickList
+                        unseparatedTrickList
                     } else {
-                        sortedTrickList
+                        separatedTrickList
                     }
                 }
             case .failure(let firestoreError):
                 VStack {
                     Spacer()
-                    Text(firestoreError.errorDescription ?? "Error...")
+                    Text(firestoreError.errorDescription ?? "Something went wrong...")
                     
                     Button {
                         Task {
@@ -72,53 +72,68 @@ struct ProVideosListView: View {
         }
     }
     
-    var unsortedTrickList: some View {
-        VStack {
-            ForEach(viewModel.videos) { video in
-                CustomNavLink(
-                    destination: ProVideosView(videos: viewModel.videos, selectedVideo: video)
-                        .customNavBarItems(title: "\(proSkater.name)'s Videos", subtitle: "", backButtonHidden: false)
+    @ViewBuilder
+    var unseparatedTrickList: some View {
+        VStack(alignment: .leading) {
+            let sortedVideos = viewModel.getSortedVideoList()
+            
+            ForEach(sortedVideos) { videosListByStance in
+                
+                if !videosListByStance.videos.isEmpty {
+                    
+                    Text(videosListByStance.stance)
+                        .foregroundColor(.gray)
+                        .font(.headline)
+                    // Adds padding to each header except the top one
+                        .padding([.top], videosListByStance.stance == Stance.Stances.regular.rawValue ? 0 : 5)
+                    
+                    ForEach(videosListByStance.videos) { video in
+                        
+                        CustomNavLink(
+                            destination: ProVideosView(videos: viewModel.videos, selectedVideo: video)
+                                .customNavBarItems(title: "\(proSkater.name)'s Videos", subtitle: "", backButtonHidden: false)
+                        ) {
+                            HStack {
+                                Text(video.trickData.name)
+                                    .offset(x: 20)
 
-                ) {
-                    HStack {
-                        Text(video.trickData.name)
-                        Spacer()
-                        Image(systemName: "chevron.right")
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                            }
+                            .padding(.vertical, 5)
+                        }
+                        .foregroundColor(.primary)
+                        
+                        Divider()
                     }
-                    .padding(.vertical, 5)
                 }
-                .foregroundColor(.primary)
-                
-                Divider()
-                
             }
         }
     }
     
-    var sortedTrickList: some View {
+    var separatedTrickList: some View {
         VStack {
-            tabSelector
+            stanceTabSelector
 
             let sortedVideos = viewModel.getSortedVideoList()
             
             switch(tabIndex) {
             case 0:
-                videoListByStance(proVideosByStance: sortedVideos[0], allProVideos: viewModel.videos)
+                videoListByStance(proVideosByStance: sortedVideos[0].videos, allProVideos: viewModel.videos)
             case 1:
-                videoListByStance(proVideosByStance: sortedVideos[1], allProVideos: viewModel.videos)
+                videoListByStance(proVideosByStance: sortedVideos[1].videos, allProVideos: viewModel.videos)
             case 2:
-                videoListByStance(proVideosByStance: sortedVideos[2], allProVideos: viewModel.videos)
+                videoListByStance(proVideosByStance: sortedVideos[2].videos, allProVideos: viewModel.videos)
             case 3:
-                videoListByStance(proVideosByStance: sortedVideos[3], allProVideos: viewModel.videos)
+                videoListByStance(proVideosByStance: sortedVideos[3].videos, allProVideos: viewModel.videos)
             default:
                 Text("No Tricks")
             }
         }
     }
     
-    @ViewBuilder
-    var tabSelector: some View {
-        HStack {
+    var stanceTabSelector: some View {
+        HStack(spacing: 0) {
             ForEach(tabs, id: \.self) { tab in
                 let index = tabs.firstIndex(of: tab)
                 let isCurrentTab = index == tabIndex
@@ -127,7 +142,7 @@ struct ProVideosListView: View {
                     Text(tab)
                         .font(.subheadline)
                         .fontWeight(isCurrentTab ? .semibold : .regular)
-                        .padding(8)
+                        .frame(width: UIScreen.screenWidth * 0.2, height: 40)
                         .background {
                             Rectangle()
                                 .fill(.gray.opacity(isCurrentTab ? 0.2 : 0.0))
@@ -137,7 +152,6 @@ struct ProVideosListView: View {
                                         .frame(height: 1)
                                 }
                         }
-                        .padding(8)
                 }
                 .onTapGesture {
                     withAnimation(.easeInOut(duration: 0.3)) {

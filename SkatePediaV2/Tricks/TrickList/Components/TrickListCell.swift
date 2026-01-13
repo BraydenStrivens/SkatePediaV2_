@@ -68,8 +68,3 @@ struct TrickListCell: View {
         }
     }
 }
-
-//#Preview {
-//    TrickListCell(userId: "qR4WOA2Pv6bLN9csd5LLsyQocR72",
-//                  trick: Trick(id: "00000011", name: "Backside Kickflip", stance: "Regular", abbreviation: "BS Flip", learnFirst: "Backside 180, Kickflip", learnFirstAbbreviation: "BS Flip, Kickflip", difficulty: "Intermediate", learned: false, inProgress: false))
-//}

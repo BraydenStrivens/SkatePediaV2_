@@ -36,7 +36,7 @@ final class ProViewModel: ObservableObject {
             self.fetchState = .success
             
         } catch let error as FirestoreError {
-            self.fetchState = .failure(error)
+            self.fetchState = .failure(.firestore(error))
             
         } catch {
             self.fetchState = .failure(.unknown)

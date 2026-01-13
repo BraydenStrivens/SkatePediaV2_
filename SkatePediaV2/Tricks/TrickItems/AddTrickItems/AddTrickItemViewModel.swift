@@ -94,7 +94,7 @@ final class AddTrickItemViewModel: ObservableObject {
             return newTrickItem
             
         } catch let error as FirestoreError {
-            self.trickItemUploadState = .failure(error)
+            self.trickItemUploadState = .failure(.firestore(error))
             return nil
             
         } catch {

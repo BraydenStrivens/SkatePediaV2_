@@ -14,11 +14,13 @@ struct Stance: Identifiable, Codable {
         case items = "items"
     }
     
-    enum Stances: String {
+    enum Stances: String, CaseIterable, Identifiable {
         case regular = "Regular"
         case fakie = "Fakie"
         case _switch = "Switch"
         case nollie = "Nollie"
+        
+        var id: String { self.rawValue }
     }
     
     let id = UUID().uuidString

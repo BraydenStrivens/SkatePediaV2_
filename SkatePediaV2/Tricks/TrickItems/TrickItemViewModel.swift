@@ -41,7 +41,7 @@ final class TrickItemViewModel: ObservableObject {
                 self.edit = false
             }
         } catch let error as FirestoreError {
-            self.updateTrickItemState = .failure(error)
+            self.updateTrickItemState = .failure(.firestore(error))
             
         } catch {
             self.updateTrickItemState = .failure(.unknown)
@@ -57,7 +57,7 @@ final class TrickItemViewModel: ObservableObject {
             self.edit = false
             
         } catch let error as FirestoreError {
-            self.deleteTrickItemState = .failure(error)
+            self.deleteTrickItemState = .failure(.firestore(error))
             
         } catch {
             self.deleteTrickItemState = .failure(.unknown)

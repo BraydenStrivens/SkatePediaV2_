@@ -17,6 +17,7 @@ final class AddTrickViewModel: ObservableObject {
     @Published var learnFirstAbbreviation: [String] = []
     
     @Published var errorMessage: String = ""
+    @Published var addTrickState: RequestState = .idle
     
     private func validate() -> Bool {
         
@@ -37,20 +38,26 @@ final class AddTrickViewModel: ObservableObject {
     
     func addTrickToList(userId: String, stance: String, trickListInfo: TrickListInfo) async throws {
         if validate() {
-            fetchTrickAbbreviations(userId: userId)
-
-            let trick: Trick = Trick(
-                id: assignNextTrickId(stance: stance, trickListInfo: trickListInfo),
-                name: trickName,
-                stance: stance,
-                abbreviation: abbreviatedName,
-                learnFirst: convertArrayToString(array: learnFirst),
-                learnFirstAbbreviation: convertArrayToString(array: learnFirstAbbreviation),
-                difficulty: difficulty,
-                progress: []
-            )
-            
-            try await TrickListManager.shared.uploadNewTrick(userId: userId, trick: trick, trickListInfo: trickListInfo)
+            do {
+                addTrickState = .loading
+                
+                fetchTrickAbbreviations(userId: userId)
+                
+                let trick: Trick = Trick(
+                    id: assignNextTrickId(stance: stance, trickListInfo: trickListInfo),
+                    name: trickName,
+                    stance: stance,
+                    abbreviation: abbreviatedName,
+                    learnFirst: convertArrayToString(array: learnFirst),
+                    learnFirstAbbreviation: convertArrayToString(array: learnFirstAbbreviation),
+                    difficulty: difficulty,
+                    progress: []
+                )
+                
+                try await TrickListManager.shared.uploadNewTrick(userId: userId, trick: trick, trickListInfo: trickListInfo)
+                
+                addTrickState = .success
+            }
         }
     }
     

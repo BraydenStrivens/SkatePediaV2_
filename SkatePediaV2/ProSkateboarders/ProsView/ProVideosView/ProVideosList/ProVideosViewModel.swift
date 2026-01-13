@@ -7,6 +7,12 @@
 
 import Foundation
 
+struct ProSkaterVideoArray: Identifiable {
+    let id = UUID()
+    let videos: [ProSkaterVideo]
+    let stance: String
+}
+
 final class ProVideosListViewModel: ObservableObject {
     @Published var videos: [ProSkaterVideo] = []
     @Published var fetchState: RequestState = .idle
@@ -24,7 +30,7 @@ final class ProVideosListViewModel: ObservableObject {
             self.fetchState = .success
             
         } catch let error as FirestoreError {
-            self.fetchState = .failure(error)
+            self.fetchState = .failure(.firestore(error))
             
         } catch {
             self.fetchState = .failure(.unknown)
@@ -32,7 +38,7 @@ final class ProVideosListViewModel: ObservableObject {
         
     }
 
-    func getSortedVideoList() -> [[ProSkaterVideo]] {
+    func getSortedVideoList() -> [ProSkaterVideoArray] {
         var regular: [ProSkaterVideo] = []
         var fakie: [ProSkaterVideo] = []
         var _switch: [ProSkaterVideo] = []
@@ -55,7 +61,12 @@ final class ProVideosListViewModel: ObservableObject {
             }
         }
         
-        return [regular, fakie, _switch, nollie]
+        return [
+            ProSkaterVideoArray(videos: regular, stance: Stance.Stances.regular.rawValue),
+            ProSkaterVideoArray(videos: fakie, stance: Stance.Stances.fakie.rawValue),
+            ProSkaterVideoArray(videos: _switch, stance: Stance.Stances._switch.rawValue),
+            ProSkaterVideoArray(videos: nollie, stance: Stance.Stances.nollie.rawValue)
+        ]
     }
     
     func getVideoStance(video: ProSkaterVideo) -> StanceType {

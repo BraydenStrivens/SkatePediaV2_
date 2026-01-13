@@ -39,7 +39,7 @@ final class CompareViewModel: ObservableObject {
             self.trickFetchState = .success
             
         } catch let error as FirestoreError {
-            self.trickFetchState = .failure(error)
+            self.trickFetchState = .failure(.firestore(error))
             
         } catch {
             self.trickFetchState = .failure(.unknown)

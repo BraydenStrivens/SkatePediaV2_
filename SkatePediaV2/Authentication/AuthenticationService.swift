@@ -68,8 +68,8 @@ final class AuthenticationService {
             try await TrickListManager.shared.readJSonFile(userId: authResult.user.uid)
 
         } catch {
-            // If auth successfully creates a user but firestore fails to upload their data, this deletes the user from
-            // auth so the user can recreate their account
+            // If auth successfully creates a user but firestore fails to upload their data, this deletes the
+            // user from auth so the user can recreate their account
             try await deleteUser()
             throw FirestoreError.mapFirebaseError(error)
         }

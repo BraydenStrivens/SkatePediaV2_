@@ -26,7 +26,6 @@ struct RegisterView: View {
                 .font(.system(size: UIScreen.screenWidth * 0.12))
                 .fontWeight(.semibold)
                 .kerning(1.5)
-                .foregroundColor(Color("textColor"))
                 .padding([.bottom], 20)
                         
             VStack(spacing: 20) {

@@ -15,11 +15,12 @@ import UIKit
 ///
 @MainActor
 final class LoginViewModel: ObservableObject {
-    @Published var email = ""
-    @Published var password = ""
-    @Published var resetEmail = ""
+    @Published var email: String = ""
+    @Published var password: String = ""
+    @Published var resetEmail: String = ""
+    @Published var passwordResetSent: Bool = false
     @Published var error: AuthError?
-    @Published var showErrorPopup = false
+//    @Published var showErrorPopup: Bool = false
 
     ///
     /// Valids the login input fields contain characters and attempts to login in the user.
@@ -41,12 +42,16 @@ final class LoginViewModel: ObservableObject {
     ///
     /// Resets the users password with the email inputed into a text field
     ///
-    func resetPassword() async throws {
+    func resetPassword() async {
         do {
             try emptyInputFieldCheck(resetEmail, "uselessValidPassword")
             try await AuthenticationService.shared.resetPassword(email: resetEmail)
+            passwordResetSent = true
+        } catch let error as AuthError {
+            self.error = error
+            
         } catch {
-            throw error
+            self.error = AuthError.mapFirebaseError(error)
         }
     }
     

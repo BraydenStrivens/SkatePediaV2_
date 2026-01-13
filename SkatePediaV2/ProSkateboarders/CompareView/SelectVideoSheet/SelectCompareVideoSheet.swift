@@ -79,7 +79,7 @@ struct SelectCompareVideoSheet: View {
                     
                 case .failure(let firestoreError):
                     Text("Error fetching user")
-                    Text(firestoreError.errorDescription ?? "ERROR...")
+                    Text(firestoreError.errorDescription ?? "Something went wrong...")
                 }
                 
             }

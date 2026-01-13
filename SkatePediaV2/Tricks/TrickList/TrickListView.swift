@@ -16,7 +16,7 @@ struct TrickListView: View {
     
     var body: some View {
         VStack {
-            switch viewModel.requestState {
+            switch viewModel.getTrickListFetchState {
             case .idle:
                 VStack { }
                 
@@ -30,7 +30,7 @@ struct TrickListView: View {
                     
                     // Sections for each stance
                     VStack {
-                        HStack {
+                        HStack(spacing: 0) {
                             Spacer()
                             ForEach(tabs, id: \.self) { tab in
                                 let index = tabs.firstIndex(of: tab)
@@ -43,7 +43,7 @@ struct TrickListView: View {
                                         .frame(width: UIScreen.screenWidth * 0.23, height: 50)
                                         .background {
                                             Rectangle()
-                                                .fill(Color("AccentColor").opacity(isCurrentTab ? 0.15 : 0.0))
+                                                .fill(.gray.opacity(isCurrentTab ? 0.15 : 0.0))
                                                 .overlay(alignment: .bottom) {
                                                     Rectangle()
                                                         .fill(isCurrentTab ? Color("AccentColor") : Color.clear)
@@ -69,6 +69,7 @@ struct TrickListView: View {
                                 stance: Stance.Stances.regular.rawValue,
                                 userId: viewModel.user.userId
                             )
+                            .environmentObject(viewModel)
                         case 1:
                             trickListViewByStance(
                                 trickList: viewModel.fakieTrickList,
@@ -76,6 +77,7 @@ struct TrickListView: View {
                                 stance: Stance.Stances.fakie.rawValue,
                                 userId: viewModel.user.userId
                             )
+                            .environmentObject(viewModel)
                         case 2:
                             trickListViewByStance(
                                 trickList: viewModel.switchTrickList,
@@ -83,6 +85,7 @@ struct TrickListView: View {
                                 stance: Stance.Stances._switch.rawValue,
                                 userId: viewModel.user.userId
                             )
+                            .environmentObject(viewModel)
                         case 3:
                             trickListViewByStance(
                                 trickList: viewModel.nollieTrickList,
@@ -90,6 +93,7 @@ struct TrickListView: View {
                                 stance: Stance.Stances.nollie.rawValue,
                                 userId: viewModel.user.userId
                             )
+                            .environmentObject(viewModel)
                         default:
                             Text("No Tricks")
                         }
@@ -116,7 +120,7 @@ struct TrickListView: View {
         }
     }
     
-    func failedToFetchView(_ error: FirestoreError) -> some View {
+    func failedToFetchView(_ error: SPError) -> some View {
         VStack(alignment: .center) {
             Spacer()
             
@@ -130,16 +134,6 @@ struct TrickListView: View {
             
             Button {
                 Task {
-                    // If the document wasn't found this attempts to re-create it
-                    do {
-                        try await TrickListManager.shared.readJSonFile(userId: "")
-                        
-                    } catch(let error as FirestoreError) {
-                        viewModel.requestState = .failure(error)
-                    } catch {
-                        viewModel.requestState = .failure(.unknown)
-                    }
-                    
                     // Re-fetches the users tricks and trick list info
                     try await viewModel.loadTrickListView(userId: viewModel.user.userId)
                 }

@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct AddTrickView: View {
-    
+    @EnvironmentObject var trickListViewModel: TrickListViewModel
     @StateObject var viewModel = AddTrickViewModel()
     
     let userId: String
