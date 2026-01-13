@@ -8,6 +8,7 @@
 import Foundation
 import FirebaseAuth
 import FirebaseFirestore
+import Firebase
 import SwiftUI
 import PhotosUI
 import AVKit
@@ -16,7 +17,7 @@ import AVKit
 /// Class that contains functions for fetching user data and interacting with other users.
 ///
 @MainActor
-final class AccountViewModel: ObservableObject {
+final class UserAccountViewModel: ObservableObject {
     @Published var user: User? = nil
     @Published var userTrickListInfo: TrickListInfo? = nil
     @Published var userPosts: [Post] = []
@@ -31,13 +32,41 @@ final class AccountViewModel: ObservableObject {
     private var uiImage: UIImage?
     private let currentUserId = Auth.auth().currentUser?.uid
     
+    @Published var getUserFetchState: RequestState = .idle
+    @Published var getTrickInfoFetchState: RequestState = .idle
+    @Published var getUserPostsFetchState: RequestState = .idle
+    @Published var updateProfileState: RequestState = .idle
+    
+    init(user: User?) {
+        if let user = user {
+            self.user = user
+            getUserFetchState = .success
+        } else {
+            Task {
+                await fetchCurrentUser()
+            }
+        }
+    }
+    
     ///
     /// Fetches the current user from the database as a User object.
     ///
-    func fetchCurrentUser() async throws {
-        guard let userId = Auth.auth().currentUser?.uid else { return }
-        self.user = try await UserManager.shared.fetchUser(withUid: userId)
-        if let bio = self.user?.bio { self.newBio = bio }
+    func fetchCurrentUser() async {
+        do {
+            getUserFetchState = .loading
+            
+            guard let userId = Auth.auth().currentUser?.uid else { throw FirestoreError.unknown }
+            self.user = try await UserManager.shared.fetchUser(withUid: userId)
+            if let bio = self.user?.bio { self.newBio = bio }
+            
+            getUserFetchState = .success
+            
+        } catch let error as FirestoreError {
+            getUserFetchState = .failure(.firestore(error))
+            
+        } catch {
+            getUserFetchState = .failure(.unknown)
+        }
     }
 
     ///
@@ -46,13 +75,17 @@ final class AccountViewModel: ObservableObject {
     /// - Parameters:
     ///  - userId: An optional string representing the Id of a user.
     ///
-    func getTrickListInfo(userId: String? = nil) async throws {
-        if let userId = userId {
+    func getTrickListInfo(userId: String) async {
+        do {
+            getTrickInfoFetchState = .loading
             self.userTrickListInfo = try await TrickListInfoManager.shared.fetchTrickListInfo(userId: userId)
-        } else {
-            guard let userId = currentUserId else { return }
+            getTrickInfoFetchState = .success
             
-            self.userTrickListInfo = try await TrickListInfoManager.shared.fetchTrickListInfo(userId: userId)
+        } catch let error as FirestoreError {
+            getTrickInfoFetchState = .failure(.firestore(error))
+            
+        } catch {
+            getTrickInfoFetchState = .failure(.unknown)
         }
     }
     
@@ -63,21 +96,33 @@ final class AccountViewModel: ObservableObject {
     /// - Parameters:
     ///  - userId: An optional string representing the Id of a user.
     ///
-    func fetchPosts(userId: String? = nil) async throws {
+    func fetchPosts(userId: String) async throws {
         // If the number of fetched posts is not divisible by 10, then there are no more posts left to be fetched.
         guard self.userPosts.count % 10 == 0 else { return }
-        guard let userId = userId else { return }
+
+        do {
+            getUserPostsFetchState = .loading
+            
+            // Fetches 10 posts starting from the last fetched document and stores the last fetched document.
+            let (newPosts, lastDocument) = try await PostManager.shared.getAllPostsFromUser(userId: userId, count: 10, lastDocument: lastDocument)
+            
+            self.userPosts.append(contentsOf: newPosts)
+            
+            // Fetches trick data for the post and user data from the owner of each post.
+            try await fetchDataForPosts()
+            
+            lastPostIndex += newPosts.count
+            if let lastDocument { self.lastDocument = lastDocument }
+            
+            getUserPostsFetchState = .success
+            
+        } catch let error as FirestoreError {
+            getUserPostsFetchState = .failure(.firestore(error))
+            
+        } catch {
+            getUserPostsFetchState = .failure(.unknown)
+        }
         
-        // Fetches 10 posts starting from the last fetched document and stores the last fetched document.
-        let (newPosts, lastDocument) = try await PostManager.shared.getAllPostsFromUser(userId: userId, count: 10, lastDocument: lastDocument)
-        
-        self.userPosts.append(contentsOf: newPosts)
-        
-        // Fetches trick data for the post and user data from the owner of each post.
-        try await fetchDataForPosts()
-        
-        lastPostIndex += newPosts.count
-        if let lastDocument { self.lastDocument = lastDocument }
     }
     
     ///
