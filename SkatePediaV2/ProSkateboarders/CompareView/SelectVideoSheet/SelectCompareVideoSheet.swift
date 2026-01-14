@@ -164,11 +164,11 @@ struct SelectCompareVideoSheet: View {
         case .success:
             VStack { }
             if viewModel.trickItems.isEmpty {
-                HStack {
-                    Spacer()
-                    Text("No trick items uploaded for trick")
-                    Spacer()
-                }
+                ContentUnavailableView(
+                    "Unavailable",
+                    image: "list.bullet.rectangle.portrait",
+                    description: Text("You have not uploaded any trick items for this trick...")
+                )
             } else {
                 ForEach(viewModel.trickItems) { trickItem in
                     SelectTrickItemCell(user: viewModel.currentUser, trickItem: trickItem, currentSelection: $selectedVideo)
@@ -199,16 +199,15 @@ struct SelectCompareVideoSheet: View {
         case .success:
             VStack { }
             if viewModel.proVideos.isEmpty {
-                HStack {
-                    Spacer()
-                    Text("No trick items uploaded for trick")
-                    Spacer()
-                }
+                ContentUnavailableView(
+                    "Unavailable",
+                    image: "list.bullet.rectangle.portrait",
+                    description: Text("Pro videos are unavailable for this trick...")
+                )
             } else {
                 ForEach(viewModel.proVideos) { proVideo in
                     SelectProVideoCell(video: proVideo, currentSelection: $selectedVideo)
                 }
-                
             }
         case .failure(let error):
             VStack {
