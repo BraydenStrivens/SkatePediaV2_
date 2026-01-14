@@ -18,6 +18,7 @@ struct Trick: Identifiable, Codable, Equatable {
     let learnFirstAbbreviation: String
     let difficulty: String
     let progress: [Int]
+    let hidden: Bool
     
     init(
         id: String,
@@ -27,7 +28,8 @@ struct Trick: Identifiable, Codable, Equatable {
         learnFirst: String,
         learnFirstAbbreviation: String,
         difficulty: String,
-        progress: [Int]
+        progress: [Int],
+        hidden: Bool
     ) {
         self.id = id
         self.name = name
@@ -37,6 +39,7 @@ struct Trick: Identifiable, Codable, Equatable {
         self.learnFirstAbbreviation = learnFirstAbbreviation
         self.difficulty = difficulty
         self.progress = progress
+        self.hidden = hidden
     }
     
     enum CodingKeys: String, CodingKey {
@@ -48,6 +51,7 @@ struct Trick: Identifiable, Codable, Equatable {
         case learnFirstAbbreviation = "learn_first_abbreviation"
         case difficulty = "difficulty"
         case progress = "progress_list"
+        case hidden = "hidden"
     }
     
     init(from decoder: any Decoder) throws {
@@ -60,6 +64,7 @@ struct Trick: Identifiable, Codable, Equatable {
         self.learnFirstAbbreviation = try container.decode(String.self, forKey: .learnFirstAbbreviation)
         self.difficulty = try container.decode(String.self, forKey: .difficulty)
         self.progress = try container.decode([Int].self, forKey: .progress)
+        self.hidden = try container.decode(Bool.self, forKey: .hidden)
     }
     
     // Defines an encoder for encoding a comment object to the comment document in the database
@@ -73,6 +78,8 @@ struct Trick: Identifiable, Codable, Equatable {
         try container.encode(self.learnFirstAbbreviation, forKey: .learnFirstAbbreviation)
         try container.encode(self.difficulty, forKey: .difficulty)
         try container.encode(self.progress, forKey: .progress)
+        try container.encode(self.hidden, forKey: .hidden)
+
     }
     
     // Equality function

@@ -53,6 +53,13 @@ final class TrickListManager {
             .updateData(data)
     }
     
+    func hideTrick(userId: String, trick: Trick) async throws {
+        try await trickListCollection(userId: userId).document(trick.id)
+            .updateData([
+                Trick.CodingKeys.hidden.rawValue : true
+            ])
+    }
+    
     func deleteTrick(userId: String, trick: Trick) async throws {
         try await trickListCollection(userId: userId).document(trick.id).delete()
         try await TrickListInfoManager.shared.updateTrickListInfo(userId: userId, stance: trick.stance, increment: false)
@@ -100,7 +107,8 @@ final class TrickListManager {
                         learnFirst: jsonTrick.learnFirst,
                         learnFirstAbbreviation: jsonTrick.learnFirstAbbreviation,
                         difficulty: jsonTrick.difficulty,
-                        progress: []
+                        progress: [],
+                        hidden: false
                     )
                     try await uploadTrick(userId: userId, trick: trick)
                 }
@@ -133,7 +141,6 @@ final class TrickListManager {
     func fetchTricksById(userId: String, trickId: String) async throws -> Trick {
         return try await trickListCollection(userId: userId).document(trickId)
             .getDocument(as: Trick.self)
-        
     }
     
     func fetchTricksByName(userId: String, trickNameList: [String]) async throws -> [Trick] {

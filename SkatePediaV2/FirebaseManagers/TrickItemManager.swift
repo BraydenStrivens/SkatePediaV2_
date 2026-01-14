@@ -45,16 +45,6 @@ final class TrickItemManager {
         let videoData = VideoData(videoUrl: videoUrl ?? "NO URL", width: aspectRatio?.width, height: aspectRatio?.height)
 
         let newTrickItem = TrickItem(id: documentId, trickItem: trickItem, videoData: videoData)
-//        let data: [String: Any] = [
-//            TrickItem.CodingKeys.id.rawValue : documentId,
-//            TrickItem.CodingKeys.trickId.rawValue : trickItem.trickId,
-//            TrickItem.CodingKeys.trickName.rawValue : trickItem.trickName,
-//            TrickItem.CodingKeys.dateCreated.rawValue : trickItem.dateCreated,
-//            TrickItem.CodingKeys.stance.rawValue : trickItem.stance,
-//            TrickItem.CodingKeys.notes.rawValue : trickItem.notes,
-//            TrickItem.CodingKeys.progress.rawValue : [trickItem.progress],
-//            TrickItem.CodingKeys.videoData.rawValue : videoData
-//        ]
         
         try document.setData(from: newTrickItem, merge: false)
         try await TrickListManager.shared.updateTrick(userId: userId, trickId: trickItem.trickId, newProgressRating: trickItem.progress, addingNewItem: true)
@@ -63,22 +53,7 @@ final class TrickItemManager {
             // Updates the number of learned tricks if the trick item's progress is 3 and no other 3-rated
             // trick items have been uploaded to the trick item's trick
             try await TrickListInfoManager.shared.updateTrickLearnedInInfo(userId: userId, stance: trickItem.stance, increment: true)
-        } else {
-            // Otherwise updates the number of in progress tricks, this information itself is not
-            // used and is only used to update the view with the snapshot listener.
-            try await TrickListInfoManager.shared.updateInProgressInInfo(userId: userId, increment: false)
-
         }
-        
-//        if trickItem.progress == 3 {
-//            try await TrickListManager.shared.updateTrick(userId: userId, trickId: trickItem.trickId, inProgress: false, learned: true)
-//            try await TrickListInfoManager.shared.updateTrickLearnedInInfo(userId: userId, stance: trickItem.stance, increment: true)
-            
-//        } else {
-//            try await TrickListManager.shared.updateTrick(userId: userId, trickId: trickItem.trickId, inProgress: true, learned: false)
-//            try await TrickListInfoManager.shared.updateInProgressInInfo(userId: userId, increment: true)
-//
-//        }
         
         print("DEBUG: VIDEO SUCCEFULLY UPLOADED TO USER DATABASE")
         return newTrickItem
@@ -161,48 +136,7 @@ final class TrickItemManager {
             // Updates the number of learned tricks if the deleted trick item had a rating 3,
             // and the tricks rating array no longer contains a 3.
             try await TrickListInfoManager.shared.updateTrickLearnedInInfo(userId: userId, stance: trickItem.stance, increment: false)
-        } else {
-            // Otherwise updates the number of in progress tricks, this information itself is not
-            // used and is only used to update the view with the snapshot listener.
-            try await TrickListInfoManager.shared.updateInProgressInInfo(userId: userId, increment: false)
-        }
-//
-//        // Updates trick's progress field based on remaining trick items
-//        let remainingTrickItems = try await getTrickItems(userId: userId, trickId: trickItem.trickId)
-//        
-//        if remainingTrickItems.isEmpty {
-//            // Marks trick as not learned and not in progress if no other trick items exists
-//            try await TrickListManager.shared.updateTrick(userId: userId, trickId: trickItem.trickId, inProgress: false, learned: false)
-//            
-//            // Decrement the number of learned tricks if the lone trick item's progress rating was 3
-//            if trickItem.progress == 3 {
-//                try await TrickListInfoManager.shared.updateTrickLearnedInInfo(userId: userId, stance: trickItem.stance, increment: false)
-//            } else {
-//                // Decrements the number of in progress tricks if the lone trick item's progress was not 3
-//                try await TrickListInfoManager.shared.updateInProgressInInfo(userId: userId, increment: false)
-//            }
-//        } else {
-//            var isLearned = false
-//            var inProgress = false
-//            
-//            // Marks trick as learned if another trick item with rating 3 exists
-//            // Marks trick as in progress if another trick item with rating other than 3 exists
-//            for trickItem in remainingTrickItems {
-//                if trickItem.progress == 3 { isLearned = true } else { inProgress = true }
-//            }
-//            
-//            // Decrement the value of learned tricks if no tricks with a progress rating of 3 are remaining
-//            if !isLearned {
-//                try await TrickListInfoManager.shared.updateTrickLearnedInInfo(userId: userId, stance: trickItem.stance, increment: false)
-//            }
-//            
-//            try await TrickListManager.shared.updateTrick(
-//                userId: userId,
-//                trickId: trickItem.trickId,
-//                inProgress: inProgress,
-//                learned: isLearned
-//            )
-//        }
+        } 
     }
     
     func deleteAllTrickItems(userId: String) async throws {

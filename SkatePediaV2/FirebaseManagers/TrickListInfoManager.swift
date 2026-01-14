@@ -24,7 +24,6 @@ final class TrickListInfoManager {
             ownerId: userId,
             totalTricks: 100,
             learnedTricks: 0,
-            totalInProgressTricks: 0,
             totalRegularTricks: 25,
             learnedRegularTricks: 0,
             totalFakieTricks: 25,
@@ -42,19 +41,6 @@ final class TrickListInfoManager {
             return try await trickListInfoCollection
                 .whereField(TrickListInfo.CodingKeys.ownerId.rawValue, isEqualTo: userId)
                 .getDocument(as: TrickListInfo.self)
-    }
-    
-    func addListenerForTrickListInfo(userId: String) -> AnyPublisher<[TrickListInfo], Error> {
-        let (publisher, listener) = trickListInfoCollection
-            .whereField(TrickListInfo.CodingKeys.ownerId.rawValue, isEqualTo: userId)
-            .addSnapshotListenerToCollection(as: TrickListInfo.self)
-        
-        self.trickListInfoListener = listener
-        return publisher
-    }
-    
-    func removeListener() {
-        self.trickListInfoListener?.remove()
     }
     
     func updateTrickLearnedInInfo(userId: String, stance: String, increment: Bool) async throws {
@@ -86,38 +72,6 @@ final class TrickListInfoManager {
         )
     }
     
-    func updateInProgressInInfo(userId: String, increment: Bool) async throws {
-        let value = increment ? 1.0 : -1.0
-        
-        try await trickListInfoCollection.document(userId).updateData(
-            [ TrickListInfo.CodingKeys.totalInProgressTricks.rawValue : FieldValue.increment(value) ]
-        )
-    }
-    
-//    var data: [String: FieldValue] = [:]
-//    
-//    switch stance {
-//    case Stance.Stances.regular.rawValue:
-//        data = [
-//            TrickListInfo.CodingKeys.totalTricks.rawValue: FieldValue.increment(1.0),
-//            TrickListInfo.CodingKeys.totalRegularTricks.rawValue: trickListInfo.totalRegularTricks + value,
-//        ]
-//    case Stance.Stances.fakie.rawValue:
-//        data = [
-//            TrickListInfo.CodingKeys.totalTricks.rawValue: trickListInfo.totalTricks + value,
-//            TrickListInfo.CodingKeys.totalFakieTricks.rawValue: trickListInfo.totalFakieTricks + value,
-//        ]
-//    case Stance.Stances._switch.rawValue:
-//        data = [
-//            TrickListInfo.CodingKeys.totalTricks.rawValue: trickListInfo.totalTricks + value,
-//            TrickListInfo.CodingKeys.totalSwitchTricks.rawValue: trickListInfo.totalSwitchTricks + value,
-//        ]
-//    case Stance.Stances.nollie.rawValue:
-//        data = [
-//            TrickListInfo.CodingKeys.totalTricks.rawValue: trickListInfo.totalTricks + value,
-//            TrickListInfo.CodingKeys.totalNollieTricks.rawValue: trickListInfo.totalNollieTricks + value,
-//        ]
-//
     func updateTrickListInfo(userId: String, stance: String, increment: Bool) async throws {
         var data: [String: FieldValue] = [:]
         let incrementAmount = increment ? 1.0 : -1.0

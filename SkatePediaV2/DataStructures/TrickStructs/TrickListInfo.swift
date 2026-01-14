@@ -12,7 +12,6 @@ struct TrickListInfo: Identifiable, Codable {
     let ownerId: String
     let totalTricks: Int
     let learnedTricks: Int
-    let totalInProgressTricks: Int
     let totalRegularTricks: Int
     let learnedRegularTricks: Int
     let totalFakieTricks: Int
@@ -32,7 +31,6 @@ struct TrickListInfo: Identifiable, Codable {
         ownerId: String,
         totalTricks: Int,
         learnedTricks: Int,
-        totalInProgressTricks: Int,
         totalRegularTricks: Int,
         learnedRegularTricks: Int,
         totalFakieTricks: Int,
@@ -45,7 +43,6 @@ struct TrickListInfo: Identifiable, Codable {
         self.ownerId = ownerId
         self.totalTricks = totalTricks
         self.learnedTricks = learnedTricks
-        self.totalInProgressTricks = totalInProgressTricks
         self.totalRegularTricks = totalRegularTricks
         self.learnedRegularTricks = learnedRegularTricks
         self.totalFakieTricks = totalFakieTricks
@@ -60,7 +57,6 @@ struct TrickListInfo: Identifiable, Codable {
         case ownerId = "owner_id"
         case totalTricks = "total_tricks"
         case learnedTricks = "learned_tricks"
-        case totalInProgressTricks = "total_in_progress_tricks"
         case totalRegularTricks = "regular_tricks"
         case learnedRegularTricks = "learned_regular_tricks"
         case totalFakieTricks = "fakie_tricks"
@@ -76,7 +72,6 @@ struct TrickListInfo: Identifiable, Codable {
         self.ownerId = try container.decode(String.self, forKey: .ownerId)
         self.totalTricks = try container.decode(Int.self, forKey: .totalTricks)
         self.learnedTricks = try container.decode(Int.self, forKey: .learnedTricks)
-        self.totalInProgressTricks = try container.decode(Int.self, forKey: .totalInProgressTricks)
         self.totalRegularTricks = try container.decode(Int.self, forKey: .totalRegularTricks)
         self.learnedRegularTricks = try container.decode(Int.self, forKey: .learnedRegularTricks)
         self.totalFakieTricks = try container.decode(Int.self, forKey: .totalFakieTricks)
@@ -93,7 +88,6 @@ struct TrickListInfo: Identifiable, Codable {
         try container.encode(self.ownerId, forKey: .ownerId)
         try container.encode(self.totalTricks, forKey: .totalTricks)
         try container.encode(self.learnedTricks, forKey: .learnedTricks)
-        try container.encode(self.totalInProgressTricks, forKey: .totalInProgressTricks)
         try container.encode(self.totalRegularTricks, forKey: .totalRegularTricks)
         try container.encode(self.learnedRegularTricks, forKey: .learnedRegularTricks)
         try container.encode(self.totalFakieTricks, forKey: .totalFakieTricks)
@@ -114,7 +108,6 @@ extension TrickListInfo {
         ownerId: "",
         totalTricks: 0,
         learnedTricks: 0,
-        totalInProgressTricks: 0,
         totalRegularTricks: 0,
         learnedRegularTricks: 0,
         totalFakieTricks: 0,

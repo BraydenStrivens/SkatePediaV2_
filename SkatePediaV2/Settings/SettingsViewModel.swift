@@ -45,7 +45,6 @@ final class SettingsViewModel: ObservableObject {
     ///  - userId: The id of an account in the database.
     func deleteUser(userId: String) async throws {
         self.isDeleting = true
-        TrickListInfoManager.shared.removeListener()
         
         do {
             // Deletes the users account

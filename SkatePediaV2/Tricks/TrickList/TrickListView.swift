@@ -9,9 +9,9 @@ import SwiftUI
 import SlidingTabView
 
 struct TrickListView: View {
-    
     @StateObject var viewModel = TrickListViewModel()
     @State private var tabIndex: Int = 0
+    
     private let tabs = ["Regular", "Fakie", "Switch", "Nollie"]
     
     var body: some View {
@@ -25,8 +25,9 @@ struct TrickListView: View {
                 
             case .success:
                 VStack {
+                    let _ = print(viewModel.trickListInfo)
                     // Displays total tricks learned bar
-                    trickListInfoView(stance: "", trickListInfo: viewModel.trickListInfo)
+                    TrickListInfoView(stance: "", trickListInfo: viewModel.trickListInfo)
                     
                     // Sections for each stance
                     VStack {
@@ -123,19 +124,16 @@ struct TrickListView: View {
     func failedToFetchView(_ error: SPError) -> some View {
         VStack(alignment: .center) {
             Spacer()
+            HStack { Spacer() }
             
-            HStack {
-                Spacer()
-            }
-            
-            Text(error.errorDescription ?? error.localizedDescription)
+            Text(error.errorDescription ?? "Error fetching tricks...")
                 .padding()
                 .multilineTextAlignment(.center)
             
             Button {
                 Task {
                     // Re-fetches the users tricks and trick list info
-                    try await viewModel.loadTrickListView(userId: viewModel.user.userId)
+                    await viewModel.loadTrickListView(userId: viewModel.user.userId)
                 }
             } label: {
                 Text("Try Again")

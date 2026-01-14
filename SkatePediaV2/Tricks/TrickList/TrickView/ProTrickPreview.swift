@@ -16,6 +16,7 @@ struct ProTrickPreview: View {
     
     var body: some View {
         VStack(spacing: 8) {
+            let _ = print(video.id)
             HStack {
                 KFImage(URL(string: video.proData.photoUrl)!)
                     .resizable()

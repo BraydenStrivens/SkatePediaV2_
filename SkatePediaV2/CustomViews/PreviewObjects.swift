@@ -12,7 +12,7 @@ import FirebaseFirestore
 public class PreviewObjects {
     static let user = User(userId: NSUUID().uuidString, email: "preview@gmail.com", username: "Preview User", stance: "Goofy", dateCreated: Date())
     
-    static let notification = Notification(id: NSUUID().uuidString, fromUserId: NSUUID().uuidString, toUserId: NSUUID().uuidString, notificationType: .comment, dateCreated: Timestamp(), seen: false)
+//    static let notification = Notification(id: NSUUID().uuidString, fromUserId: NSUUID().uuidString, toUserId: NSUUID().uuidString, notificationType: .comment, dateCreated: Timestamp(), seen: false)
     
 //    static let message = Message(id: NSUUID().uuidString, fromUserId: NSUUID().uuidString, toUserId: NSUUID().uuidString, content: "Yo what up bro. You got dope tre flips", videoUrl: "", dateCreated: Timestamp())
     
@@ -22,7 +22,7 @@ public class PreviewObjects {
     
 //    static let post = Post(postId: NSUUID().uuidString, ownerId: NSUUID().uuidString, trickId: NSUUID().uuidString, content: "Anyone got any tips?", commentCount: 2, dateCreated: Timestamp(), videoUrl: "")
     
-    static let comment = Comment(commentId: NSUUID().uuidString, postId: NSUUID().uuidString, commenterUid: NSUUID().uuidString, replyCount: 2, isReply: false, baseId: NSUUID().uuidString, content: "Yo u gotta lean back more", dateCreated: Timestamp())
+//    static let comment = Comment(commentId: NSUUID().uuidString, postId: NSUUID().uuidString, commenterUid: NSUUID().uuidString, replyCount: 2, isReply: false, baseId: NSUUID().uuidString, content: "Yo u gotta lean back more", dateCreated: Timestamp())
     
     func fetchCurrentUser() -> User? {
         guard let uid = Auth.auth().currentUser?.uid else { return nil }

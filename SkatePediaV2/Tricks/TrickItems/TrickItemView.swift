@@ -48,7 +48,7 @@ struct TrickItemView: View {
                     viewModel.updateTrickItemState = .idle
                 }
             } message: {
-                Text(viewModel.updateTrickItemState.error?.localizedDescription ?? "")
+                Text(viewModel.updateTrickItemState.error?.errorDescription ?? "")
             }
             .alert("Error Deleting Trick Item",
                    isPresented: .constant(viewModel.deleteTrickItemState.hasError)
@@ -57,7 +57,7 @@ struct TrickItemView: View {
                     viewModel.deleteTrickItemState = .idle
                 }
             } message: {
-                Text(viewModel.deleteTrickItemState.error?.localizedDescription ?? "")
+                Text(viewModel.deleteTrickItemState.error?.errorDescription ?? "")
             }
         }
         
