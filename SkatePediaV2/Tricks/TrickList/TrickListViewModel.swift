@@ -26,8 +26,6 @@ final class TrickListViewModel: ObservableObject {
     @Published var nollieTrickList: [[Trick]] = []
         
     @Published var getTrickListFetchState: RequestState = .idle
-    @Published var hideTrickState: RequestState = .idle
-    @Published var deleteTrickState: RequestState = .idle
     @Published var error: FirestoreError? = nil
     
     init() {
@@ -150,19 +148,36 @@ final class TrickListViewModel: ObservableObject {
     ///
     func hideTrick(userId: String, trick: Trick) async {
         do {
-            hideTrickState = .loading
             try await TrickListManager.shared.hideTrick(userId: userId, trick: trick)
-            hideTrickState = .success
 
             // Re-fetch trick list to update the view
             await loadTrickListView(userId: userId)
             
         } catch let error as FirestoreError {
-            hideTrickState = .failure(.firestore(error))
             self.error = error
             
         } catch {
-            hideTrickState = .failure(.unknown)
+            self.error = FirestoreError.unknown
+        }
+    }
+    
+    /// Resets the 'hidden' attribute to false for each trick in a given stance. Handles errors accordingly.
+    ///
+    /// - Parameters:
+    ///  - userId: The id of the current user.
+    ///  - stance: The stance corresponding to the list of tricks to reset.
+    ///
+    func resetHiddenTricks(userId: String, stance: String) async {
+        do {
+            try await TrickListManager.shared.resetHiddenTricks(userId: userId, stance: stance)
+            
+            // Re-fetch trick list to update the view
+            await loadTrickListView(userId: userId)
+            
+        } catch let error as FirestoreError {
+            self.error = error
+            
+        } catch {
             self.error = FirestoreError.unknown
         }
     }
@@ -176,19 +191,15 @@ final class TrickListViewModel: ObservableObject {
     ///
     func deleteTrick(userId: String, trick: Trick) async {
         do {
-            deleteTrickState = .loading
             try await TrickListManager.shared.deleteTrick(userId: userId, trick: trick)
-            deleteTrickState = .success
             
             // Re-fetch trick list to update the view
             await loadTrickListView(userId: userId)
             
         } catch let error as FirestoreError {
-            deleteTrickState = .failure(.firestore(error))
             self.error = error
             
         } catch {
-            deleteTrickState = .failure(.unknown)
             self.error = FirestoreError.unknown
         }
     }

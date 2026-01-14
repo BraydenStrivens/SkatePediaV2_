@@ -38,10 +38,23 @@ struct trickListViewByStance: View {
                 // Displays total tricks learned by stance
                 TrickListInfoView(stance: stance, trickListInfo: trickListInfo)
                 
-                // Add trick button
                 HStack(alignment: .center) {
+                    // Trick list options menu
+                    Menu {
+                        Button("Reset Hidden Tricks") {
+                            Task {
+                                await trickListViewModel.resetHiddenTricks(userId: userId, stance: stance)
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis")
+                            .tint(.primary)
+                            .padding()
+                    }
+                    
                     Spacer()
                     
+                    // Add trick button
                     Button {
                         showAddTrickView.toggle()
                     } label: {

@@ -60,6 +60,23 @@ final class TrickListManager {
             ])
     }
     
+    func unhideTrick(userId: String, trick: Trick) async throws {
+        guard trick.hidden else { return }
+        print("\(trick.name) was un-hidden")
+        try await trickListCollection(userId: userId).document(trick.id)
+            .updateData([
+                Trick.CodingKeys.hidden.rawValue : false
+            ])
+    }
+    
+    func resetHiddenTricks(userId: String, stance: String) async throws {
+        let tricksByStance = try await fetchTricksByStance(userId: userId, stance: stance)
+        
+        for trick in tricksByStance {
+            try await unhideTrick(userId: userId, trick: trick)
+        }
+    }
+    
     func deleteTrick(userId: String, trick: Trick) async throws {
         try await trickListCollection(userId: userId).document(trick.id).delete()
         try await TrickListInfoManager.shared.updateTrickListInfo(userId: userId, stance: trick.stance, increment: false)
