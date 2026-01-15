@@ -130,6 +130,7 @@ struct trickListViewByStance: View {
             CustomNavLink(
                 destination: TrickView(userId: userId, trick: trick)
                     .customNavBarItems(title: trick.name, subtitle: "", backButtonHidden: false)
+                    .environmentObject(trickListViewModel)
             ) {
                 HStack(alignment: .center, spacing: 12) {
                     Text(trick.name)

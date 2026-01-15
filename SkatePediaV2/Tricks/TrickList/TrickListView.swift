@@ -25,7 +25,6 @@ struct TrickListView: View {
                 
             case .success:
                 VStack {
-                    let _ = print(viewModel.trickListInfo)
                     // Displays total tricks learned bar
                     TrickListInfoView(stance: "", trickListInfo: viewModel.trickListInfo)
                     

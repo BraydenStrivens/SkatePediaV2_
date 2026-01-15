@@ -9,9 +9,11 @@ import SwiftUI
 import AVKit
 
 struct TrickItemView: View {
+    @EnvironmentObject var trickListViewModel: TrickListViewModel
     
     let userId: String
     @State var trickItem: TrickItem
+    let trick: Trick
     @Binding var trickItems: [TrickItem]
     
     @StateObject var viewModel = TrickItemViewModel()
@@ -69,11 +71,14 @@ struct TrickItemView: View {
             if viewModel.edit {
                 Button {
                     Task {
-                        await viewModel.deleteTrickItem(userId: userId, trickItem: trickItem)
+                        await viewModel.deleteTrickItem(userId: userId, trickItem: trickItem, trick: trick)
                         
                         if case .success = viewModel.deleteTrickItemState {
                             self.trickItems.removeAll { aTrickItem in
                                 trickItem.id == aTrickItem.id
+                            }
+                            Task {
+                                await trickListViewModel.loadTrickListView(userId: userId)
                             }
                             dismiss()
                         }

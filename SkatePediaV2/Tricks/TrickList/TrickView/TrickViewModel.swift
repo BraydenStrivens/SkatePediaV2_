@@ -54,18 +54,4 @@ final class TrickViewModel: ObservableObject {
             self.proVideosFetchState = .failure(.unknown)
         }
     }
-    
-    func deleteTrickItem(userId: String, trickItem: TrickItem) async throws {
-        do {
-            self.deleteTrickItemState = .loading
-            try await TrickItemManager.shared.deleteTrickItem(userId: userId, trickItem: trickItem)
-            self.deleteTrickItemState = .success
-            
-        } catch let error as FirestoreError {
-            self.deleteTrickItemState = .failure(.firestore(error))
-            
-        } catch {
-            self.deleteTrickItemState = .failure(.unknown)
-        }
-    }
 }

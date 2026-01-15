@@ -68,6 +68,7 @@ final class AddTrickViewModel: ObservableObject {
                 learnFirstAbbreviation: convertArrayToString(array: self.learnFirstAbbreviation),
                 difficulty: difficulty,
                 progress: [],
+                hasTrickItems: false,
                 hidden: false
             )
             try await TrickListManager.shared.uploadNewTrick(userId: userId, trick: trick, trickListInfo: trickListInfo)

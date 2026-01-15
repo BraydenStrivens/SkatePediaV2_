@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct TrickView: View {
+    @EnvironmentObject var trickListViewModel: TrickListViewModel
     @StateObject var viewModel = TrickViewModel()
     
     let userId: String
@@ -70,7 +71,8 @@ struct TrickView: View {
                     trick: trick,
                     trickItems: $viewModel.trickItems
                 )
-                    .customNavBarItems(title: "Add Trick Item", subtitle: "\(trick.name)", backButtonHidden: false)
+                .environmentObject(trickListViewModel)
+                .customNavBarItems(title: "Add Trick Item", subtitle: "\(trick.name)", backButtonHidden: false)
             ) {
                 Text("Add Trick Item")
                     .font(.body)
@@ -105,7 +107,8 @@ struct TrickView: View {
                         }
                     } else {
                         ForEach(viewModel.trickItems) { trickItem in
-                            TrickItemCell(userId: userId, trickItem: trickItem, trickItems: $viewModel.trickItems)
+                            TrickItemCell(userId: userId, trickItem: trickItem, trick: trick, trickItems: $viewModel.trickItems)
+                                .environmentObject(trickListViewModel)
                         }
                     }
                 case .failure(let error):

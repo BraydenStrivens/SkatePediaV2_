@@ -36,21 +36,29 @@ final class TrickListManager {
         try await TrickListInfoManager.shared.updateTrickListInfo(userId: userId, stance: trick.stance, increment: true)
     }
     
-    func updateTrick(userId: String, trickId: String, newProgressRating: Int, addingNewItem: Bool) async throws {
-        var data: [String : Any]
+    func updateTrick(userId: String, trick: Trick, progressRating: Int, addingNewItem: Bool) async throws {
+        var progressArray = trick.progress
         
         if addingNewItem {
-            data = [
-                Trick.CodingKeys.progress.rawValue : FieldValue.arrayUnion([newProgressRating]),
-            ]
+            progressArray.append(progressRating)
+            
         } else {
-            data = [
-                Trick.CodingKeys.progress.rawValue : FieldValue.arrayRemove([newProgressRating]),
-            ]
+            let indexOfRating = progressArray.firstIndex(of: progressRating)
+            
+            if let indexOfRating = indexOfRating {
+                progressArray.remove(at: indexOfRating)
+            }
         }
         
-        try await trickListCollection(userId: userId).document(trickId)
-            .updateData(data)
+        try await trickListCollection(userId: userId).document(trick.id).updateData(
+            [ Trick.CodingKeys.progress.rawValue : progressArray ]
+        )
+    }
+    
+    func updateTrickHasTrickItemsField(userId: String, trickId: String, hasItems: Bool) async throws {
+        try await trickListCollection(userId: userId).document(trickId).updateData(
+            [ Trick.CodingKeys.hasTrickItems.rawValue : hasItems ]
+        )
     }
     
     func hideTrick(userId: String, trick: Trick) async throws {
@@ -125,6 +133,7 @@ final class TrickListManager {
                         learnFirstAbbreviation: jsonTrick.learnFirstAbbreviation,
                         difficulty: jsonTrick.difficulty,
                         progress: [],
+                        hasTrickItems: false,
                         hidden: false
                     )
                     try await uploadTrick(userId: userId, trick: trick)

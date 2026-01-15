@@ -16,6 +16,8 @@ import Kingfisher
 ///  - userId: The id of an account in the database.
 ///  - trick: A 'JsonTrick' object containing data about the trick the trick item is for.
 struct AddTrickItemView: View {
+    @EnvironmentObject var trickListViewModel: TrickListViewModel
+    
     let userId: String
     let trick: Trick
     @Binding var trickItems: [TrickItem]
@@ -90,6 +92,10 @@ struct AddTrickItemView: View {
                     let newTrickItem = await viewModel.addTrickItem(userId: userId, trick: trick)
                     if let newItem = newTrickItem {
                         self.trickItems.insert(newItem, at: 0)
+                        
+                        Task {
+                            await trickListViewModel.loadTrickListView(userId: userId)
+                        }
                         dismiss()
                     }
                 }

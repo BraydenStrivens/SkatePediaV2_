@@ -88,7 +88,21 @@ final class AddTrickItemViewModel: ObservableObject {
                 videoData: VideoData(videoUrl: "", width: 0, height: 0)
             )
                         
-            let newTrickItem = try await TrickItemManager.shared.uploadTrickItem(userId: userId, videoData: videoData, trickItem: trickItem)
+            let newTrickItem = try await TrickItemManager.shared.uploadTrickItem(
+                userId: userId,
+                videoData: videoData,
+                trickItem: trickItem,
+                trick: trick
+            )
+            
+            // If the trick's progress array is empty, this is the first trick item being uploaded
+            if trick.progress.isEmpty {
+                try await TrickListManager.shared.updateTrickHasTrickItemsField(
+                    userId: userId,
+                    trickId: trick.id,
+                    hasItems: true
+                )
+            }
             
             self.trickItemUploadState = .success
             return newTrickItem

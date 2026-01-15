@@ -48,11 +48,21 @@ final class TrickItemViewModel: ObservableObject {
         }
     }
     
-    func deleteTrickItem(userId: String, trickItem: TrickItem) async {
+    func deleteTrickItem(userId: String, trickItem: TrickItem, trick: Trick) async {
         do {
             self.deleteTrickItemState = .loading
                         
-            try await TrickItemManager.shared.deleteTrickItem(userId: userId, trickItem: trickItem)
+            try await TrickItemManager.shared.deleteTrickItem(userId: userId, trickItem: trickItem, trick: trick)
+            
+            // If the user only has one trick item for a trick, reset the trick's 'hasTrickItems' attribute
+            if trick.progress.count == 1 {
+                try await TrickListManager.shared.updateTrickHasTrickItemsField(
+                    userId: userId,
+                    trickId: trickItem.trickId,
+                    hasItems: false
+                )
+            }
+            
             self.deleteTrickItemState = .success
             self.edit = false
             

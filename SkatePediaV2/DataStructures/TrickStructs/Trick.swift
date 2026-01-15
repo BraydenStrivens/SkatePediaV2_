@@ -18,6 +18,7 @@ struct Trick: Identifiable, Codable, Equatable {
     let learnFirstAbbreviation: String
     let difficulty: String
     let progress: [Int]
+    let hasTrickItems: Bool
     let hidden: Bool
     
     init(
@@ -29,6 +30,7 @@ struct Trick: Identifiable, Codable, Equatable {
         learnFirstAbbreviation: String,
         difficulty: String,
         progress: [Int],
+        hasTrickItems: Bool,
         hidden: Bool
     ) {
         self.id = id
@@ -39,6 +41,7 @@ struct Trick: Identifiable, Codable, Equatable {
         self.learnFirstAbbreviation = learnFirstAbbreviation
         self.difficulty = difficulty
         self.progress = progress
+        self.hasTrickItems = hasTrickItems
         self.hidden = hidden
     }
     
@@ -51,6 +54,7 @@ struct Trick: Identifiable, Codable, Equatable {
         case learnFirstAbbreviation = "learn_first_abbreviation"
         case difficulty = "difficulty"
         case progress = "progress_list"
+        case hasTrickItems = "has_trick_items"
         case hidden = "hidden"
     }
     
@@ -64,6 +68,7 @@ struct Trick: Identifiable, Codable, Equatable {
         self.learnFirstAbbreviation = try container.decode(String.self, forKey: .learnFirstAbbreviation)
         self.difficulty = try container.decode(String.self, forKey: .difficulty)
         self.progress = try container.decode([Int].self, forKey: .progress)
+        self.hasTrickItems = try container.decode(Bool.self, forKey: .hasTrickItems)
         self.hidden = try container.decode(Bool.self, forKey: .hidden)
     }
     
@@ -78,6 +83,7 @@ struct Trick: Identifiable, Codable, Equatable {
         try container.encode(self.learnFirstAbbreviation, forKey: .learnFirstAbbreviation)
         try container.encode(self.difficulty, forKey: .difficulty)
         try container.encode(self.progress, forKey: .progress)
+        try container.encode(self.hasTrickItems, forKey: .hasTrickItems)
         try container.encode(self.hidden, forKey: .hidden)
 
     }

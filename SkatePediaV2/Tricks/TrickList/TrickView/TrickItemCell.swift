@@ -8,16 +8,21 @@
 import SwiftUI
 
 struct TrickItemCell: View {
+    @EnvironmentObject var trickListViewModel: TrickListViewModel
     
     let userId: String
     let trickItem: TrickItem
+    let trick: Trick
     @Binding var trickItems: [TrickItem]
     
     private let starColor = Color(red: 255.0, green: 215.0, blue: 0.0)
     
     var body: some View {
         CustomNavLink(
-            destination: TrickItemView(userId: userId, trickItem: trickItem, trickItems: $trickItems)) {
+            destination:
+                TrickItemView(userId: userId, trickItem: trickItem, trick: trick, trickItems: $trickItems)
+                .environmentObject(trickListViewModel)
+        ) {
                 HStack(alignment: .center, spacing: 12) {
                     VStack(spacing: 5) {
                         Text("Rating:")
