@@ -241,7 +241,7 @@ final class UserManager {
             
             if !userTrickItems.isEmpty {
                 for trickItem in userTrickItems {
-                    try await TrickItemManager.shared.deleteTrickItem(userId: userId, trickItem: trickItem)
+//                    try await TrickItemManager.shared.deleteTrickItem(userId: userId, trickItem: trickItem)
                 }
             }
             print("DELETED USER TRICK LIST")
@@ -255,7 +255,7 @@ final class UserManager {
                         
             if !userTrickList.isEmpty {
                 for trick in userTrickList {
-                    try await TrickListManager.shared.deleteTrickWithoutUpdate(userId: userId, trickId: trick.id)
+//                    try await TrickListManager.shared.deleteTrickWithoutUpdate(userId: userId, trickId: trick.id)
                 }
             }
             
@@ -268,7 +268,7 @@ final class UserManager {
         
         // Deletes user comments from database and storage
         do {
-            try await CommentManager.shared.deleteAllCommentsByUser(userId: userId)
+//            try await CommentManager.shared.deleteAllCommentsByUser(userId: userId)
             
             print("DELETED USER COMMENTS")
         } catch {

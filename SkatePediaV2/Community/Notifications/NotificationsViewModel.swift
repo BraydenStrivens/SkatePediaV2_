@@ -35,25 +35,25 @@ final class NotificationsViewModel: ObservableObject {
     
     @MainActor
     func fetchDataForNotifications() async throws {
-        for index in 0 ..< currentBatch.count {
-            let notification = currentBatch[index]
-            print("BEFORE")
-            self.currentBatch[index].fromUser = try await UserManager.shared.fetchUser(withUid: notification.fromUserId)
-            print("AFTER")
-            if let fromPostId = notification.fromPostId, let fromCommentId = notification.fromCommentId {
-                self.currentBatch[index].fromPost = try await PostManager.shared.fetchPost(postId: fromPostId)
-                self.currentBatch[index].fromComment = try await CommentManager.shared.getComment(commentId: fromCommentId)
-                
-            } else if let fromCommentId = notification.fromCommentId, let toCommentId = notification.toCommentId {
-                self.currentBatch[index].fromComment = try await CommentManager.shared.getComment(commentId: fromCommentId)
-                self.currentBatch[index].toComment = try await CommentManager.shared.getComment(commentId: toCommentId)
-                
-            } else if let messageId = notification.messageId {
-                // TODO
-            }
-            
-            if self.currentBatch[index].fromUser != nil { self.notifications.append(currentBatch[index]) }
-        }
+//        for index in 0 ..< currentBatch.count {
+//            let notification = currentBatch[index]
+//            print("BEFORE")
+//            self.currentBatch[index].fromUser = try await UserManager.shared.fetchUser(withUid: notification.fromUserId)
+//            print("AFTER")
+//            if let fromPostId = notification.fromPostId, let fromCommentId = notification.fromCommentId {
+//                self.currentBatch[index].fromPost = try await PostManager.shared.fetchPost(postId: fromPostId)
+//                self.currentBatch[index].fromComment = try await CommentManager.shared.getComment(commentId: fromCommentId)
+//                
+//            } else if let fromCommentId = notification.fromCommentId, let toCommentId = notification.toCommentId {
+//                self.currentBatch[index].fromComment = try await CommentManager.shared.getComment(commentId: fromCommentId)
+//                self.currentBatch[index].toComment = try await CommentManager.shared.getComment(commentId: toCommentId)
+//                
+//            } else if let messageId = notification.messageId {
+//                // TODO
+//            }
+//            
+//            if self.currentBatch[index].fromUser != nil { self.notifications.append(currentBatch[index]) }
+//        }
     }
     
     func markNotificationAsSeen(notificationId: String) async throws {

@@ -8,99 +8,97 @@
 import SwiftUI
 import FirebaseAuth
 
+/// Struct that displays a reply comment for a base comment. This includes the username of the commenter being replied to, the
+/// commenter's username and profile photo, the content of the comment, the time elapsed since upload, a reply button that sets
+/// the CommunityViewModel's replyToReply variable, Contains functionality where if a comment is pressed and held, an option
+/// to delete the comment is displayed.
+///
+/// - Parameters:
+///  - reply: A "Reply" object representing a reply to a base comment.
+///  - postCommentCount: A binding to @State variable holding the post's comment count.
+///
 struct ReplyCommentCell: View {
     @EnvironmentObject var commentsViewModel: CommentsViewModel
     
-    let replyComment: Comment
+    let reply: Reply
     @Binding var postCommentCount: Int
     
     var body: some View {
-        VStack {
-            HStack(alignment: .center, spacing: 10) {
-                // Commenter's profile picture
-                CircularProfileImageView(photoUrl: replyComment.userData.photoUrl, size: .large)
-                
-                // Commenter's username, content, date upload, reply button
-                replyCommentBody
-                
-                // Comment options, only available if the current user is the owner of the comment
-                replyCommentOptions
-                
-                Spacer()
-            }
+        HStack(alignment: .top, spacing: 15) {
+            // Commenter's profile picture
+            CircularProfileImageView(photoUrl: reply.userData.photoUrl, size: .large)
             
-            Divider()
+            replyCommentBody
+            
+            Spacer()
+        }
+        // Opens an option menu when the reply cell is pressed and held
+        .contextMenu {
+            // Only shows options if the reply comment or the post belongs to the current user
+            if let currentUid = Auth.auth().currentUser?.uid,
+               currentUid == reply.userData.userId {
+                replyCommentOptions
+            }
         }
     }
     
+    /// Displays the commenter's username, time since upload, comment content text, a button to reply to the comment,
+    /// and a button to toggle the base comment's replies.
+    ///
     var replyCommentBody: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(replyComment.userData.username)
-                .font(.headline)
-            
-            // Adds username of the user being replied to
-            if let repliee = replyComment.replyingToUsername {
-                HStack {
-                    Text("@\(repliee) \(replyComment.content)")
-                        .font(.subheadline)
-                }
-            } else {
-                Text(replyComment.content)
-                    .font(.subheadline)
+            HStack(spacing: 15) {
+                Text(reply.userData.username)
+                    .font(.headline)
+                
+                Text(reply.dateCreated.timeAgoString())
+                    .foregroundStyle(Color(uiColor: .systemGray2))
+                    .font(.caption)
             }
             
+            // Adds username of the user being replied to in from of the content
+            Text("@\(reply.commentData.ownerUsername) \(reply.content)")
+                .font(.subheadline)
+ 
             HStack(spacing: 10) {
-                Text(replyComment.dateCreated.timeAgoString())
-                
-                // Sets the comment to be replied to
+                // Sets the reply to be replied to
                 Button {
-                    commentsViewModel.replyToComment = replyComment
-                    commentsViewModel.isReply = true
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        commentsViewModel.replyToComment = nil
+                        commentsViewModel.replyToReply = reply
+                        commentsViewModel.isReply = true
+                    }
                 } label: {
                     Text("Reply")
                 }
                 
                 Spacer()
             }
+            .foregroundStyle(.gray)
             .font(.caption)
         }
-        .foregroundColor(.primary)
+        .foregroundStyle(.primary)
     }
     
     var replyCommentOptions: some View {
         VStack {
-            if replyComment.userData.userId == Auth.auth().currentUser?.uid {
-                Spacer()
-                
-                Menu {
-                    // Delete comment reply button
-                    Button(role: .destructive) {
-                        // Deletes comment from database and decrements the post's reply count
-                        Task {
-                            await commentsViewModel.deleteComment(comment: replyComment)
-                            
-                            // If a the deleted comment has replies, its reply count is also subtracted
-                            // from the post comment count
-                            postCommentCount -= 1 + replyComment.replyCount
-                            
-                            withAnimation(.easeInOut(duration: 0.5)) {
-                                // Removes the deleted reply from the array of replies for it's baseId
-                                commentsViewModel.repliesByBaseId[replyComment.baseId]?.removeAll { comment in
-                                    replyComment.commentId == comment.commentId
-                                }
-                            }
+            Button(role: .destructive) {
+                // Deletes comment from database and decrements the post's reply count
+                Task {
+                    await commentsViewModel.deleteReply(reply: reply)
+                    postCommentCount -= 1
+                    
+                    withAnimation(.easeInOut(duration: 0.5)) {
+                        // Removes the deleted reply from the array of replies for it's baseId in the
+                        // repliesByBaseId dictionary
+                        commentsViewModel.repliesByBaseId[reply.commentData.baseCommentId]?.removeAll { replyX in
+                            reply.replyId == replyX.replyId
                         }
-                    } label: {
-                        Text("Delete Comment")
-                        Image(systemName: "trash")
                     }
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .foregroundColor(.primary)
                 }
-                .frame(width: 20, height: 20)
-                
-                Spacer()
+            } label: {
+                Text("Delete Reply")
+                Image(systemName: "trash")
             }
         }
     }

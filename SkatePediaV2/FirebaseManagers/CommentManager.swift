@@ -8,227 +8,307 @@
 import Foundation
 import SwiftUI
 import FirebaseFirestore
-import Combine
 
+/// Contains functions for fetching, uploading, updating, and deleting comments and replies on a post.
+/// 
 final class CommentManager {
     static let shared = CommentManager()
     private init() { }
     
-    private let commentsCollection = Firestore.firestore().collection("comments")
-
-    private func commentDocument(commentId: String) -> DocumentReference {
-        commentsCollection.document(commentId)
+    /// Path to the comments sub-collection for a post.
+    ///
+    /// - Parameters:
+    ///  - postId: The ID of a post document in firestore.
+    ///
+    /// - Returns: A reference to the posts collection
+    ///
+    private func commentsCollection(postId: String) -> CollectionReference {
+        Firestore.firestore().collection("posts").document(postId).collection("comments")
     }
-
-    /// Adds a comment to a post.
-    /// Checks if comment is a base comment or a reply comment.
-    /// A base comment's 'baseId' property is the post's ID.
-    /// A reply comment's 'baseId' property is the 'baseId' of the comment it is replying to.
+    /// Path to a comment document within a post's comments sub-collection.
+    ///
+    /// - Parameters:
+    ///  - postId: The ID of a post document in firestore.
+    ///  - commentId: The ID of a comment document in a post's comments sub-collection.
+    ///
+    /// - Returns: A reference to a post document in the posts collection.
+    ///
+    private func commentDocument(postId: String, commentId: String) -> DocumentReference {
+        commentsCollection(postId: postId).document(commentId)
+    }
+    /// Path to the replies sub-collection within a post's comment document.
+    ///
+    /// - Parameters:
+    ///  - postId: The ID of a post document in firestore.
+    ///  - commentId: The ID of a comment document for which the replies collection belongs.
+    ///
+    /// - Returns: A reference to the replies sub-collection within a base comment's document.
+    ///
+    private func repliesCollection(postId: String, commentId: String) -> CollectionReference {
+        commentsCollection(postId: postId).document(commentId).collection("replies")
+    }
+    /// Path to a reply document within a comment's replies sub-collection.
+    ///
+    /// - Parameters:
+    ///  - postId: The ID of a post document in firestore.
+    ///  - commentId: The ID of a comment document in a post's comments sub-collection.
+    ///  - replyId: The ID of a reply document in a comment's replies sub-collection.
+    ///
+    /// - Returns: A reference to a reply document within a comment's replies sub-collection.
+    ///
+    private func replyDocument(postId: String, commentId: String, replyId: String) -> DocumentReference {
+        repliesCollection(postId: postId, commentId: commentId).document(replyId)
+    }
+    
+    /// Uploads a base comment to a post's comments sub-collection. Increments the post's comment count.
     ///
     /// - Parameters:
     ///  - comment: A 'Comment' object containing information about the comment being uploaded.
     ///
-    /// - Returns: The newly uploaded comment
+    /// - Returns: The newly uploaded comment.
+    ///
+    /// - Throws: An error returned by firebase that specifies what went wrong.
+    ///
     func uploadComment(comment: Comment) async throws -> Comment {
-        var commentToUpload: Comment
-        
-        // Creates new document and gets its ID
-        let document = commentsCollection.document()
+        let document = commentsCollection(postId: comment.postData.postId).document()
         let documentId = document.documentID
         
-        let commentIsReply = comment.replyToCommentId != nil
+        let commentToUpload = Comment(documentId: documentId, comment: comment)
         
-        if commentIsReply {
-            // If the comment is a reply its 'baseId' is the 'baseId' of the comment its replying to
-            commentToUpload = Comment(commentId: documentId, baseId: comment.baseId, comment: comment)
-            // Increments the reply count on the commentToUpload's base comment
-            try await updateCommentReplyCount(comment: commentToUpload, increment: true)
-            
-        } else {
-            // If the comment is not a reply its 'baseId' is its own comment ID
-            commentToUpload = Comment(commentId: documentId, baseId: documentId, comment: comment)
-        }
+        try document.setData(from: commentToUpload, merge: false)
+        try await PostManager.shared.updatePostCommentCount(postId: comment.postData.postId, increment: true)
         
-        try await document.setData(commentToUpload.asDictionary(), merge: false)
-        try await PostManager.shared.updatePostCommentCount(postId: comment.postId, increment: true)
-        
-        print("DEBUG: COMMENT SUCCESSFULLY ADDED TO POST")
         return commentToUpload
     }
     
-    /// Fetches a singular comment given a comment ID
+    /// Uploads a reply to a comment's replies sub-collection. Increments the post's comment count and the base comment's reply count.
     ///
     /// - Parameters:
-    ///     - commentId: The document ID of a comment in the comments collection
+    ///  - reply: A 'Reply' object containing information about the reply being uploaded.
     ///
-    /// - Returns: The fetched comment if found otherwise nil
-    func getComment(commentId: String) async throws -> Comment? {
-        do {
-            return try await commentsCollection.document(commentId)
-                .getDocument(as: Comment.self)
-        } catch {
-            print("DEBUG: Couldn't fetch comment: \(error)")
-            return nil
-        }
+    /// - Returns: The newly uploaded reply.
+    ///
+    /// - Throws: An error returned by firebase that specifies what went wrong.
+    ///
+    func uploadReply(reply: Reply) async throws -> Reply {
+        let document = repliesCollection(postId: reply.postData.postId, commentId: reply.commentData.baseCommentId)
+            .document()
+        let documentId = document.documentID
+        
+        let replyToUpload = Reply(
+            documentId: documentId,
+            reply: reply
+        )
+        
+        try document.setData(from: replyToUpload, merge: false)
+        try await updateCommentReplyCount(
+            postId: reply.postData.postId, commentId: reply.commentData.baseCommentId, increment: true
+        )
+        try await PostManager.shared.updatePostCommentCount(postId: reply.postData.postId, increment: true)
+        
+        return replyToUpload
+    }
+    
+    /// Fetches a single base comment given a post ID and comment ID.
+    ///
+    /// - Parameters:
+    ///  - postId: The ID of a post in the 'posts' collection
+    ///  - commentId: The ID of a comment in the post's comments sub-collection.
+    ///
+    /// - Returns: The fetched document decoded as a 'Comment' object.
+    ///
+    /// - Throws: An error returned by firebase that specifies what went wrong.
+    ///
+    func getComment(postId: String, commentId: String) async throws -> Comment {
+        return try await commentsCollection(postId: postId).document(commentId)
+            .getDocument(as: Comment.self)
+    }
+    
+    /// Fetches a single reply given a post ID, comment ID, and reply ID.
+    ///
+    /// - Parameters:
+    ///  - postId: The ID of a post in the 'posts' collection
+    ///  - commentId: The ID of a comment in the post's comments sub-collection.
+    ///  - replyId: The ID of a reply in the comment's replies sub-collection.
+    ///
+    /// - Returns: The fetched document decoded as a 'Reply' object.
+    ///
+    /// - Throws: An error returned by firebase that specifies what went wrong.
+    ///
+    func getReply(postId: String, commentId: String, replyId: String) async throws -> Reply {
+        return try await repliesCollection(postId: postId, commentId: commentId).document(replyId)
+            .getDocument(as: Reply.self)
     }
 
-    /// Fetches 10 base comments starting from the last fetched document from the database.
-    /// A base comment's 'isReply' field is false.
+    /// Fetches x number of base comments starting from the last fetched document from the database.
     ///
     /// - Parameters:
-    ///  - postId: The id of the post to get comments from.
+    ///  - postId: The ID of the post to get comments from.
     ///  - count: The maximum number of comments to fetch.
-    ///  - lastDocument: The last fetched document.
+    ///  - lastDocument: The last fetched document if it exists.
     ///
     /// - Returns: A tuple containing an array of the fetched comment and the last fetched document.
+    ///
+    /// - Throws: An error returned by firebase that specifies what went wrong.
+    ///
     func getComments(postId: String, count: Int, lastDocument: DocumentSnapshot?) async throws -> (item: [Comment], lastDocument: DocumentSnapshot?) {
-        
-        let query: Query = commentsCollection
-            .whereField(Comment.CodingKeys.postId.rawValue, isEqualTo: postId)
-            .whereField(Comment.CodingKeys.isReply.rawValue, isEqualTo: false)
+        return try await commentsCollection(postId: postId)
             .order(by: Comment.CodingKeys.dateCreated.rawValue, descending: false)
-        
-        return try await query
             .limit(to: count)
             .startOptionally(afterDocument: lastDocument)
             .getDocumentsWithSnapshot(as: Comment.self)
-        
     }
 
-    /// Fetches 10 reply comments starting from the last fetched document from the database.
-    /// A reply comment's 'baseId' is the 'baseId' of the comment it is replying to.
+    /// Fetches x number of replies starting from the last fetched document from the database.
     ///
     /// - Parameters:
-    ///  - comment: The comment object we are fetching replies for.
+    ///  - comment: The base comment object for which replies are being fetched for.
     ///  - count: The maximum number of replies to fetch.
-    ///  - lastDocument: The last fetched document.
+    ///  - lastDocument: The last fetched document if it exists.
     ///
     /// - Returns: A tuple containing an array of the fetched replies and the last fetched document.
-    func getCommentReplies(comment: Comment, count: Int, lastDocument: DocumentSnapshot?) async throws -> (item: [Comment], lastDocument: DocumentSnapshot?) {
-        let query: Query = commentsCollection
-            .whereField(Comment.CodingKeys.baseId.rawValue, isEqualTo: comment.commentId)
-            .whereField(Comment.CodingKeys.commentId.rawValue, isNotEqualTo: comment.commentId)
+    ///
+    /// - Throws: An error returned by firebase that specifies what went wrong.
+    ///
+    func getCommentReplies(comment: Comment, count: Int, lastDocument: DocumentSnapshot?) async throws -> (item: [Reply], lastDocument: DocumentSnapshot?) {
+        return try await repliesCollection(postId: comment.postData.postId, commentId: comment.commentId)
             .order(by: Comment.CodingKeys.dateCreated.rawValue, descending: true)
-        
-        return try await query
             .limit(to: count)
             .startOptionally(afterDocument: lastDocument)
-            .getDocumentsWithSnapshot(as: Comment.self)
+            .getDocumentsWithSnapshot(as: Reply.self)
     }
     
-    func getCommentReplies2(comment: Comment) async throws -> [Comment] {
-        let query: Query = commentsCollection
-            .whereField(Comment.CodingKeys.baseId.rawValue, isEqualTo: comment.commentId)
-            .whereField(Comment.CodingKeys.commentId.rawValue, isNotEqualTo: comment.commentId)
-            .order(by: Comment.CodingKeys.dateCreated.rawValue, descending: true)
-        
-        return try await query
-            .getDocuments(as: Comment.self)
-    }
-    
-    /// Updates the reply count of a comment by 1 by default or by a passed value.
-    /// Only updates the reply count for base comments because of the way the comments are displayed in the comments section.
+    /// Fetches all replies for a base comment.
     ///
     /// - Parameters:
-    ///    - comment: A comment object whose base comment will have its reply count updated
-    ///    - increment: Whether to increase or decrease the reply count
-    ///    - value: The value to increase or decrease the reply count by (1 by default)
-    func updateCommentReplyCount(comment: Comment, increment: Bool, value: Double = 1.0) async throws {
+    ///  - baseCommentId: The ID of the comment for which replies are being fetched.
+    ///  - postId: The ID of the post for which the base comment belongs to.
+    ///
+    ///  - Returns: An array of fetched replies.
+    ///
+    /// - Throws: An error returned by firebase that specifies what went wrong.
+    ///
+    func getAllCommentReplies(baseCommentId: String, postId: String) async throws -> [Reply] {
+        return try await repliesCollection(postId: postId, commentId: baseCommentId)
+            .order(by: Comment.CodingKeys.dateCreated.rawValue, descending: true)
+            .getDocuments(as: Reply.self)
+    }
+    
+    /// Updates the reply count of a base comment by 1 by default or by a passed value.
+    ///
+    /// - Parameters:
+    ///    - postId: The ID of the post for which the base comment belongs to.
+    ///    - commentId: The ID of the base comment whose reply count is being updated.
+    ///    - increment: Whether to increase or decrease the reply count.
+    ///    - value: The value to increase or decrease the reply count by (1 by default).
+    ///
+    /// - Throws: An error returned by firebase that specifies what went wrong.
+    ///
+    func updateCommentReplyCount(postId: String, commentId: String, increment: Bool, value: Double = 1.0) async throws {
+        // Inverts the increment value if we are decrementing
         let incrementValue = increment ? value : -value
 
-        try await commentDocument(commentId: comment.baseId)
+        try await commentDocument(postId: postId, commentId: commentId)
             .updateData(
                 [ Comment.CodingKeys.replyCount.rawValue: FieldValue.increment(incrementValue)]
             )
     }
     
-    /// Deletes comment from the comments collection.
-    /// If the comment is a base comment, all other comments whose 'baseId' match this comment are also deleted.
-    /// If the comment is a reply comment, all other comments whose 'replyToCommentId' match this comment are also deleted.
-    /// Updates the post's comment count and its base comment's reply count if it is a reply.
+    /// Deletes a base comment and all of its replies from a post's comments sub-collection.
     ///
     /// - Parameters:
-    ///  - comment: A comment object representing the comment to be deleted.
-    func deleteComment(comment: Comment) {
-        var numberOfCommentsDeleted = 1.0
+    ///  - comment: A 'Comment' object containing information about the base comment being deleted.
+    ///
+    /// - Throws: An error returned by firebase that specifies what went wrong.
+    ///
+    func deleteComment(comment: Comment) async throws {
+        var totalDeletes: Double = 0.0
         
-        // Deletes comment
-        commentDocument(commentId: comment.commentId).delete()
-
-        Task {
-            // Checks if comment is reply, and updates the base comment's reply count
-            if comment.replyToCommentId != nil {
-                try await updateCommentReplyCount(comment: comment, increment: false)
-            }
-            // Checks if comment has replies, and deletes them
-            if comment.replyCount > 0 {
-                numberOfCommentsDeleted = try await deleteCommentReplies(comment: comment)
-            }
-            // Updates the post's comment count based off the calculated number of comments deleted
-            try await PostManager.shared.updatePostCommentCount(postId: comment.postId, increment: false, value: numberOfCommentsDeleted)
+        if comment.replyCount > 0 {
+            totalDeletes += try await deleteCommentReplies(comment: comment)
         }
+        try await commentDocument(
+            postId: comment.postData.postId,
+            commentId: comment.commentId
+        )
+        .delete()
+        totalDeletes += 1
+        
+        // Updates the post's comment count based off the calculated number of comments deleted
+        try await PostManager.shared.updatePostCommentCount(
+            postId: comment.postData.postId,
+            increment: false,
+            value: totalDeletes
+        )
     }
     
-    /// Searches for and deletes all replies for a comment.
-    /// If the comment is a base comment, all other comments whose 'baseId' match this comment are also deleted.
-    /// If the comment is a reply comment, all other comments whose 'replyToCommentId' match this comment are also deleted.
-    /// Counts the total number of replies deleted.
+    /// Deletes a reply from a comment's replies sub-collection. A reply's replies are not deleted.
     ///
     /// - Parameters:
-    ///  - comment: A comment object representing the comment to be deleted.
+    ///  - reply: A 'Reply' object containing information about the reply being deleted.
     ///
-    ///  - Returns: The calculated number of replies deleted.
+    /// - Throws: An error returned by firebase that specifies what went wrong.
+    ///
+    func deleteReply(reply: Reply) async throws {
+        // Delete reply
+        try await replyDocument(
+            postId: reply.postData.postId, commentId: reply.commentData.baseCommentId, replyId: reply.replyId
+        )
+        .delete()
+        
+        // Decrement it's base comment's reply count by 1
+        try await updateCommentReplyCount(
+            postId: reply.postData.postId, commentId: reply.commentData.baseCommentId, increment: false
+        )
+        // Decrement it's post's comment count by 1
+        try await PostManager.shared.updatePostCommentCount(postId: reply.postData.postId, increment: false)
+    }
+    
+    /// Fetches all the replies for a base comment and deletes each reply from the base comment's replies sub-collection.
+    ///
+    /// - Parameters:
+    ///  - comment: A 'Comment' object containing information about a base comment whose replies are to be deleted.
+    ///
+    ///  - Returns: The number of replies deleted.
+    ///
+    ///  - Throws: An error returned by firebase that specifies what went wrong.
+    ///
     func deleteCommentReplies(comment: Comment) async throws -> Double {
-        var numberOfRepliesDeleted = 0.0
-        var snapshot: [Comment]
+        var deletedReplyCount: Double = 0.0
         
-        // If the comment is not a reply to another comment
-        if comment.commentId == comment.baseId {
-            // Deletes all the comment's whose 'base comment' is the comment being deleted
-            snapshot = try await commentsCollection
-                .whereField(Comment.CodingKeys.baseId.rawValue, isEqualTo: comment.commentId)
-                .getDocuments(as: Comment.self)
-        } else {
-            // Deletes all the comments whose 'reply to' comment is the comment being deleted
-            snapshot = try await commentsCollection
-                .whereField(Comment.CodingKeys.replyToCommentId.rawValue, isEqualTo: comment.commentId)
-                .getDocuments(as: Comment.self)
+        let snapshot = try await repliesCollection(postId: comment.postData.postId, commentId: comment.commentId)
+            .getDocuments(as: Reply.self)
+
+        for reply in snapshot {
+            try await replyDocument(
+                postId: reply.postData.postId,
+                commentId: reply.commentData.baseCommentId,
+                replyId: reply.replyId
+            )
+            .delete()
+            
+            deletedReplyCount += 1
         }
-        
-        // Deletes comments and calculates the total number of deletions
-        for comment in snapshot {
-            numberOfRepliesDeleted += 1.0
-            deleteComment(comment: comment)
-        }
-        
-        return numberOfRepliesDeleted
+        return deletedReplyCount
     }
     
-    /// Deletes all base comments and reply comments for a given post.
+    /// Deletes all base comments and reply comments for a given post. Used before deleting a post's document when the user deletes one of their posts.
     ///
     /// - Parameters:
     ///  - postId: The ID of a post in the database.
-    func deleteAllCommentsForPost(postId: String) async throws {
-        let snapshot = try await commentsCollection
-            .whereField(Comment.CodingKeys.postId.rawValue, isEqualTo: postId)
-            .getDocuments()
-        
-        for document in snapshot.documents {
-            try await document.reference.delete()
-        }
-    }
-    
-    /// Deletes all comments made by a user
     ///
-    /// - Parameters:
-    ///  - userId: The ID of the user whose comments are to be deleted
-    func deleteAllCommentsByUser(userId: String) async throws {
-        let snapshot = try await commentsCollection
-            .whereField(Comment.CodingKeys.commenterUid.rawValue, isEqualTo: userId)
+    /// - Throws: An error returned by firebase that specifies what went wrong.
+    /// 
+    func deleteAllCommentsForPost(postId: String) async throws {
+        let comments = try await commentsCollection(postId: postId)
             .getDocuments(as: Comment.self)
         
-        for comment in snapshot {
-            deleteComment(comment: comment)
+        for comment in comments {
+            if comment.replyCount > 0 {
+                let _ = try await deleteCommentReplies(comment: comment)
+            }
+            
+            try await deleteComment(comment: comment)
         }
     }
 }
