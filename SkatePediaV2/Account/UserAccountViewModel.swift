@@ -108,9 +108,6 @@ final class UserAccountViewModel: ObservableObject {
             
             self.userPosts.append(contentsOf: newPosts)
             
-            // Fetches trick data for the post and user data from the owner of each post.
-            try await fetchDataForPosts()
-            
             lastPostIndex += newPosts.count
             if let lastDocument { self.lastDocument = lastDocument }
             
@@ -123,18 +120,6 @@ final class UserAccountViewModel: ObservableObject {
             getUserPostsFetchState = .failure(.unknown)
         }
         
-    }
-    
-    ///
-    /// Fetches data for the trick of a post, and user data for the owner of a post.
-    ///
-    func fetchDataForPosts() async throws {
-        for index in lastPostIndex ..< userPosts.count {
-            let post = userPosts[index]
-            
-            userPosts[index].user = try await UserManager.shared.fetchUser(withUid: post.ownerId)
-            userPosts[index].trick = try await TrickListManager.shared.fetchTricksById(userId: post.ownerId, trickId: post.trickId)
-        }
     }
     
     ///

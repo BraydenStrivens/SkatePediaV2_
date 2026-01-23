@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct VideoData: Codable {
+struct VideoData: Codable, Hashable {
     let videoUrl: String
     let width: CGFloat?
     let height: CGFloat?

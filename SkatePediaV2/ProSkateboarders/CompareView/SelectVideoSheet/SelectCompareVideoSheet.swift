@@ -166,7 +166,7 @@ struct SelectCompareVideoSheet: View {
             if viewModel.trickItems.isEmpty {
                 ContentUnavailableView(
                     "Unavailable",
-                    image: "list.bullet.rectangle.portrait",
+                    systemImage: "list.bullet.rectangle.portrait",
                     description: Text("You have not uploaded any trick items for this trick...")
                 )
             } else {
@@ -201,7 +201,7 @@ struct SelectCompareVideoSheet: View {
             if viewModel.proVideos.isEmpty {
                 ContentUnavailableView(
                     "Unavailable",
-                    image: "list.bullet.rectangle.portrait",
+                    systemImage: "list.bullet.rectangle.portrait",
                     description: Text("Pro videos are unavailable for this trick...")
                 )
             } else {

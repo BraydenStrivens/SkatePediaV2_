@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct TrickItem: Codable, Identifiable, Equatable {
+struct TrickItem: Codable, Identifiable, Equatable, Hashable {
     let id: String
     let trickId: String
     let trickName: String
@@ -16,8 +16,9 @@ struct TrickItem: Codable, Identifiable, Equatable {
     var notes: String
     var progress: Int
     var videoData: VideoData
+    var postId: String?
     
-    init(id: String, trickItem: TrickItem, videoData: VideoData) {
+    init(id: String, trickItem: TrickItem, videoData: VideoData, postId: String? = nil) {
         self.id = id
         self.trickId = trickItem.trickId
         self.trickName = trickItem.trickName
@@ -26,6 +27,7 @@ struct TrickItem: Codable, Identifiable, Equatable {
         self.notes = trickItem.notes
         self.progress = trickItem.progress
         self.videoData = videoData
+        self.postId = postId
     }
     
     init(
@@ -36,8 +38,8 @@ struct TrickItem: Codable, Identifiable, Equatable {
         stance: String,
         notes: String,
         progress: Int,
-        videoData: VideoData
-        
+        videoData: VideoData,
+        postId: String? = nil
     ) {
         self.id = id
         self.trickId = trickId
@@ -47,6 +49,7 @@ struct TrickItem: Codable, Identifiable, Equatable {
         self.notes = notes
         self.progress = progress
         self.videoData = videoData
+        self.postId = postId
     }
     
     /// Defines naming conventions for the trick items document's fields in the database.
@@ -59,6 +62,7 @@ struct TrickItem: Codable, Identifiable, Equatable {
         case notes = "notes"
         case progress = "progress"
         case videoData = "video_data"
+        case postId = "post_id"
     }
     
     // Defines a decoder to decode 'trick_item' documents into 'TrickItem' objects.
@@ -72,6 +76,7 @@ struct TrickItem: Codable, Identifiable, Equatable {
         self.notes = try container.decode(String.self, forKey: .notes)
         self.progress = try container.decode(Int.self, forKey: .progress)
         self.videoData = try container.decode(VideoData.self, forKey: .videoData)
+        self.postId = try container.decodeIfPresent(String.self, forKey: .postId)
     }
     
     // Defines an encoder to encode a 'TrickItem' object into a 'trick_item' document.
@@ -85,6 +90,7 @@ struct TrickItem: Codable, Identifiable, Equatable {
         try container.encode(self.notes, forKey: .notes)
         try container.encode(self.progress, forKey: .progress)
         try container.encode(self.videoData, forKey: .videoData)
+        try container.encodeIfPresent(self.postId, forKey: .postId)
     }
     
     /// Equality function for trick item objects.

@@ -9,7 +9,7 @@ import Foundation
 
 
 
-struct Trick: Identifiable, Codable, Equatable {
+struct Trick: Identifiable, Codable, Equatable, Hashable {
     let id: String
     let name: String
     let stance: String

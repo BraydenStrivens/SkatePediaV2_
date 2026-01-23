@@ -154,7 +154,7 @@ struct UserAccountView: View {
                         .frame(width: 80, height: 80)
                         .clipShape(Circle())
                 } else {
-                    CircularProfileImageView(user: user, size: .xLarge)
+                    CircularProfileImageView(photoUrl: user.photoUrl, size: .xLarge)
                 }
             }
             .overlay {
@@ -268,7 +268,7 @@ struct UserAccountView: View {
         case .failure(let firestoreError):
             ContentUnavailableView(
                 "Error",
-                image: "exclamationmark.triangle",
+                systemImage: "exclamationmark.triangle",
                 description: Text(
                     firestoreError.errorDescription ?? "Something went wrong..."
                 )
@@ -293,10 +293,18 @@ struct UserAccountView: View {
                     Text("\(user.username) has no posts.")
                 })
             } else {
-                UserPostsPreviewView(viewModel: viewModel, user: user)
+                UserPostsPreviewView(user: user)
+                    .environmentObject(viewModel)
+                
             }
         case .failure(let firestoreError):
-            VStack { Text("ERROR GETTING POSTS: \(firestoreError.errorDescription ?? "")") }
+            ContentUnavailableView(
+                "Error Getting Posts",
+                systemImage: "exclamationmark.triangle",
+                description: Text(
+                    firestoreError.errorDescription ?? "Something went wrong..."
+                )
+            )
         }
     }
 }

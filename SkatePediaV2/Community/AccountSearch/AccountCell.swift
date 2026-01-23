@@ -21,7 +21,7 @@ struct AccountCell: View {
         CustomNavLink(
             destination: UserAccountView(user: user)) {
                 HStack(alignment: .top, spacing: 10) {
-                    CircularProfileImageView(user: user, size: .large)
+                    CircularProfileImageView(photoUrl: user.photoUrl, size: .large)
                     
                     VStack(alignment: .leading, spacing: 5) {
                         Text("@\(user.username)")
