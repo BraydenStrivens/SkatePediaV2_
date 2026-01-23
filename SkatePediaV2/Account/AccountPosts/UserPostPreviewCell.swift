@@ -35,7 +35,7 @@ struct UserPostPreviewCell: View {
                     .font(.caption)
             }
             
-            CollapsableTextView(post.content, lineLimit: 2)
+            CollapsableTextView(post.content, lineLimit: 2, font: .body)
                 .multilineTextAlignment(.leading)
             
             Divider()

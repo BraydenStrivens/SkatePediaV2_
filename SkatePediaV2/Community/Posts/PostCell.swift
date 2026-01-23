@@ -124,7 +124,7 @@ struct PostCell: View {
             // Post content and comments button
             HStack(alignment: .top) {
                 // Expandable text view
-                CollapsableTextView(post.content, lineLimit: 2)
+                CollapsableTextView(post.content, lineLimit: 2, font: .body)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 
                 VStack(spacing: 8) {

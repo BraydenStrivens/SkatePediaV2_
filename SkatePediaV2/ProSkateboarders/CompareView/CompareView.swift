@@ -215,7 +215,7 @@ struct CompareView: View {
                     .lineLimit(1...3)
                     .offset(x: 10)
             } else {
-                CollapsableTextView(viewModel.leftVideo?.trickItem?.notes ?? "", lineLimit: 3)
+                CollapsableTextView(viewModel.leftVideo?.trickItem?.notes ?? "", lineLimit: 3, font: .body)
                     .offset(x: 10)
             }
         }

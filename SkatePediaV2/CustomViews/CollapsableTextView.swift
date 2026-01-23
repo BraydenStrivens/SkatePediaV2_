@@ -9,12 +9,15 @@ import SwiftUI
 
 struct CollapsableTextView: View {
     let lineLimit: Int
+    let font: Font
     private var text: String
+    
     @State private var expanded: Bool = false
     @State private var showViewButton: Bool = false
 
-    init(_ text: String, lineLimit: Int) {
+    init(_ text: String, lineLimit: Int, font: Font) {
         self.text = text
+        self.font = font
         self.lineLimit = lineLimit
     }
     
@@ -29,12 +32,12 @@ struct CollapsableTextView: View {
         VStack(alignment: .leading) {
             ZStack {
                 Text(text)
-                    .font(.body)
+                    .font(font)
                     .lineLimit(expanded ? nil : lineLimit)
                 
                 ScrollView(.vertical) {
                     Text(text)
-                        .font(.body)
+                        .font(font)
                         .background(
                             GeometryReader { proxy in
                                 Color.clear
@@ -46,7 +49,6 @@ struct CollapsableTextView: View {
                                     }
                             }
                         )
-                        
                 }
                 .opacity(0.0)
                 .disabled(true)
@@ -54,13 +56,13 @@ struct CollapsableTextView: View {
             }
             
             Button {
-                withAnimation {
+                withAnimation(.easeInOut(duration: 0.25)) {
                     expanded.toggle()
                 }
             } label: {
                 Text(moreLessText)
-                    .font(.body)
-                    .foregroundColor(Color("AccentColor").opacity(0.8))
+                    .font(font)
+                    .foregroundColor(Color("AccentColor"))
             }
             .opacity(showViewButton ? 1.0 : 0)
             .disabled(!showViewButton)
@@ -70,5 +72,5 @@ struct CollapsableTextView: View {
 }
 
 #Preview {
-    CollapsableTextView("Hello this is brayden strivens, im tryna make an app but kinda suck, we still tryin anyways so fuck it. We'll see how it goes", lineLimit: 2)
+    CollapsableTextView("Hello this is brayden strivens, im tryna make an app but kinda suck, we still tryin anyways so fuck it. We'll see how it goes", lineLimit: 2, font: .body)
 }
