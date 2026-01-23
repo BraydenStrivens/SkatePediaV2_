@@ -16,13 +16,10 @@ struct UserPostsView:  View {
     let user: User
     
     var body: some View {
-        
         ScrollView(showsIndicators: false) {
             LazyVStack(alignment: .center) {
                 ForEach(viewModel.userPosts) { post in
-                    PostCell(posts: $viewModel.userPosts,
-                             post: post
-                    )
+                    PostCell(user: user, post: post)
                     .padding(.horizontal, 15)
                 }
             }

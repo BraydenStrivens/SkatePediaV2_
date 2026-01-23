@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct UserPostsPreviewView: View {
-    @ObservedObject var viewModel: UserAccountViewModel
+    @EnvironmentObject var viewModel: UserAccountViewModel
     var user: User
     
     var body: some View {
@@ -16,13 +16,14 @@ struct UserPostsPreviewView: View {
             ScrollView {
                 ForEach(viewModel.userPosts) { post in
                     CustomNavLink(destination: UserPostsView(viewModel: viewModel, user: user)
-                        .customNavBarItems(title: "\(user.username)'s Posts", subtitle: "", backButtonHidden: false)) {
+                        .customNavBarItems(title: "\(user.username)'s Posts", subtitle: "", backButtonHidden: false)
+                    ) {
                         UserPostPreviewCell(
                             post: post,
                             postOwner: user
                         )
                     }
-                        .foregroundColor(.primary)
+                    .foregroundColor(.primary)
                 }
             }
         }

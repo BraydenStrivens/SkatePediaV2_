@@ -10,212 +10,158 @@ import Firebase
 import FirebaseAuth
 import AVKit
 
+/// A view displaying the contents of a user post and a toggleable sheet displaying the comments for the post. User posts consist of user data (userId, username,
+/// profile photo, stance), trick data (trickId, trick name, trick abbreviation), trick item data (trick item id, progress rating, notes), and video data (video url, width,
+/// height). The video player is initialized in the view model to prevent the video from updating and flickering on every @State change. An @EnvironmentObject of
+/// the community view model is present for deleting posts.
+///
 struct PostCell: View {
-    @Binding var posts: [Post] 
-    var post: Post
+    @State private var showComments: Bool = false
     
-    @State private var showComments = false
+    @EnvironmentObject var communityViewModel: CommunityViewModel
+    @StateObject private var viewModel: PostCellViewModel
     @State var postCommentCount: Int
-    @ObservedObject var viewModel = PostCellViewModel()
     
-    @MainActor
-    init(posts: Binding<[Post]>, post: Post) {
-        self._posts = posts
+    let user: User
+    let post: Post
+    
+    // Sets the max width and max height of the video player. Used in conjunction with the videos width and height
+    // to calculate the optimal aspect ratio that fits within this frame.
+    private let videoPlayerFrame: CGSize = CGSize(width: UIScreen.screenWidth, height: UIScreen.screenHeight * 0.6)
+    
+    /// Initializes the post and passes the post's video data to the view model to store the video player.
+    ///
+    /// - Parameters:
+    ///  - post: A 'Post' object containing information about a post.
+    ///
+    init(user: User, post: Post) {
+        self.user = user
         self.post = post
-        self.postCommentCount = self.post.commentCount
+        _viewModel = StateObject(wrappedValue: PostCellViewModel(videoData: post.videoData))
+        _postCommentCount = State(initialValue: post.commentCount)
     }
     
     var body: some View {
-        VStack {
-            // Post header
-            postHeader
-            
-            Divider()
+        VStack(spacing: 0) {
+            // Post Header
+            HStack(spacing: 20) {
+                CircularProfileImageView(photoUrl: post.userData.photoUrl, size: .large)
 
-            videoPlayerSection
-            
-            Spacer()
-            Divider()
-            
-            // Post contents
-            postContents
-        }
-        .sheet(isPresented: $showComments) {
-            showComments = false
-        } content: {
-            CommentsView(post: post, postCommentCount: $postCommentCount)
-                .interactiveDismissDisabled()
-        }
-        .padding(10)
-        .background {
-            Rectangle()
-                .fill(.clear)
-                .stroke(.primary.opacity(0.4), lineWidth: 1)
-        }
-    }
-    
-    var postHeader: some View {
-        HStack(spacing: 10) {
-            CircularProfileImageView(user: post.user, size: .medium)
-
-            if let user = post.user {
-                UsernameHyperlink(user: user, font: .title2)
-            }
-            
-            Spacer()
-            
-            if post.ownerId == Auth.auth().currentUser?.uid {
-                Menu {
-                    Button(role: .destructive) {
-                        viewModel.deletePost(postId: post.postId)
-                        withAnimation(.easeInOut(duration: 0.5)) {
-                            posts.removeAll { p in
-                                post.postId == p.postId
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack {
+                        Text(post.userData.username)
+                            .font(.title2)
+                        
+                        Spacer()
+                        
+                        // Post options if the current user is the owner of the post
+                        if let currentUid = Auth.auth().currentUser?.uid, currentUid == post.userData.userId {
+                            Menu {
+                                Button("Delete Post", role: .destructive) {
+                                    Task {
+                                        await communityViewModel.deletePost(postToRemove: post)
+                                    }
+                                }
+                            } label: {
+                                Image(systemName: "ellipsis")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 20, height: 20)
+                                    .tint(.primary)
                             }
                         }
-                    } label: {
-                        Text("Delete Post")
-                        Image(systemName: "trash")
                     }
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 20, height: 20)
-                        .foregroundColor(.primary)
+                    
+                    HStack(alignment: .bottom) {
+                        Text(post.userData.stance)
+                            .font(.body)
+                        
+                        Spacer()
+                        
+                        Text("\(post.trickData.name):")
+                            .font(.body)
+                            .lineLimit(1)
+                        
+                        Spacer()
+                        
+                        if post.showTrickItemRating {
+                            TrickStarRatingView(rating: post.trickItemData.progress, size: 20)
+                        }
+                    }
                 }
             }
-        }
-//        .onFirstAppear {
-//            if viewModel.videoPlayer == nil {
-//                viewModel.setupVideoPlayer(videoUrl: post.videoData.videoUrl)
-//            }
-//        }
-    }
-    
-    @ViewBuilder
-    var videoPlayerSection: some View {
-        GeometryReader { proxy in
-//            if let player = viewModel.videoPlayer {
-                let player = AVPlayer(url: URL(string: post.videoData.videoUrl)!)
-                let size = viewModel.getNewAspectRatio(
-                    baseWidth: post.videoData.width,
-                    baseHeight: post.videoData.height,
-                    maxWidth: proxy.size.width,
-                    maxHeight: proxy.size.height)
+            .padding(10)
+            .overlay(alignment: .bottom) {
+                Rectangle()
+                    .fill(.gray)
+                    .frame(height: 1)
+            }
 
-                
-                if let size = size {
-                    SPVideoPlayer(
-                        userPlayer: player,
-                        frameSize: proxy.size,
-                        videoSize: size,
-                        showButtons: true
-                    )
-                    .ignoresSafeArea()
-                    .scaledToFit()
-                    .onDisappear {
-                        player.pause()
-                    }
-                    
-                    
-                } else {
-                    ProgressView()
-                }
-//            } else {
-//                ProgressView()
-//            }
-        }
-        .frame(width: UIScreen.screenWidth * 0.95, height: UIScreen.screenHeight * 0.6)
-        .padding()
-        .zIndex(10000)
-    }
-    
-//    @ViewBuilder
-//    var videoPlayerSection: some View {
-//        GeometryReader { proxy in
-//            let _ = print("PHONE: \(UIScreen.screenWidth) x \(UIScreen.screenHeight)")
-//            let _ = print("READER: \(proxy.size.width) x \(proxy.size.height)")
-//            let _ = print("BASE \(post.videoData.width ?? -1) x \(post.videoData.height ?? -1)")
-//            let _ = print("NEW: \(viewModel.videoAspectRatio?.width ?? -1) x \(viewModel.videoAspectRatio?.height ?? -1)")
-//            
-//            HStack {
-//                Spacer()
-//                VStack {
-//                    Spacer()
-//                    
-//                    let player = AVPlayer(url: URL(string: post.videoData.videoUrl)!)
-//                    let safeArea = proxy.safeAreaInsets
-//                    let size = viewModel.getNewAspectRatio(
-//                        baseWidth: post.videoData.width,
-//                        baseHeight: post.videoData.height,
-//                        maxWidth: proxy.size.width,
-//                        maxHeight: proxy.size.height)
-//                    let fullScreenSize = viewModel.getNewAspectRatio(
-//                        baseWidth: post.videoData.width,
-//                        baseHeight: post.videoData.height,
-//                        maxWidth: UIScreen.screenWidth,
-//                        maxHeight: UIScreen.screenHeight)
-//                    
-//                    if let size = size, let fullScreenSize = fullScreenSize {
-//                        SPVideoPlayer(
-//                            userPlayer: player,
-//                            size: size,
-//                            fullScreenSize: fullScreenSize,
-//                            safeArea: safeArea,
-//                            showButtons: true
-//                        )
-//                        .ignoresSafeArea()
-//                        .scaledToFit()
-//                        .onDisappear {
-//                            player.pause()
-//                        }
-//                        
-//                    } else {
-//                        ProgressView()
-//                    }
-//                    Spacer()
-//                }
-//                Spacer()
-//            }
-//        }
-//        .frame(width: UIScreen.screenWidth * 0.95, height: UIScreen.screenHeight * 0.6)
-//        .padding(.horizontal)
-//        .zIndex(10000)
-//    }
-    
-    var postContents: some View {
-        VStack(alignment: .leading) {
+            // Video Player
             
+            // Calculates the optimal aspect ratio for the video given it's width and height and the size
+            // of the frame it is within.
+            let videoSize = CustomVideoPlayer.getNewAspectRatio(
+                baseWidth: post.videoData.width,
+                baseHeight: post.videoData.height,
+                maxWidth: videoPlayerFrame.width,
+                maxHeight: videoPlayerFrame.height)
+            
+            if let videoSize = videoSize {
+                SPVideoPlayer(
+                    userPlayer: viewModel.player,
+                    frameSize: videoPlayerFrame,
+                    videoSize: videoSize,
+                    showButtons: true
+                )
+                .padding(12)
+                .background(.gray.opacity(0.1))
+                .onDisappear {
+                    viewModel.player.pause()
+                }
+            }
+            
+            // Post content and comments button
             HStack(alignment: .top) {
+                // Expandable text view
+                CollapsableTextView(post.content, lineLimit: 2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 
-                Text(post.trick?.name ?? "")
-                    .font(.headline)
-                
-                Spacer()
-                
-                HStack(spacing: 6) {
+                VStack(spacing: 8) {
+                    // Comments toggle button
                     Button {
-                        showComments = true
+                        showComments.toggle()
                     } label: {
-                        Image(systemName: "message")
-                            .resizable()
-                            .frame(width: 22, height: 22)
-                            .foregroundColor(.primary)
+                        VStack(spacing: 3) {
+                            Text("\(postCommentCount)")
+                                .font(.body)
+                            Image(systemName: "message")
+                                .resizable()
+                                .frame(width: 25, height: 25)
+                        }
                     }
-//                    Text("\(post.commentCount)")
-                    Text("\(postCommentCount)")
-                        .foregroundColor(.primary)
+                    .tint(.primary)
+                    .padding(.horizontal, 8)
+                    
+                    // Time since upload text
+                    Text(post.dateCreated.timeAgoString())
+                        .font(.caption)
+                        .foregroundStyle(.gray)
                 }
             }
-                            
-            CollapsableTextView(post.content, lineLimit: 2)
-            
-            HStack {
-                Spacer()
-                Text(post.dateCreated.timeSinceUploadString())
-                    .font(.footnote)
+            .font(.caption)
+            .padding(.horizontal)
+            .padding(.vertical, 10)
+            .overlay(alignment: .top) {
+                Rectangle()
+                    .fill(.gray)
+                    .frame(height: 1)
             }
         }
+        .padding(.vertical, 10)
+        .sheet(isPresented: $showComments) {
+            CommentsView(user: user, post: post, postCommentCount: $postCommentCount)
+        }
+        .transition(.move(edge: .top))
     }
 }

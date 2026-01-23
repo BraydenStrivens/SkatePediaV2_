@@ -9,182 +9,159 @@ import Foundation
 import SwiftUI
 import FirebaseFirestore
 import Firebase
-import Combine
 
-/// Contains all functions for accessing and manipulating post documents in the database.
+/// Contains all functions for fetching, uploading, updating, and deleting post documents in the database.
+///
 final class PostManager {
-    
-    // Allows access to this class' functions in other files
     static let shared = PostManager()
     private init() { }
     
-    private var postListener: ListenerRegistration? = nil
+    /// Reference to the posts collection.
+    ///
     private let postCollection = Firestore.firestore().collection("posts")
-    
+    /// Path to a post document in the posts collection in firestore.
+    ///
+    /// - Parameters:
+    ///  - postId: The ID of a post's document in the posts collection.
+    ///
+    /// - Returns: A reference to document within the posts collection.
+    ///
     private func postDocument(postId: String) -> DocumentReference {
         postCollection.document(postId)
     }
     
-    /// Adds listener to 'posts' collection. Allows for live updates when this collection is changed.
-    func addUnfilteredListenerForPosts(count: Int, lastDocument: DocumentSnapshot?) -> AnyPublisher<[Post], Error> {
-        let (publisher, listener) = postCollection
-            .order(by: Post.CodingKeys.dateCreated.rawValue, descending: true)
-//            .limit(to: count)
-//            .startOptionally(afterDocument: lastDocument)
-            .addSnapshotListener(as: Post.self)
-        
-        self.postListener = listener
-        return publisher
-    }
-    
-    /// Adds a listener to fetch the user's posts from the database.
+    /// Creates a 'Post' object from the passed data and uploads it to the posts collection. Returns the post so it can be inserts the the CommunityViewModel's posts array.
+    /// Updates the new post's associated trick item's postId field with the id of the new post.
     ///
     /// - Parameters:
-    ///  - userId: The id of the current user.
-    func addFilteredListenerForPosts(userId: String, count: Int, lastDocument: DocumentSnapshot?) -> AnyPublisher<[Post], Error> {
-        let (publisher, listener) = postCollection
-            .whereField(Post.CodingKeys.ownerId.rawValue, isEqualTo: userId)
-            .order(by: Post.CodingKeys.dateCreated.rawValue, descending: true)
-            .limit(to: count)
-            .startOptionally(afterDocument: lastDocument)
-            .addSnapshotListener(as: Post.self)
-        
-        self.postListener = listener
-        return publisher
-    }
-    
-    /// Adds a listener to fetch all posts from the database. Can filter posts to the user's post using the user's id.
+    ///  - postData: A dictionary containing user inputted data for the post to be uploaded.
+    ///  - user: A 'User' object containing information about the current user.
+    ///  - trick: A 'Trick' object containing information about a trick. Used to set the trick data field for a post.
+    ///  - trickItem: A 'TrickItem' object containing information about the trick item the post is based off of. Used ot set the trick item data field for a post.
     ///
-    /// - Parameters:
-    ///  - userId: The id of the current user.
-    ///  - filterUserOnly: Whether or not to filter the posts.
-    func addListenerForPosts(userId: String, filterUserOnly: Bool, count: Int, lastDocument: DocumentSnapshot?) -> AnyPublisher<[Post], Error> {
-        if filterUserOnly {
-            addFilteredListenerForPosts(userId: userId, count: count, lastDocument: lastDocument)
-        } else {
-            addUnfilteredListenerForPosts(count: count, lastDocument: lastDocument)
-        }
-    }
-    
-    /// Removes the listener for posts.
-    func removeListenerForPosts() {
-        self.postListener?.remove()
-    }
-    
-    /// Uploads the post to the database and its associated video to storage through the post manager class.
+    ///  - Returns: The newly uploaded post object.
     ///
-    /// - Parameters:
-    ///  - userId: The id of the current user in the database.
-    ///  - postId: The id of the post in the database.
-    func uploadPost(post: Post, videoData: Data) async throws -> Post {
+    /// - Throws: An error returned by firebase that specifies what went wrong.
+    ///
+    func uploadPost(postData: [String : Any], user: User, trick: Trick, trickItem: TrickItem) async throws -> Post {
         let document = postCollection.document()
         let documentId = document.documentID
-        
-        let videoUrl = try await StorageManager.shared.uploadPostVideo(videoData: videoData, postId: documentId)
 
-        let aspectRatio = try await CustomVideoPlayer.getVideoResolution(url: videoUrl!)
-        let videoData = VideoData(videoUrl: videoUrl!, width: aspectRatio?.width, height: aspectRatio?.height)
+        let newPost = Post(
+            postId: documentId,
+            content: postData[Post.CodingKeys.content.rawValue] as! String,
+            showTrickItemRating: postData[Post.CodingKeys.showTrickItemRating.rawValue] as! Bool,
+            user: user,
+            trick: trick,
+            trickItem: trickItem
+        )
         
-//        let data = Post(
-//            postId: documentId,
-//            post: post,
-//            videoUrl: videoUrl ?? "No Video URL"
-//        )
-        let data = Post(postId: documentId, post: post, videoData: videoData)
-        
-        try await document.setData(data.asDictionary(), merge: false)
-        return data
+        try document.setData(from: newPost, merge: false)
+        try await TrickItemManager.shared.updateTrickItemPostId(
+            userId: user.userId,
+            trickItemId: trickItem.id,
+            postId: documentId,
+            adding: true
+        )
+        return newPost
     }
     
-    /// Queries for all the documents in the 'posts' collections.
-    private func getAllPostsQuery() -> Query {
-        postCollection
-    }
-    
-    /// Queries for all the documents in the 'posts' collection that belong to a specific user.
+    /// Fetches a post from the posts collection given its ID.
     ///
     /// - Parameters:
-    ///  - userId: The id of the account to filter posts.
-    private func getAllUserPosts(userId: String) -> Query {
-        postCollection
-            .whereField(Post.CodingKeys.ownerId.rawValue, isEqualTo: userId)
+    ///  - postId: The ID of a post document in the posts collection.
+    ///
+    /// - Returns: The fetched document decoded into a 'Post' object.
+    ///
+    /// - Throws: An error returned by firebase that specifies what went wrong.
+    ///
+    func fetchPost(postId: String) async throws -> Post {
+        return try await postCollection.document(postId)
+            .getDocument(as: Post.self)
     }
     
-    func fetchPost(postId: String) async throws -> Post? {
-        do {
-            return try await postCollection.document(postId)
-                .getDocument(as: Post.self)
-        } catch {
-            print("COULDNT GET POST: \(error)")
-            return nil
-        }
-    }
-    
-    /// Fetches 10 posts from the database starting at the last fetched post. Has the option to fetch only a specific user's posts.
+    /// Fetches x number of posts from the posts collection starting at the last fetched post if it exists.
     ///
     /// - Parameters:
-    ///  - userId: The id of the account to filter posts.
     ///  - count: The maximum number of posts to fetch.
-    ///  - filterUserOnly: Whether to only fetch the user's posts.
     ///  - lastDocument: The last fetched post.
     ///
     /// - Returns: A tuple containing an array of the fetched posts and the last fetched post.
-    func getAllPosts(count: Int, filterUserOnly: Bool?, lastDocument: DocumentSnapshot?) async throws -> (item: [Post], lastDocument: DocumentSnapshot?) {
-
-        let snapshot = try await postCollection
+    ///
+    /// - Throws: An error returned by firebase that specifies what went wrong.
+    ///
+    func getAllPosts(count: Int, lastDocument: DocumentSnapshot?) async throws -> (item: [Post], lastDocument: DocumentSnapshot?) {
+        return try await postCollection
             .order(by: Post.CodingKeys.dateCreated.rawValue, descending: true)
             .limit(to: count)
             .startOptionally(afterDocument: lastDocument)
-            .getDocuments()
-//            .getDocuments(as: Post.self)
-
-        let items = try snapshot.documents.map({ document in
-            try document.data(as: Post.self)
-        })
-        
-        return (items, snapshot.documents.last)
+            .getDocumentsWithSnapshot(as: Post.self)
     }
 
+    /// Fetches x number of posts from the posts collection whose userData.userId match the passed userId.  Starts at the last fetched post if it exists.
+    ///
+    /// - Parameters:
+    ///  - userId: The ID of a user for which the posts are queried with.
+    ///  - count: The maximum number of posts to fetch.
+    ///  - lastDocument: The last fetched post.
+    ///
+    /// - Returns: A tuple containing an array of the fetched posts and the last fetched post.
+    ///
+    /// - Throws: An error returned by firebase that specifies what went wrong.
+    ///
     func getAllPostsFromUser(userId: String, count: Int, lastDocument: DocumentSnapshot?) async throws -> (item: [Post], lastDocument: DocumentSnapshot?) {
-        return try await getAllUserPosts(userId: userId)
+        return try await postCollection
+            .whereField(UserData.FieldKeys.userId.rawValue, isEqualTo: userId)
             .order(by: Post.CodingKeys.dateCreated.rawValue, descending: true)
             .limit(to: count)
             .startOptionally(afterDocument: lastDocument)
             .getDocumentsWithSnapshot(as: Post.self)
     }
     
-    /// Deletes a post from the database.
+    /// Deletes a post from the posts collection. Deletes the post's comments and those comment's replies first, deletes the postId field from the trick item
+    /// associated with the post, then deletes the post.
     ///
     /// - Parameters:
-    ///  - postId: The id of the post to delete.
-    func deletePost(postId: String) {
-        Task {
-            try await StorageManager.shared.deletePostVideo(postId: postId)
-            try await CommentManager.shared.deleteAllCommentsForPost(postId: postId)
-        }
-        
-        postDocument(postId: postId).delete()
-//        postCollection.whereField(Post.CodingKeys.postId.rawValue, isEqualTo: postId).getDocuments() { (querySnapshot, err) in
-//            if let err = err {
-//                print("ERROR GETTING DOCUMENTS: \(err)")
-//            } else {
-//                for document in querySnapshot!.documents {
-//                    document.reference.delete()
-//                }
-//            }
-//        }
+    ///  - post: A 'Post' object containing information about the post to be deleted.
+    ///
+    /// - Throws: An error returned by firebase that specifies what went wrong.
+    ///
+    func deletePost(post: Post) async throws {
+        try await CommentManager.shared.deleteAllCommentsForPost(postId: post.postId)
+        try await TrickItemManager.shared.updateTrickItemPostId(
+            userId: post.userData.userId,
+            trickItemId: post.trickItemData.trickItemId,
+            postId: post.postId, adding: false
+        )
+        try await postDocument(postId: post.postId).delete()
     }
     
+    /// Deletes all the posts uploaded by a user.
+    ///
+    /// - Parameters:
+    ///  - userId: The ID of a user for whom their posts are to be deleted.
+    ///
+    /// - Throws: An error returned by firebase that specifies what went wrong.
+    ///
     func deleteAllUserPosts(userId: String) async throws {
         let postsToDelete = try await postCollection
-            .whereField(Post.CodingKeys.ownerId.rawValue, isEqualTo: userId)
+            .whereField(UserData.FieldKeys.userId.rawValue, isEqualTo: userId)
             .getDocuments(as: Post.self)
         
         for post in postsToDelete {
-            deletePost(postId: post.postId)
+            try await deletePost(post: post)
         }
     }
     
+    /// Updates the comment count field of a post's document.
+    ///
+    /// - Parameters:
+    ///  - postId: The ID of a post's document in the posts collection.
+    ///  - increment: A boolean that indicates whether to increase or decrease the comment count.
+    ///  - value: The value to increase or decrease the comment count by (1 by default).
+    ///
+    ///  - Throws: An error returned by firebase that specifies what went wrong.
+    ///
     func updatePostCommentCount(postId: String, increment: Bool, value: Double = 1.0) async throws {
         let incrementValue = increment ? value : -value
         

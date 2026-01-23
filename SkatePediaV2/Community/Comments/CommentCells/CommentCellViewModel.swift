@@ -41,33 +41,8 @@ final class CommentCellViewModel: ObservableObject {
         if let lastDocument { self.lastDocument = lastDocument }
     }
     
-    ///
-    /// Fetches user data about the owner of a reply and the user being replies to.
-    ///
-    @MainActor
-    func fetchDataForReplies() async throws {
-        for index in lastReplyIndex ..< self.replies.count {
-            let reply = self.replies[index]
-            
-            // Fetches the uses who posted each reply
-            self.replies[index].user = try await UserManager.shared.fetchUser(withUid: reply.commenterUid)
-            
-            // Fetches the username of the users being replied to
-            if let replyToId = reply.replyToCommentId {
-                let replyToComment = try await CommentManager.shared.getComment(commentId: replyToId)
-                let replyToCommentOwner = try await UserManager.shared.fetchUser(withUid: replyToComment!.commenterUid)
-                self.replies[index].replyToCommentUsername = replyToCommentOwner?.username
-            }
-        }
-    }
+
     
     ///
-    /// Deletes a comment and all of its replies from the database.
-    ///
-    /// - Parameters:
-    ///  - comment: An object containing information about a comment in the database.
-    ///
-    func deleteComment(comment: Comment) {
-        CommentManager.shared.deleteComment(comment: comment)
-    }
+    
 }

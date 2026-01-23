@@ -90,11 +90,39 @@ final class TrickItemManager {
             )
     }
     
-    /// Deletes the trick item from the database and storage.
+    /// Updates the postId field in a trick items document. Posts are based off of trick items so this links a trick item with its post when a user
+    /// creates a post. Adds the postId field when a user uploads a post and removes the postId field when the user deletes a post.
     ///
     /// - Parameters:
-    ///  - userId: The id of an account in the database.
-    ///  - trickItemId: The id of a trick item in the database.
+    ///  - userId: The ID a user for whom the trick item and post belongs to.
+    ///  - trickItemId: The ID of a trick item in the user's trick items sub-collection for which a post is based off of.
+    ///  - postId: The ID of the post uploaded for the trick item.
+    ///  - adding: A boolean indicating whether to add the postId field or to remove it.
+    ///
+    /// - Throws: An error returned by firebase that specifies what went wrong.
+    ///
+    func updateTrickItemPostId(userId: String, trickItemId: String, postId: String, adding: Bool) async throws {
+        if adding {
+            try await trickItemDocument(userId: userId, trickItemId: trickItemId)
+                .updateData(
+                    [ TrickItem.CodingKeys.postId.rawValue : postId ]
+                )
+        } else {
+            try await trickItemDocument(userId: userId, trickItemId: trickItemId)
+                .updateData(
+                    [ TrickItem.CodingKeys.postId.rawValue : FieldValue.delete() ]
+                )
+        }
+    }
+    
+    /// Deletes the trick item from a user's trick items sub-collection and deletes the trick item's video from storage.
+    ///
+    /// - Parameters:
+    ///  - userId: The ID of an account in the database.
+    ///  - trickItem: A 'TrickItem' object containing information about the trick item being deleted.
+    ///  - trick: A 'Trick' object containing information about the trick the trick item was uploaded for. Used to update the tricks progress and hasTrickItems fields.
+    ///
+    /// - Throws: An error returned by firebase that specifies what went wrong.
     ///
     func deleteTrickItem(userId: String, trickItem: TrickItem, trick: Trick) async throws {
         // Deletes the trick item's video from storage

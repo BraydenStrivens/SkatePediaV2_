@@ -5,71 +5,88 @@
 //  Created by Brayden Strivens on 2/28/25.
 //
 
+import SwiftUI
 import Foundation
 import FirebaseFirestore
 import FirebaseAuth
 
 final class CommunityViewModel: ObservableObject {
-    @Published var userId: String? = nil
+    @Published var user: User? = nil
+    @Published var fetchUserState: RequestState = .idle
     @Published var posts: [Post] = []
+    @Published var initialFetchIsLoading: Bool = false
+    @Published var paginationFetchIsLoading: Bool = false
+    @Published var showFilters: Bool = false
+    @Published var postFilter: PostFilter = PostFilter(stance: .all)
+    @Published var error: SPError? = nil
+    
     @Published var unseenNotificationsExist: Bool = false
-    @Published var isFetching = false
-    @Published var newPost: Post? = nil {
-        didSet {
-            if self.newPost != nil {
-                posts.insert(newPost!, at: 0)
-                self.newPost = nil
-            }
-        }
-    }
+
     
     private var lastDocument: DocumentSnapshot? = nil
     private var lastPostIndex: Int = 0
     
+    @MainActor
     init() {
-        guard let currentUserId = Auth.auth().currentUser?.uid else { return }
-        self.userId = currentUserId
         Task {
-            try await fetchNotificationCount(userId: currentUserId)
+            do {
+                fetchUserState = .loading
+                guard let currentUserId = Auth.auth().currentUser?.uid else { return }
+                self.user = try await UserManager.shared.fetchUser(withUid: currentUserId)
+                fetchUserState = .success
+                
+            } catch let error as FirestoreError {
+                fetchUserState = .failure(.firestore(error))
+                
+            } catch {
+                fetchUserState = .failure(.unknown)
+            }
         }
     }
     
     @MainActor
-    func fetchPosts() {
-        isFetching = true
-        Task {
-            let (newPosts, lastDocument) = try await PostManager.shared.getAllPosts(count: 10, filterUserOnly: false, lastDocument: lastDocument)
+    func initialPostFetch() async {
+        do {
+            initialFetchIsLoading = true
             
+            let (newPosts, lastDocument) = try await PostManager.shared.getAllPosts(count: 10, lastDocument: lastDocument)
+
             self.posts.append(contentsOf: newPosts)
-            try await fetchDataForPosts()
             
             lastPostIndex += newPosts.count
             if let lastDocument { self.lastDocument = lastDocument }
-        }
-        isFetching = false
-    }
-    
-    @MainActor
-    func fetchDataForPosts() async throws {
-        for index in lastPostIndex ..< posts.count {
-            let post = posts[index]
             
-            posts[index].user = try await UserManager.shared.fetchUser(withUid: post.ownerId)
-            posts[index].trick = try await TrickListManager.shared.fetchTricksById(userId: post.ownerId, trickId: post.trickId)
+        } catch let error as FirestoreError {
+            self.error = .firestore(error)
+
+        } catch {
+            self.error = .unknown
         }
+        
+        initialFetchIsLoading = false
     }
 
     @MainActor
-    func refreshPosts() {
+    func refreshPosts() async {
         self.posts.removeAll()
         self.lastDocument = nil
-        self.lastPostIndex = 0
-        fetchPosts()
+        await initialPostFetch()
     }
-    
+
     @MainActor
-    func fetchNotificationCount(userId: String) async throws {
-        let notificationCount = try await NotificationManager.shared.getUnseenNotificationCount(userId: userId)
-        if notificationCount > 0 { self.unseenNotificationsExist = true }
+    func deletePost(postToRemove: Post) async {
+        do {
+            try await PostManager.shared.deletePost(post: postToRemove)
+            
+            self.posts.removeAll { post in
+                post == postToRemove
+            }
+            
+        } catch let error as FirestoreError {
+            self.error = .firestore(error)
+            
+        } catch {
+            self.error = .unknown
+        }
     }
 }

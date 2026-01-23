@@ -50,7 +50,6 @@ extension Query {
     func getDocumentsWithSnapshot<T>(as type: T.Type) async throws -> (
         item: [T], lastDocument: DocumentSnapshot?) where T : Decodable {
             let snapshot = try await self.getDocuments()
-            
             let items = try snapshot.documents.map({ document in
                 try document.data(as: T.self)
             })

@@ -30,7 +30,7 @@ struct UserPostPreviewCell: View {
                 
                 Spacer()
                 
-                Text(post.dateCreated.timeSinceUploadString())
+                Text(post.dateCreated.timeAgoString())
                     .foregroundColor(.gray)
                     .font(.caption)
             }
@@ -43,7 +43,7 @@ struct UserPostPreviewCell: View {
         .padding(10)
         .onAppear {
             Task {
-                trick = try await TrickListManager.shared.fetchTricksById(userId: postOwner.userId, trickId: post.trickId)
+                trick = try await TrickListManager.shared.fetchTricksById(userId: postOwner.userId, trickId: post.trickData.trickId)
             }
         }
     }
