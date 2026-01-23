@@ -14,7 +14,7 @@ struct NotificationCell: View {
     var body: some View {
         if let user = notification.fromUser {
             HStack(alignment: .center, spacing: 10) {
-                CircularProfileImageView(user: user, size: .medium)
+                CircularProfileImageView(photoUrl: user.photoUrl, size: .medium)
                 
                 VStack(alignment: .leading, spacing: 5) {
                     HStack {

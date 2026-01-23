@@ -24,7 +24,7 @@ struct PendingFriendCell: View {
         if let user = pendingFriend.user {
             HStack(alignment: .center, spacing: 10) {
                 // Profile Photo
-                CircularProfileImageView(user: user, size: .medium)
+                CircularProfileImageView(photoUrl: user.photoUrl, size: .medium)
                 
                 // Username hyperlink to the user's profile
                 UsernameHyperlink(user: user, font: .headline)

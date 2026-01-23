@@ -63,6 +63,11 @@ struct SPVideoPlayer: View {
     
     var body: some View {
         VStack(spacing: 0) {
+            // Subtracts the height of the playback controls from the height of the video itself
+            // Makes it so the video and the buttons all fit within the passed video size parameter.
+            // The buttons have a height of the video.width / 12 with 8 pixes of vertical padding.
+            let videoHeight = showButtons ? videoSize.height - (videoSize.width / 12) - 16 : videoSize.height
+            
             // Custom Video Player
             ZStack {
                 VStack {
@@ -71,7 +76,7 @@ struct SPVideoPlayer: View {
                         HStack {
                             Spacer()
                             CustomVideoPlayer(player: userPlayer)
-                                .frame(width: videoSize.width, height: videoSize.height)
+                                .frame(width: videoSize.width, height: videoHeight)
                             
                             Spacer()
                         }
@@ -96,7 +101,7 @@ struct SPVideoPlayer: View {
                 
             }
             .padding(.bottom, 8)
-            .frame(width: videoSize.width, height: videoSize.height)
+            .frame(width: videoSize.width, height: videoHeight)
             // Avoids other view expansion by setting it's native view height
             .frame(width: frameSize.width, height: frameSize.height)
         }

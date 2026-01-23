@@ -42,7 +42,7 @@ struct SelectTrickItemCell: View {
                 
                 VStack(alignment: .leading) {
                     HStack {
-                        CircularProfileImageView(user: user, size: .medium)
+                        CircularProfileImageView(photoUrl: user.photoUrl, size: .medium)
                         
                         Text(user.username)
                             .font(.title2)

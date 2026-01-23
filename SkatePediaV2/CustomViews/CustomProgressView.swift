@@ -38,6 +38,7 @@ struct CustomProgressView: View {
             }
             Spacer()
         }
+        .tint(.primary)
         .frame(maxHeight: .infinity)
     }
     
@@ -51,6 +52,7 @@ struct CustomProgressView: View {
             }
             Spacer()
         }
+        .tint(.primary)
         .frame(maxHeight: .infinity)
     }
     
@@ -63,6 +65,7 @@ struct CustomProgressView: View {
                 Spacer()
             }
         }
+        .tint(.primary)
         .frame(maxHeight: .infinity)
     }
 }

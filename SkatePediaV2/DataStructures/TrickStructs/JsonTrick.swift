@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct JsonTrick: Identifiable, Codable {
+struct JsonTrick: Identifiable, Codable, Equatable {
     let id: String
     var name: String
     var stance: String
@@ -16,4 +16,7 @@ struct JsonTrick: Identifiable, Codable {
     var learnFirstAbbreviation: String
     var difficulty: String
     
+    static func ==(lhs: JsonTrick, rhs: JsonTrick) -> Bool {
+        return lhs.id == rhs.id
+    }
 }
