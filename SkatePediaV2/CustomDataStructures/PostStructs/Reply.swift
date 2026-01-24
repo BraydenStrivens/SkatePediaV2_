@@ -12,7 +12,7 @@ struct Reply: Codable, Identifiable {
     let content: String
     let dateCreated: Date
     /// Data about the comment being replied to
-    let commentData: CommentData
+    let replyingToCommentData: CommentData
     let postData: PostData
     let userData: UserData
     
@@ -20,14 +20,11 @@ struct Reply: Codable, Identifiable {
         return replyId
     }
     
-    var user: User?
-    var trick: Trick?
-    
     init(documentId: String, reply: Reply) {
         self.replyId = documentId
         self.content = reply.content
         self.dateCreated = Date()
-        self.commentData = reply.commentData
+        self.replyingToCommentData = reply.replyingToCommentData
         self.postData = reply.postData
         self.userData = reply.userData
     }
@@ -42,7 +39,7 @@ struct Reply: Codable, Identifiable {
         self.replyId = replyId
         self.content = content
         self.dateCreated = Date()
-        self.commentData = CommentData(comment: replyingToComment)
+        self.replyingToCommentData = CommentData(comment: replyingToComment)
         self.postData = PostData(post: post)
         self.userData = UserData(user: currentUser)
     }
@@ -57,7 +54,7 @@ struct Reply: Codable, Identifiable {
         self.replyId = replyId
         self.content = content
         self.dateCreated = Date()
-        self.commentData = CommentData(reply: replyingToReply)
+        self.replyingToCommentData = CommentData(reply: replyingToReply)
         self.postData = PostData(post: post)
         self.userData = UserData(user: currentUser)
     }
@@ -67,7 +64,7 @@ struct Reply: Codable, Identifiable {
         case replyId = "reply_id"
         case content = "content"
         case dateCreated = "date_created"
-        case commentData = "comment_data"
+        case replyingToCommentData = "replying_to_comment_data"
         case postData = "post_data"
         case userData = "user_data"
     }
@@ -78,7 +75,7 @@ struct Reply: Codable, Identifiable {
         self.replyId = try container.decode(String.self, forKey: .replyId)
         self.content = try container.decode(String.self, forKey: .content)
         self.dateCreated = try container.decode(Date.self, forKey: .dateCreated)
-        self.commentData = try container.decode(CommentData.self, forKey: .commentData)
+        self.replyingToCommentData = try container.decode(CommentData.self, forKey: .replyingToCommentData)
         self.postData = try container.decode(PostData.self, forKey: .postData)
         self.userData = try container.decode(UserData.self, forKey: .userData)
     }
@@ -89,7 +86,7 @@ struct Reply: Codable, Identifiable {
         try container.encode(self.replyId, forKey: .replyId)
         try container.encode(self.content, forKey: .content)
         try container.encode(self.dateCreated, forKey: .dateCreated)
-        try container.encode(self.commentData, forKey: .commentData)
+        try container.encode(self.replyingToCommentData, forKey: .replyingToCommentData)
         try container.encode(self.postData, forKey: .postData)
         try container.encode(self.userData, forKey: .userData)
     }

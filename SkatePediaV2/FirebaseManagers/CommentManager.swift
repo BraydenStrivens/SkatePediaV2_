@@ -91,7 +91,7 @@ final class CommentManager {
     /// - Throws: An error returned by firebase that specifies what went wrong.
     ///
     func uploadReply(reply: Reply) async throws -> Reply {
-        let document = repliesCollection(postId: reply.postData.postId, commentId: reply.commentData.baseCommentId)
+        let document = repliesCollection(postId: reply.postData.postId, commentId: reply.replyingToCommentData.baseCommentId)
             .document()
         let documentId = document.documentID
         
@@ -102,7 +102,7 @@ final class CommentManager {
         
         try document.setData(from: replyToUpload, merge: false)
         try await updateCommentReplyCount(
-            postId: reply.postData.postId, commentId: reply.commentData.baseCommentId, increment: true
+            postId: reply.postData.postId, commentId: reply.replyingToCommentData.baseCommentId, increment: true
         )
         try await PostManager.shared.updatePostCommentCount(postId: reply.postData.postId, increment: true)
         
@@ -252,13 +252,13 @@ final class CommentManager {
     func deleteReply(reply: Reply) async throws {
         // Delete reply
         try await replyDocument(
-            postId: reply.postData.postId, commentId: reply.commentData.baseCommentId, replyId: reply.replyId
+            postId: reply.postData.postId, commentId: reply.replyingToCommentData.baseCommentId, replyId: reply.replyId
         )
         .delete()
         
         // Decrement it's base comment's reply count by 1
         try await updateCommentReplyCount(
-            postId: reply.postData.postId, commentId: reply.commentData.baseCommentId, increment: false
+            postId: reply.postData.postId, commentId: reply.replyingToCommentData.baseCommentId, increment: false
         )
         // Decrement it's post's comment count by 1
         try await PostManager.shared.updatePostCommentCount(postId: reply.postData.postId, increment: false)
@@ -282,7 +282,7 @@ final class CommentManager {
         for reply in snapshot {
             try await replyDocument(
                 postId: reply.postData.postId,
-                commentId: reply.commentData.baseCommentId,
+                commentId: reply.replyingToCommentData.baseCommentId,
                 replyId: reply.replyId
             )
             .delete()

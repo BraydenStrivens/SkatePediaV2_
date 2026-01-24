@@ -24,7 +24,7 @@ struct CommentData: Codable {
     
     init(reply: Reply) {
         self.commentId = reply.replyId
-        self.baseCommentId = reply.commentData.baseCommentId
+        self.baseCommentId = reply.replyingToCommentData.baseCommentId
         self.content = reply.content
         self.ownerUserId = reply.userData.userId
         self.ownerUsername = reply.userData.username

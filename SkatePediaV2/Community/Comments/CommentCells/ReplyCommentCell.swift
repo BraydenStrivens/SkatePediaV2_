@@ -58,7 +58,7 @@ struct ReplyCommentCell: View {
             }
             
             // Adds username of the user being replied to in from of the content
-            Text("@\(reply.commentData.ownerUsername) \(reply.content)")
+            Text("@\(reply.replyingToCommentData.ownerUsername) \(reply.content)")
                 .font(.subheadline)
  
             HStack(spacing: 10) {
@@ -92,7 +92,7 @@ struct ReplyCommentCell: View {
                     withAnimation(.easeInOut(duration: 0.5)) {
                         // Removes the deleted reply from the array of replies for it's baseId in the
                         // repliesByBaseId dictionary
-                        commentsViewModel.repliesByBaseId[reply.commentData.baseCommentId]?.removeAll { replyX in
+                        commentsViewModel.repliesByBaseId[reply.replyingToCommentData.baseCommentId]?.removeAll { replyX in
                             reply.replyId == replyX.replyId
                         }
                     }

@@ -180,7 +180,7 @@ final class CommentsViewModel: ObservableObject {
         // Groups the replies by the parentId
         var childrenByParent: [String : [Reply]] = [:]
         for reply in replies {
-            childrenByParent[reply.commentData.commentId, default: []].append(reply)
+            childrenByParent[reply.replyingToCommentData.commentId, default: []].append(reply)
         }
         // Final sorted replies array
         var result: [Reply] = []
@@ -256,8 +256,8 @@ final class CommentsViewModel: ObservableObject {
                 self.newContent = ""
             }
 
-            // Sends notification for the newly uploaded comment
-            //        try await sendNotification(comment: newComment)
+            // Sends notification to the owner of the post
+            try await sendCommentNotification(currentUser: user, comment: newComment)
             
         } catch let error as FirestoreError {
             self.error = .firestore(error)
@@ -295,12 +295,14 @@ final class CommentsViewModel: ObservableObject {
                 )
                 // Inserts the new reply into the array of replies where the key is the reply's baseCommentId
                 withAnimation(.easeInOut(duration: 0.25)) {
-                    self.repliesByBaseId[newReply.commentData.baseCommentId]?.insert(newReply, at: 0)
+                    self.repliesByBaseId[newReply.replyingToCommentData.baseCommentId]?.insert(newReply, at: 0)
                 }
                 // Opens the reply section for the base comment being replied to if not already open
                 if !expandedBaseIds.contains(replyToComment.commentId) {
                     toggleReplies(for: replyToComment.commentId, postId: post.postId)
                 }
+                // Sends notification to the owner of the comment being replied to
+                try await sendReplyNotification(currentUser: user, reply: newReply)
                 
             } else if let replyToReply = self.replyToReply {
                 // Uploads a reply to another reply
@@ -315,13 +317,15 @@ final class CommentsViewModel: ObservableObject {
                 )
                 // Inserts the new reply into the array of replies where the key is the reply's baseCommentId
                 withAnimation(.easeInOut(duration: 0.25)) {
-                    self.repliesByBaseId[newReply.commentData.baseCommentId]?.insert(newReply, at: 0)
+                    self.repliesByBaseId[newReply.replyingToCommentData.baseCommentId]?.insert(newReply, at: 0)
                 }
                 // Reopens the reply section for the base comment being replied to if for some reason,
                 // the user closed it after selecting a reply to reply to.
-                if !expandedBaseIds.contains(replyToReply.commentData.baseCommentId) {
-                    toggleReplies(for: replyToReply.commentData.baseCommentId, postId: post.postId)
+                if !expandedBaseIds.contains(replyToReply.replyingToCommentData.baseCommentId) {
+                    toggleReplies(for: replyToReply.replyingToCommentData.baseCommentId, postId: post.postId)
                 }
+                // Sends notification to the owner of the reply being replied to
+                try await sendReplyNotification(currentUser: user, reply: newReply)
                 
             } else {
                 throw FirestoreError.unknown
@@ -374,53 +378,33 @@ final class CommentsViewModel: ObservableObject {
             self.error = .unknown
         }
     }
-    
-    ///
+        
     /// Sends a notification to the owner of the post being commented on or the owner of the comment being replied to.
     ///
     /// - Parameters:
     ///  - comment: An object containing information about a comment that is to be uploaded.
     ///
-//    private func sendNotification(comment: Comment) async throws {
-//        var notification: Notification? = nil
+    private func sendCommentNotification(currentUser: User, comment: Comment) async throws {
+        let notification: Notification = Notification(
+            toUserId: comment.postData.ownerUid,
+            fromUser: currentUser,
+            notificationType: .comment,
+            toPost: comment.postData,
+            fromComment: CommentData(comment: comment)
+        )
         
-//        if comment.isReply {
-//            // Fetches reply-to-comment UID and creates notification object with this ID
-//            let replyingTo = try await CommentManager.shared.getComment(commentId: comment.replyToCommentId!)
-//            
-//            if let reply = replyingTo {
-//                notification = Notification(
-//                    id: "",
-//                    fromUserId: comment.commenterUid,
-//                    toUserId: reply.commenterUid,
-//                    fromCommentId: comment.commentId,
-//                    toCommentId: comment.replyToCommentId,
-//                    notificationType: .commentReply,
-//                    dateCreated: Timestamp(),
-//                    seen: false
-//                )
-//            }
-//        } else {
-//            // Fetches post owner UID and creates notification object with this ID
-//            let post = try await PostManager.shared.fetchPost(postId: comment.postId)
-//            
-//            if let post = post {
-//                notification = Notification(
-//                    id: "",
-//                    fromUserId: comment.commenterUid,
-//                    toUserId: post.ownerId,
-//                    fromPostId: comment.postId,
-//                    fromCommentId: comment.commentId,
-//                    notificationType: .comment,
-//                    dateCreated: Timestamp(),
-//                    seen: false
-//                )
-//            }
-//        }
-//        
-//        // Sends notification
-//        if let notification = notification {
-//            try await NotificationManager.shared.sendNotification(notification: notification)
-//        }
-//    }
+        try await NotificationManager.shared.sendNotification(notification: notification)
+    }
+    
+    private func sendReplyNotification(currentUser: User, reply: Reply) async throws {
+        let notification: Notification = Notification(
+            toUserId: reply.replyingToCommentData.ownerUserId,
+            fromUser: currentUser,
+            notificationType: .reply,
+            toComment: reply.replyingToCommentData,
+            fromComment: CommentData(reply: reply)
+        )
+        
+        try await NotificationManager.shared.sendNotification(notification: notification)
+    }
 }
