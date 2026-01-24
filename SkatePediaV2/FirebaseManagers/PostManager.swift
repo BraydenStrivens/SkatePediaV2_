@@ -110,8 +110,11 @@ final class PostManager {
     /// - Throws: An error returned by firebase that specifies what went wrong.
     ///
     func getAllPostsFromUser(userId: String, count: Int, lastDocument: DocumentSnapshot?) async throws -> (item: [Post], lastDocument: DocumentSnapshot?) {
+        // The userId is a sub-field so it's path is "object_path.sub_field_path".
+        let subFieldPath = "\(Post.CodingKeys.userData.rawValue).\(UserData.CodingKeys.userId.rawValue)"
+        
         return try await postCollection
-            .whereField(UserData.FieldKeys.userId.rawValue, isEqualTo: userId)
+            .whereField(subFieldPath, isEqualTo: userId)
             .order(by: Post.CodingKeys.dateCreated.rawValue, descending: true)
             .limit(to: count)
             .startOptionally(afterDocument: lastDocument)
@@ -144,8 +147,10 @@ final class PostManager {
     /// - Throws: An error returned by firebase that specifies what went wrong.
     ///
     func deleteAllUserPosts(userId: String) async throws {
+        let userIdNestedPath = "\(Post.CodingKeys.userData.rawValue).\(UserData.CodingKeys.userId.rawValue)"
+        
         let postsToDelete = try await postCollection
-            .whereField(UserData.FieldKeys.userId.rawValue, isEqualTo: userId)
+            .whereField(userIdNestedPath, isEqualTo: userId)
             .getDocuments(as: Post.self)
         
         for post in postsToDelete {

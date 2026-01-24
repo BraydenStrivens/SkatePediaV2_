@@ -29,23 +29,31 @@ final class ProManager {
     }
     
     func getProVideo(proId: String, trickId: String) async throws -> ProSkaterVideo {
+        let trickIdNestedPath = "\(ProSkaterVideo.CodingKeys.trickData.rawValue).\(TrickData.CodingKeys.trickId.rawValue)"
+        let proIdNestedPath = "\(ProSkaterVideo.CodingKeys.proData.rawValue).\(ProSkaterData.CodingKeys.proId.rawValue)"
+        
         return try await proVideosCollection
-            .whereField(TrickData.FieldKeys.trickId.rawValue, isEqualTo: trickId)
-            .whereField(ProSkaterData.FieldKeys.proId.rawValue, isEqualTo: proId)
+            .whereField(trickIdNestedPath, isEqualTo: trickId)
+            .whereField(proIdNestedPath, isEqualTo: proId)
             .getDocument(as: ProSkaterVideo.self)
     }
     
     func getProVideos(proId: String) async throws -> [ProSkaterVideo] {
+        let proIdNestedPath = "\(ProSkaterVideo.CodingKeys.proData.rawValue).\(ProSkaterData.CodingKeys.proId.rawValue)"
+        let trickIdNestedPath = "\(ProSkaterVideo.CodingKeys.trickData.rawValue).\(TrickData.CodingKeys.trickId.rawValue)"
+
         return try await proVideosCollection
-            .whereField(ProSkaterData.FieldKeys.proId.rawValue, isEqualTo: proId)
-            .order(by: TrickData.FieldKeys.trickId.rawValue, descending: false)
+            .whereField(proIdNestedPath, isEqualTo: proId)
+            .order(by: trickIdNestedPath, descending: false)
             .getDocuments(as: ProSkaterVideo.self)
     }
     
     func getProVideosByTrick(trickId: String) async throws -> [ProSkaterVideo] {
+        let trickIdNestedPath = "\(ProSkaterVideo.CodingKeys.trickData.rawValue).\(TrickData.CodingKeys.trickId.rawValue)"
+
         return try await proVideosCollection
-            .whereField(TrickData.FieldKeys.trickId.rawValue, isEqualTo: trickId)
-            .order(by: TrickData.FieldKeys.trickId.rawValue, descending: false)
+            .whereField(trickIdNestedPath, isEqualTo: trickId)
+            .order(by: trickIdNestedPath, descending: false)
             .getDocuments(as: ProSkaterVideo.self)
     }
 }

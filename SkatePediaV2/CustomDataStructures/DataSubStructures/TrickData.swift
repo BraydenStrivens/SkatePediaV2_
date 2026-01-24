@@ -40,13 +40,6 @@ struct TrickData: Codable {
         case stance = "stance"
     }
     
-    enum FieldKeys: String {
-        case trickId = "trick_data.trick_id"
-        case name = "trick_data.trick_name"
-        case abbreviatedName = "trick_data.abbreviated_name"
-        case stance = "trick_data.stance"
-    }
-    
     /// Defines a decoder to decode a 'post' document into a 'Post' object.
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)

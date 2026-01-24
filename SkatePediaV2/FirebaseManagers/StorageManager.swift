@@ -17,7 +17,6 @@ final class StorageManager {
     private let proVideoCollection = Storage.storage().reference().child("pro_videos/")
     private let trickItemVideoCollection = Storage.storage().reference().child("user_videos/")
     private let profilePhotoCollection = Storage.storage().reference().child("profile_photos")
-    private let communityPostVideoCollection = Storage.storage().reference().child("community_post_videos/")
     private let directMessageFileCollection = Storage.storage().reference().child("direct_message_files/")
     
     private func getProVideoCollection(proId: String) -> StorageReference {
@@ -93,45 +92,6 @@ final class StorageManager {
             try await postRef.delete()
         } catch {
             print("DEBUG: TRICK ITEM VIDEO COULD NOT BE DELETED, \(error)")
-        }
-    }
-    
-    /// Uploads video associated with a post to storage. The name of the video is the post's id.
-    ///
-    /// - Parameters:
-    ///  - videoData: Data about the post's video.
-    ///  - postId: The id of the post in the database.
-    ///
-    /// - Returns: The video url of the post's video in storage.
-    func uploadPostVideo(videoData: Data, postId: String) async throws -> String? {
-        let filename = postId
-        let ref = communityPostVideoCollection.child("\(filename)")
-        let metadata = StorageMetadata()
-        metadata.contentType = "video/quicktime"
-        
-        do {
-            let _ = try await ref.putDataAsync(videoData, metadata: metadata)
-            let url = try await ref.downloadURL()
-            
-            print("DEBUG: TRICK ITEM VIDEO SUCCESSFULLY UPLOADED TO STORAGE")
-            return url.absoluteString
-        } catch {
-            print("DEBUG: FAILED TO UPLOAD TRICK ITEM VIDEO TO STORAGE")
-            return nil
-        }
-    }
-    
-    /// Deletes the video associated with a post from storage. The name of this video in storage is the post's id.
-    ///
-    /// - Parameters:
-    ///  - postId: The id of a post in storage.
-    func deletePostVideo(postId: String) async throws {
-        let postRef = communityPostVideoCollection.child("\(postId)")
-        
-        do {
-            try await postRef.delete()
-        } catch {
-            print("DEBUG: POST VIDEO COULD NOT BE DELETED, \(error)")
         }
     }
     

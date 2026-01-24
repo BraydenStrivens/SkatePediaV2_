@@ -31,13 +31,6 @@ struct UserData: Codable, Identifiable {
         case photoUrl = "photo_url"
     }
     
-    enum FieldKeys: String {
-        case userId = "user_data.user_id"
-        case username = "user_data.username"
-        case stance = "user_data.stance"
-        case photoUrl = "user_data.photo_url"
-    }
-    
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.userId = try container.decode(String.self, forKey: .userId)

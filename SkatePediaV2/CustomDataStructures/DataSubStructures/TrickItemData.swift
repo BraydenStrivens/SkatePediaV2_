@@ -28,12 +28,6 @@ struct TrickItemData: Codable, Identifiable {
         case notes = "notes"
     }
     
-    enum FieldKeys: String {
-        case trickItemId = "trick_item_data.trick_item_id"
-        case progress = "trick_item_data.progress"
-        case notes = "trick_item_data.notes"
-    }
-    
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.trickItemId = try container.decode(String.self, forKey: .trickItemId)

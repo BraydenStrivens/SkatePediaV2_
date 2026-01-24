@@ -38,14 +38,6 @@ struct CommentData: Codable {
         case ownerUsername = "owner_username"
     }
     
-    enum FieldKeys: String {
-        case commentId = "comment_data.comment_id"
-        case baseCommentId = "comment_data.base_comment_id"
-        case content = "comment_data.content"
-        case ownerUserId = "comment_data.owner_uid"
-        case ownerUsername = "comment_data.owner_username"
-    }
-    
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.commentId = try container.decode(String.self, forKey: .commentId)

@@ -28,13 +28,6 @@ struct ProSkaterData: Codable {
         case photoUrl = "photo_url"
     }
     
-    enum FieldKeys: String {
-        case proId = "pro_data.pro_id"
-        case name = "pro_data.name"
-        case stance = "pro_data.stance"
-        case photoUrl = "pro_data.photo_url"
-    }
-    
     /// Defines a decoder to decode a 'post' document into a 'Post' object.
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)

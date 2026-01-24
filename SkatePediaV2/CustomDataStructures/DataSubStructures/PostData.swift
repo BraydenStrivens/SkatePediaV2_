@@ -30,14 +30,6 @@ struct PostData: Codable {
         case trickAbbreviation = "abbreviated_name"
     }
     
-    enum FieldKeys: String {
-        case postId = "post_data.post_id"
-        case ownerUid = "post_data.owner_user_id"
-        case trickId = "post_data.trick_id"
-        case trickName = "post_data.trick_name"
-        case trickAbbreviation = "post_data.abbreviated_name"
-    }
-    
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.postId = try container.decode(String.self, forKey: .postId)
