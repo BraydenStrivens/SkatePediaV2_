@@ -11,7 +11,7 @@ import Firebase
 struct Friend: Codable, Identifiable, Equatable {
     let userId: String
     let fromUid: String
-    let dateCreated: Timestamp
+    let dateCreated: Date
     let isPending: Bool
     
     var user: User?
@@ -23,7 +23,7 @@ struct Friend: Codable, Identifiable, Equatable {
     init(
         userId: String,
         fromUid: String,
-        dateCreated: Timestamp,
+        dateCreated: Date,
         isPending: Bool
     ) {
         self.userId = userId
@@ -45,7 +45,7 @@ struct Friend: Codable, Identifiable, Equatable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.userId = try container.decode(String.self, forKey: .userId)
         self.fromUid = try container.decode(String.self, forKey: .fromUid)
-        self.dateCreated = try container.decode(Timestamp.self, forKey: .dateCreated)
+        self.dateCreated = try container.decode(Date.self, forKey: .dateCreated)
         self.isPending = try container.decode(Bool.self, forKey: .isPending)
     }
     

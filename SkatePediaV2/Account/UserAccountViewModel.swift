@@ -131,7 +131,7 @@ final class UserAccountViewModel: ObservableObject {
     func sendFriendRequest(toAddUserId: String) async throws {
         guard let currentUid = Auth.auth().currentUser?.uid else { return }
         
-        let newFriend = Friend(userId: toAddUserId, fromUid: currentUid, dateCreated: Timestamp(), isPending: true)
+        let newFriend = Friend(userId: toAddUserId, fromUid: currentUid, dateCreated: Date(), isPending: true)
         
         try await UserManager.shared.addFriendRequest(friend: newFriend)
     }
