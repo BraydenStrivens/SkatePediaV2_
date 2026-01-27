@@ -57,8 +57,8 @@ final class TrickItemManager {
         
         let videoUrl = try await StorageManager.shared.uploadTrickItemVideo(videoData: videoData, trickItemId: documentId)
         // Gets the width and height of the video
-        let aspectRatio = try await CustomVideoPlayer.getVideoResolution(url: videoUrl ?? "NO URL")
-        let videoData = VideoData(videoUrl: videoUrl ?? "NO URL", width: aspectRatio?.width, height: aspectRatio?.height)
+        let aspectRatio = try await CustomVideoPlayer.getVideoResolution(url: videoUrl)
+        let videoData = VideoData(videoUrl: videoUrl, width: aspectRatio.width, height: aspectRatio.height)
 
         let newTrickItem = TrickItem(id: documentId, trickItem: trickItem, videoData: videoData)
         

@@ -9,227 +9,105 @@ import SwiftUI
 import SlidingTabView
 
 struct NotificationView: View {
-    
     @StateObject var viewModel = NotificationsViewModel()
-    @State var tabIndex: Int = 0
-    @Binding var unseenNotificationsExist: Bool
-    let userId: String?
     
-    private let notificationTypes: [String] = ["All", "Messages", "Comments", "Replies", "Friend Requests"]
-    
+    let user: User
+        
     var body: some View {
         VStack {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 0) {
-                    ForEach(notificationTypes, id: \.self) { type in
-                        let index = notificationTypes.firstIndex(of: type)
-                        let isCurrentTab = self.tabIndex == index
-                        
-                        VStack {
-                            Text(type)
-                                .foregroundColor(.primary)
-                                .font(.subheadline)
-                                .fontWeight(isCurrentTab ? .semibold : .regular)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 5)
-                        .padding(.horizontal, 15)
-                        .background {
-                            Rectangle()
-                                .fill(.gray.opacity(isCurrentTab ? 0.2 : 0.0))
-                        }
-                        .padding(.vertical, 5)
-                        .padding(.horizontal, 5)
-                        .onTapGesture {
-                            if let index { self.tabIndex = index }
+            tabSelector
+                .padding(.top, 8)
+
+            switch viewModel.initialFetchState {
+            case .idle:
+                VStack { }
+                    .onAppear {
+                        Task {
+                            await viewModel.initialNotificationFetch(userId: user.userId)
                         }
                     }
+                
+            case .loading:
+                CustomProgressView(placement: .center)
+                
+            case .success:
+                if viewModel.notifications.isEmpty {
+                    ContentUnavailableView(
+                        "No Notifications",
+                        systemImage: "list.bullet.rectangle.portrait"
+                    )
+                } else {
+                    notificationsList
                 }
-                .padding(.horizontal)
+                
+            case .failure(let firestoreError):
+                ContentUnavailableView(
+                    "Error Fetching Notifications",
+                    systemImage: "exclamationmark.triangle",
+                    description: Text(firestoreError.errorDescription ?? "Something went wrong...")
+                )
             }
-            
-            VStack {
-                switch(tabIndex) {
-                case 0:
-                    allNotifications
-                        .onFirstAppear {
-                            let _ = print("FETCHING NOTIFICATIONS")
-                            Task {
-                                try await viewModel.fetchNotifications(userId: userId)
-                            }
-                        }
-                case 1:
-                    messageNotifications
-                        .onFirstAppear {
-                            
-                        }
-                case 2:
-                    commentNotifications
-                        .onFirstAppear {
-                            
-                        }
-                case 3:
-                    replyNotifications
-                        .onFirstAppear {
-                            
-                        }
-                case 4:
-                    friendRequestNotifications
-                        .onFirstAppear {
-                            
-                        }
-                default:
-                    Text("Couldnt get tab index, please select a tab.")
-                }
-            }
-            .padding()
-            
-            Spacer()
-        }
-        .customNavBarItems(title: "Notifications", subtitle: "", backButtonHidden: false)
-        .onAppear {
-            unseenNotificationsExist = false
         }
     }
     
-    var allNotifications: some View {
-        LazyVStack(spacing: 10) {
-            if viewModel.notifications.isEmpty {
-                if viewModel.isFetching {
-                    HStack {
-                        Spacer()
-                        ProgressView()
-                        Spacer()
-                    }
-                } else {
-                    Spacer()
-                    HStack {
-                        Spacer()
-                        Text("No Notifications...")
-                            .font(.title2)
-                        Spacer()
-                    }
-                    Spacer()
-                }
-            } else {
-                ScrollView {
-                    ForEach(viewModel.notifications) { notification in
-                        if let _ = notification.fromUser {
-                            NotificationCell(
-                                notifications: $viewModel.notifications,
-                                notification: notification
-                            )
-                            .onFirstAppear {
-                                Task {
-                                    try await viewModel.markNotificationAsSeen(notificationId: notification.id)
+    var tabSelector: some View {
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 0) {
+                    ForEach(NotificationFilter.allCases) { filter in
+                        Text(filter.rawValue)
+                            .font(.footnote)
+                            .kerning(0.2)
+                            .id(filter.id)
+                            .fontWeight(filter == viewModel.notificationFilter ? .semibold : .light)
+                            .padding(.horizontal)
+                            .padding(.vertical, 10)
+                            .background {
+                                Rectangle()
+                                    .fill(filter == viewModel.notificationFilter ? .gray.opacity(0.2) : Color(.systemBackground))
+                                    .overlay(alignment: .bottom) {
+                                        Rectangle()
+                                            .fill(Color("AccentColor"))
+                                            .frame(height: filter == viewModel.notificationFilter ? 1 : 0)
+                                    }
+                            }
+                            .onTapGesture {
+                                if filter != viewModel.notificationFilter {
+                                    // Emptys current notifications array
+                                    viewModel.notifications.removeAll()
+
+                                    // Changes filter and tries to move the selected tab to the middle of the screen
+                                    withAnimation(.easeInOut(duration: 0.25)) {
+                                        viewModel.notificationFilter = filter
+                                        proxy.scrollTo(filter.id, anchor: .center)
+                                    }
                                     
-                                    if notification == viewModel.notifications.last! {
-                                        try await viewModel.fetchNotifications(userId: userId)
+                                    // Re-fetches notifications using the new filter
+                                    Task {
+                                        await viewModel.initialNotificationFetch(userId: user.userId)
                                     }
                                 }
                             }
-                            Divider()
-                        }
-                    }
-                    
-                    if viewModel.isFetching {
-                        HStack {
-                            Spacer()
-                            ProgressView()
-                            Spacer()
-                        }
                     }
                 }
-                .frame(height: UIScreen.screenHeight * 0.7)
+                .overlay(alignment: .bottom) {
+                    Rectangle()
+                        .fill(.gray.opacity(0.2))
+                        .frame(height: 1)
+                }
+                .padding(.horizontal)
             }
         }
     }
     
-    var messageNotifications: some View {
-        LazyVStack {
-            if viewModel.notifications.isEmpty {
-                Spacer()
-                HStack {
-                    Spacer()
-                    Text("No Messages...")
-                        .font(.title2)
-                    Spacer()
+    var notificationsList: some View {
+        ScrollView {
+            LazyVStack {
+                ForEach(viewModel.notifications) { notification in
+                    NotificationCell(user: user, notification: notification)
+                        .environmentObject(viewModel)
                 }
-                Spacer()
-                
-            } else {
-                ScrollView {
-                    
-                }
-                .frame(height: UIScreen.screenHeight * 0.7)
-            }
-        }
-    }
-    
-    var commentNotifications: some View {
-        LazyVStack {
-            if viewModel.notifications.isEmpty {
-                Spacer()
-                HStack {
-                    Spacer()
-                    Text("No Comments...")
-                        .font(.title2)
-                    Spacer()
-                }
-                Spacer()
-                
-            } else {
-                ScrollView {
-                    
-                }
-                .frame(height: UIScreen.screenHeight * 0.7)
-            }
-        }
-    }
-    
-    var replyNotifications: some View {
-        LazyVStack {
-            if viewModel.notifications.isEmpty {
-                Spacer()
-                HStack {
-                    Spacer()
-                    Text("No Comment Replies...")
-                        .font(.title2)
-                    Spacer()
-                }
-                Spacer()
-                
-            } else {
-                ScrollView {
-                    
-                }
-                .frame(height: UIScreen.screenHeight * 0.7)
-            }
-        }
-    }
-    
-    var friendRequestNotifications: some View {
-        LazyVStack {
-            if viewModel.notifications.isEmpty {
-                Spacer()
-                HStack {
-                    Spacer()
-                    Text("No Friend Requests...")
-                        .font(.title2)
-                    Spacer()
-                }
-                Spacer()
-                
-            } else {
-                ScrollView {
-                    
-                }
-                .frame(height: UIScreen.screenHeight * 0.7)
             }
         }
     }
 }
-
-//#Preview {
-//    NotificationView()
-//}

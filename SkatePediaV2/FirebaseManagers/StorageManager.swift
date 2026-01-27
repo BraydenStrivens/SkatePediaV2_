@@ -61,24 +61,19 @@ final class StorageManager {
     ///  - trickItemId: The id of the trick item in the database.
     ///
     /// - Returns: The video url of the trick item's video in storage.
-    func uploadTrickItemVideo(videoData: Data, trickItemId: String) async throws -> String? {
+    func uploadTrickItemVideo(videoData: Data, trickItemId: String) async throws -> String {
         // Creates a reference to the trick item in storage
         let ref = trickItemVideoCollection.child("\(trickItemId)")
         let metadata = StorageMetadata()
         metadata.contentType = "video/quicktime"
         
-        do {
-            // Uploads data about the video to the database
-            let _ = try await ref.putDataAsync(videoData, metadata: metadata)
-            // Gets the video's video url
-            let url = try await ref.downloadURL()
-            
-            print("DEBUG: TRICK ITEM VIDEO SUCCESSFULLY UPLOADED TO STORAGE")
-            return url.absoluteString
-        } catch {
-            print("DEBUG: FAILED TO UPLOAD TRICK ITEM VIDEO TO STORAGE")
-            return nil
-        }
+        // Uploads data about the video to the database
+        let _ = try await ref.putDataAsync(videoData, metadata: metadata)
+        // Gets the video's video url
+        let url = try await ref.downloadURL()
+        
+        print("DEBUG: TRICK ITEM VIDEO SUCCESSFULLY UPLOADED TO STORAGE")
+        return url.absoluteString
     }
     
     /// Deletes the video associated with a trick item from storage. The name of the video in storage is the trick item's id.

@@ -20,7 +20,7 @@ final class NotificationManager {
     }
     
     private func notificationCollection(userId: String) -> CollectionReference {
-        userDocument(userId: userId).collection("notifications")
+        Firestore.firestore().collection("users").document(userId).collection("notifications")
     }
     
     private func notificationDocument(userId: String, notificationId: String) -> DocumentReference {
@@ -31,48 +31,26 @@ final class NotificationManager {
         let document = notificationCollection(userId: notification.toUserId).document()
         let documentId = document.documentID
         
-        let toSend = Notification(id: documentId, notification: notification)
+        let toSend = Notification(documentId: documentId, notification: notification)
         
-        try await document.setData(toSend.asDictionary(), merge: false)
+        try document.setData(from: toSend, merge: false)
     }
     
-    func acceptFriendRequest(notification: Notification) async throws {
-        let toAcceptUserId = notification.fromUserId
+    func handleFriendRequest(notification: Notification, accept: Bool) async throws {
+        if accept {
+            try await UserManager.shared.acceptFriendRequest(senderUid: notification.fromUser.userId)
+        } else {
+            UserManager.shared.removeFriend(toRemoveUid: notification.fromUser.userId)
+        }
         
-        try await UserManager.shared.acceptFriendRequest(senderUid: toAcceptUserId)
-        deleteNotification(notificationId: notification.id)
+        try await deleteNotification(notification: notification)
     }
     
-    func denyFriendRequest(notification: Notification) async throws {
-        let toDenyUserId = notification.fromUserId
-
-        UserManager.shared.removeFriend(toRemoveUid: toDenyUserId)
-        deleteNotification(notificationId: notification.id)
-    }
-    
-    func markNotifcationAsRead(notificationId: String) async throws {
-        guard let currentUserId = Auth.auth().currentUser?.uid else { return }
-
-        try await notificationDocument(userId: currentUserId, notificationId: notificationId)
+    func markNotifcationAsRead(notification: Notification) async throws {
+        try await notificationDocument(userId: notification.toUserId, notificationId: notification.id)
             .updateData(
                 [Notification.CodingKeys.seen.rawValue : true]
             )
-    }
-    
-    func getUnseenNotificationCount(userId: String) async throws -> Int {
-        try await notificationCollection(userId: userId)
-            .whereField(Notification.CodingKeys.seen.rawValue, isEqualTo: false)
-            .aggregateCount()
-    }
-    
-    func fetchNotifications(userId: String, count: Int, lastDocument: DocumentSnapshot?) async throws -> (item: [Notification], lastDocument: DocumentSnapshot?) {
-        let query = notificationCollection(userId: userId)
-            .order(by: Notification.CodingKeys.dateCreated.rawValue, descending: false)
-        
-        return try await query
-            .limit(to: count)
-            .startOptionally(afterDocument: lastDocument)
-            .getDocumentsWithSnapshot(as: Notification.self)
     }
     
     func fetchAllNotifications(userId: String) async throws -> [Notification] {
@@ -80,20 +58,25 @@ final class NotificationManager {
             .getDocuments(as: Notification.self)
     }
     
-    func fetchNotificationsByType(userId: String, type: NotificationType, count: Int, lastDocument: DocumentSnapshot?) async throws -> (item: [Notification], lastDocument: DocumentSnapshot?) {
-        let query = notificationCollection(userId: userId)
-            .whereField(Notification.CodingKeys.notificationType.rawValue, isEqualTo: type)
+    func fetchNotifications(userId: String, count: Int, lastDocument: DocumentSnapshot?) async throws -> (item: [Notification], lastDocument: DocumentSnapshot?) {
+        return try await notificationCollection(userId: userId)
             .order(by: Notification.CodingKeys.dateCreated.rawValue, descending: false)
-        
-        return try await query
             .limit(to: count)
             .startOptionally(afterDocument: lastDocument)
             .getDocumentsWithSnapshot(as: Notification.self)
     }
     
-    func deleteNotification(notificationId: String) {
-        guard let currentUid = Auth.auth().currentUser?.uid else { return }
-        
-        notificationCollection(userId: currentUid).document(notificationId).delete()
+    func fetchNotificationsByType(userId: String, type: NotificationType, count: Int, lastDocument: DocumentSnapshot?) async throws -> (item: [Notification], lastDocument: DocumentSnapshot?) {
+        return try await notificationCollection(userId: userId)
+            .whereField(Notification.CodingKeys.notificationType.rawValue, isEqualTo: type.rawValue)
+            .order(by: Notification.CodingKeys.dateCreated.rawValue, descending: false)
+            .limit(to: count)
+            .startOptionally(afterDocument: lastDocument)
+            .getDocumentsWithSnapshot(as: Notification.self)
+    }
+    
+    func deleteNotification(notification: Notification) async throws {
+        try await notificationDocument(userId: notification.toUserId, notificationId: notification.id)
+            .delete()
     }
 }

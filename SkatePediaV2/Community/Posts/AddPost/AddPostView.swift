@@ -166,17 +166,15 @@ struct AddPostView: View {
                     maxWidth: proxy.size.width,
                     maxHeight: proxy.size.height)
                 
-                if let size = size {
-                    SPVideoPlayer(
-                        userPlayer: videoPlayer,
-                        frameSize: proxy.size,
-                        videoSize: size,
-                        showButtons: true
-                    )
-                    .scaledToFit()
-                    .onDisappear {
-                        videoPlayer.pause()
-                    }
+                SPVideoPlayer(
+                    userPlayer: videoPlayer,
+                    frameSize: proxy.size,
+                    videoSize: size,
+                    showButtons: true
+                )
+                .scaledToFit()
+                .onDisappear {
+                    videoPlayer.pause()
                 }
             }
             

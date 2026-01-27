@@ -77,22 +77,16 @@ struct SelectProVideoCell: View {
                     maxWidth: proxy.size.width,
                     maxHeight: proxy.size.height)
 
-                if let size = size {
-                    SPVideoPlayer(
-                        userPlayer: player,
-                        frameSize: proxy.size,
-                        videoSize: size,
-                        showButtons: true
-                    )
-                    .ignoresSafeArea()
-                    .scaledToFit()
-                    .onDisappear {
-                        player.pause()
-                    }
-                    
-                    
-                } else {
-                    ProgressView()
+                SPVideoPlayer(
+                    userPlayer: player,
+                    frameSize: proxy.size,
+                    videoSize: size,
+                    showButtons: true
+                )
+                .ignoresSafeArea()
+                .scaledToFit()
+                .onDisappear {
+                    player.pause()
                 }
             }
         }

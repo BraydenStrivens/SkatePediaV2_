@@ -13,7 +13,7 @@ import Foundation
 /// 3. If a user sends a direct message, a message notification is sent.
 /// 4. If a friend request is sent, a friendRequest notification is sent.
 ///
-enum NotificationType: Codable {
+enum NotificationType: String, Codable {
     case comment
     case reply
     case message

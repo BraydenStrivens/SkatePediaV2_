@@ -107,18 +107,16 @@ struct PostCell: View {
                 maxWidth: videoPlayerFrame.width,
                 maxHeight: videoPlayerFrame.height)
             
-            if let videoSize = videoSize {
-                SPVideoPlayer(
-                    userPlayer: viewModel.player,
-                    frameSize: videoPlayerFrame,
-                    videoSize: videoSize,
-                    showButtons: true
-                )
-                .padding(12)
-                .background(.gray.opacity(0.1))
-                .onDisappear {
-                    viewModel.player.pause()
-                }
+            SPVideoPlayer(
+                userPlayer: viewModel.player,
+                frameSize: videoPlayerFrame,
+                videoSize: videoSize,
+                showButtons: true
+            )
+            .padding(12)
+            .background(.gray.opacity(0.1))
+            .onDisappear {
+                viewModel.player.pause()
             }
             
             // Post content and comments button

@@ -41,26 +41,15 @@ struct CustomVideoPlayer: UIViewControllerRepresentable {
 
     
     @MainActor
-    static func getVideoResolution(url: String) async throws -> CGSize? {
-        do {
-            let url = URL(string: url)
-            let track = try await AVURLAsset(url: url!).loadTracks(withMediaType: AVMediaType.video).first
-            let size = try await track!.load(.naturalSize).applying(track!.load(.preferredTransform))
-            
-            return CGSize(width: abs(size.width), height: abs(size.height))
-        } catch {
-            print("ERROR: \(error)")
-        }
-
-        return nil
+    static func getVideoResolution(url: String) async throws -> CGSize {
+        let url = URL(string: url)
+        let track = try await AVURLAsset(url: url!).loadTracks(withMediaType: AVMediaType.video).first
+        let size = try await track!.load(.naturalSize).applying(track!.load(.preferredTransform))
+        
+        return CGSize(width: abs(size.width), height: abs(size.height))
     }
     
-    static func getNewAspectRatio(baseWidth: CGFloat?, baseHeight: CGFloat?, maxWidth: CGFloat, maxHeight: CGFloat) -> CGSize? {
-        guard let baseWidth = baseWidth, let baseHeight = baseHeight else {
-            print("NO BASE ASPECT RATIO")
-            return nil
-        }
-        
+    static func getNewAspectRatio(baseWidth: CGFloat, baseHeight: CGFloat, maxWidth: CGFloat, maxHeight: CGFloat) -> CGSize {        
         let widthRatio = maxWidth / baseWidth
         let heightRatio = maxHeight / baseHeight
         

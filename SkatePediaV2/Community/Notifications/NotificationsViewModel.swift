@@ -9,54 +9,135 @@ import Foundation
 import FirebaseAuth
 import FirebaseFirestore
 
-final class NotificationsViewModel: ObservableObject {
-    @Published var isFetching: Bool = false
-    @Published var notifications: [Notification] = []
+enum NotificationFilter: String, CaseIterable, Identifiable {
+    case all = "All"
+    case comments = "Comments"
+    case replies = "Replies"
+    case messages = "Messages"
+    case friendRequest = "Friend Requests"
     
-    private var currentBatch: [Notification] = []
+    var id: String {
+        self.rawValue
+    }
+    
+    /// It is impossible for .notificationType to be used on a filter if it is .all, so this sets it to a random filter
+    /// so that the notification type isn't an optional.
+    var notificationType: NotificationType {
+        switch self {
+        case .all: NotificationType.comment
+        case .comments: NotificationType.comment
+        case .replies: NotificationType.reply
+        case .messages: NotificationType.message
+        case .friendRequest: NotificationType.friendRequest
+        }
+    }
+}
+
+final class NotificationsViewModel: ObservableObject {
+    @Published var notifications: [Notification] = []
+    @Published var initialFetchState: RequestState = .idle
+    @Published var isFetchingMore: Bool = false
+    @Published var notificationFilter: NotificationFilter = .all
+    @Published var error: SPError? = nil
+    
     private var lastDocument: DocumentSnapshot? = nil
+    private let batchCount: Int = 15
 
     @MainActor
-    func fetchNotifications(userId: String?) async throws {
-        guard notifications.count % 10 == 0 else { return }
-        guard let currentUid = Auth.auth().currentUser?.uid else { return }
-        
-        self.isFetching = true
-        let (newNotifications, lastDocument) = try await NotificationManager.shared.fetchNotifications(userId: currentUid, count: 10, lastDocument: lastDocument)
-        
-        self.currentBatch.append(contentsOf: newNotifications)
-        if let lastDocument { self.lastDocument = lastDocument }
-        
-        try await fetchDataForNotifications()
-        self.currentBatch.removeAll()
-        
-        self.isFetching = false
+    func initialNotificationFetch(userId: String) async {
+        do {
+            initialFetchState = .loading
+            
+            if case .all = notificationFilter {
+                
+                let (initialBatch, lastDocument) = try await NotificationManager.shared.fetchNotifications(
+                    userId: userId,
+                    count: batchCount,
+                    lastDocument: self.lastDocument
+                )
+                self.notifications.append(contentsOf: initialBatch)
+                if let lastDocument { self.lastDocument = lastDocument }
+                
+            } else {
+                
+                let (initialBatch, lastDocument) = try await NotificationManager.shared.fetchNotificationsByType(
+                    userId: userId,
+                    type: notificationFilter.notificationType,
+                    count: batchCount,
+                    lastDocument: self.lastDocument
+                )
+                self.notifications.append(contentsOf: initialBatch)
+                if let lastDocument { self.lastDocument = lastDocument }
+            }
+            
+            initialFetchState = .success
+            
+        } catch let error as FirestoreError {
+            initialFetchState = .failure(.firestore(error))
+            
+        } catch {
+            initialFetchState = .failure(.unknown)
+        }
     }
     
     @MainActor
-    func fetchDataForNotifications() async throws {
-//        for index in 0 ..< currentBatch.count {
-//            let notification = currentBatch[index]
-//            print("BEFORE")
-//            self.currentBatch[index].fromUser = try await UserManager.shared.fetchUser(withUid: notification.fromUserId)
-//            print("AFTER")
-//            if let fromPostId = notification.fromPostId, let fromCommentId = notification.fromCommentId {
-//                self.currentBatch[index].fromPost = try await PostManager.shared.fetchPost(postId: fromPostId)
-//                self.currentBatch[index].fromComment = try await CommentManager.shared.getComment(commentId: fromCommentId)
-//                
-//            } else if let fromCommentId = notification.fromCommentId, let toCommentId = notification.toCommentId {
-//                self.currentBatch[index].fromComment = try await CommentManager.shared.getComment(commentId: fromCommentId)
-//                self.currentBatch[index].toComment = try await CommentManager.shared.getComment(commentId: toCommentId)
-//                
-//            } else if let messageId = notification.messageId {
-//                // TODO
-//            }
-//            
-//            if self.currentBatch[index].fromUser != nil { self.notifications.append(currentBatch[index]) }
-//        }
+    func fetchMoreNotifications(userId: String) async {
+        do {
+            isFetchingMore = true
+            
+            if case .all = notificationFilter {
+                let (currentBatch, lastDocument) = try await NotificationManager.shared.fetchNotifications(
+                    userId: userId,
+                    count: batchCount,
+                    lastDocument: self.lastDocument
+                )
+                self.notifications.append(contentsOf: currentBatch)
+                if let lastDocument { self.lastDocument = lastDocument }
+
+            } else {
+                
+                let (currentBatch, lastDocument) = try await NotificationManager.shared.fetchNotificationsByType(
+                    userId: userId,
+                    type: notificationFilter.notificationType,
+                    count: batchCount,
+                    lastDocument: self.lastDocument
+                )
+                self.notifications.append(contentsOf: currentBatch)
+                if let lastDocument { self.lastDocument = lastDocument }
+                
+            }
+        
+            isFetchingMore = false
+            
+        } catch let error as FirestoreError {
+            self.error = .firestore(error)
+            
+        } catch {
+            self.error = .unknown
+        }
     }
     
-    func markNotificationAsSeen(notificationId: String) async throws {
-        try await NotificationManager.shared.markNotifcationAsRead(notificationId: notificationId)
+    func handleFriendRequest(notification: Notification, accept: Bool) async throws {
+        do {
+            try await NotificationManager.shared.handleFriendRequest(notification: notification, accept: accept)
+            
+        } catch let error as FirestoreError {
+            self.error = .firestore(error)
+            
+        } catch {
+            self.error = .unknown
+        }
+    }
+    
+    func markNotificationAsSeen(notification: Notification) async {
+        do {
+            try await NotificationManager.shared.markNotifcationAsRead(notification: notification)
+            
+        } catch let error as FirestoreError {
+            self.error = .firestore(error)
+            
+        } catch {
+            self.error = .unknown
+        }
     }
 }

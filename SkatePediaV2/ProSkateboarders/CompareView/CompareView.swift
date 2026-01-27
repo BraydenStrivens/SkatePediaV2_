@@ -233,14 +233,12 @@ struct CompareView: View {
                     maxHeight: proxy.size.height
                 )
                 
-                if let size = size {
-                    SPVideoPlayer(
-                        userPlayer: viewModel.videoPlayer1,
-                        frameSize: proxy.size,
-                        videoSize: size,
-                        showButtons: true
-                    )
-                }
+                SPVideoPlayer(
+                    userPlayer: viewModel.videoPlayer1,
+                    frameSize: proxy.size,
+                    videoSize: size,
+                    showButtons: true
+                )
             } else {
                 VStack {
                     Spacer()
@@ -274,14 +272,12 @@ struct CompareView: View {
                     maxHeight: proxy.size.height
                 )
                 
-                if let size = size {
-                    SPVideoPlayer(
-                        userPlayer: viewModel.videoPlayer2,
-                        frameSize: proxy.size,
-                        videoSize: size,
-                        showButtons: true
-                    )
-                }
+                SPVideoPlayer(
+                    userPlayer: viewModel.videoPlayer2,
+                    frameSize: proxy.size,
+                    videoSize: size,
+                    showButtons: true
+                )
             } else {
                 VStack {
                     Spacer()

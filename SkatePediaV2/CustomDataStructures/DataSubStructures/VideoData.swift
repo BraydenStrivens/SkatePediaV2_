@@ -9,13 +9,13 @@ import Foundation
 
 struct VideoData: Codable, Hashable {
     let videoUrl: String
-    let width: CGFloat?
-    let height: CGFloat?
+    let width: CGFloat
+    let height: CGFloat
     
-    init(videoUrl: String, width: CGFloat?, height: CGFloat?) {
+    init(videoUrl: String, width: CGFloat, height: CGFloat) {
         self.videoUrl = videoUrl
-        self.width = width ?? nil
-        self.height = height ?? nil
+        self.width = width
+        self.height = height
     }
      
     /// Defines naming conventions for the post document's fields in the database.
@@ -29,15 +29,15 @@ struct VideoData: Codable, Hashable {
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.videoUrl = try container.decode(String.self, forKey: .videoUrl)
-        self.width = try container.decodeIfPresent(CGFloat.self, forKey: .width)
-        self.height = try container.decodeIfPresent(CGFloat.self, forKey: .height)
+        self.width = try container.decode(CGFloat.self, forKey: .width)
+        self.height = try container.decode(CGFloat.self, forKey: .height)
     }
     
     /// Defines an encoder to encode a 'Post' object into a 'post' document.
     func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(self.videoUrl, forKey: .videoUrl)
-        try container.encodeIfPresent(self.width, forKey: .width)
-        try container.encodeIfPresent(self.height, forKey: .height)
+        try container.encode(self.width, forKey: .width)
+        try container.encode(self.height, forKey: .height)
     }
 }

@@ -38,8 +38,10 @@ struct CommunityView: View {
         case .success:
             NavigationStack(path: $uploadPostPath) {
                 VStack(spacing: 0) {
-                    communityHeaderSection
-                        .zIndex(1)
+                    if let user = viewModel.user {
+                        communityHeaderSection(user: user)
+                            .zIndex(1)
+                    }
                     
                     if viewModel.showFilters {
                         if let user = viewModel.user {
@@ -99,7 +101,7 @@ struct CommunityView: View {
     
     /// Contains navigation links to various views and a button to toggle the post filters view.
     ///
-    var communityHeaderSection: some View {
+    func communityHeaderSection(user: User) -> some View {
         HStack(alignment: .center, spacing: 25) {
             // Account search view nav link
             CustomNavLink(
@@ -114,22 +116,24 @@ struct CommunityView: View {
             
             // Notifications view nav link
             CustomNavLink(
-                destination: NotificationView(unseenNotificationsExist: $viewModel.unseenNotificationsExist, userId: viewModel.user?.userId),
-                label: {
-                    Image(systemName: "bell")
-                        .resizable()
-                        .frame(width: 22, height: 22)
-                        .overlay(alignment: .topTrailing) {
-                            if viewModel.unseenNotificationsExist {
-                                Circle()
-                                    .fill(Color("buttonColor"))
-                                    .stroke(.primary, lineWidth: 1)
-                                    .frame(width: 10, height: 10)
-                            }
+                destination: NotificationView(user: user)
+                    .customNavBarItems(title: "Notifications", backButtonHidden: false)
+            ) {
+                Image(systemName: "bell")
+                    .resizable()
+                    .frame(width: 22, height: 22)
+                    .overlay(alignment: .topTrailing) {
+                        if viewModel.unseenNotificationsExist {
+                            Circle()
+                                .fill(Color("buttonColor"))
+                                .stroke(.primary, lineWidth: 1)
+                                .frame(width: 10, height: 10)
                         }
-                        .foregroundColor(.primary)
-                }
-            )
+                    }
+                    .foregroundColor(.primary)
+            }
+            
+            
             
             // Direct messages view nav link
             CustomNavLink(
@@ -156,16 +160,15 @@ struct CommunityView: View {
             }
             
             // Upload new post button
-            if let user = viewModel.user {
-                Button {
-                    uploadPostPath.append(UploadPostRoutes.selectTrick(user: user))
-                } label: {
-                    Image(systemName: "plus")
-                        .resizable()
-                        .foregroundColor(.primary)
-                        .frame(width: 22, height: 22)
-                }
+            Button {
+                uploadPostPath.append(UploadPostRoutes.selectTrick(user: user))
+            } label: {
+                Image(systemName: "plus")
+                    .resizable()
+                    .foregroundColor(.primary)
+                    .frame(width: 22, height: 22)
             }
+            
             
             // Refresh posts button
             Button {

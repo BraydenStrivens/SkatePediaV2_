@@ -202,16 +202,15 @@ struct TrickItemView: View {
                     maxHeight: UIScreen.screenHeight * 0.7
                 )
                 
-                if let videoSize = videoSize {
-                    SPVideoPlayer(
-                        userPlayer: player,
-                        frameSize: frameSize,
-                        videoSize: videoSize,
-                        showButtons: true
-                    )
-                    .ignoresSafeArea()
-                    .scaledToFit()
-                }
+                SPVideoPlayer(
+                    userPlayer: player,
+                    frameSize: frameSize,
+                    videoSize: videoSize,
+                    showButtons: true
+                )
+                .ignoresSafeArea()
+                .scaledToFit()
+                
             }
         }
         .padding(.vertical, 10)

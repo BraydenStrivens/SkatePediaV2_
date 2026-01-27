@@ -44,21 +44,16 @@ struct ProTrickPreview: View {
                         maxHeight: proxy.size.height
                     )
                     
-                    if let videoSize = videoSize {
-                        SPVideoPlayer(
-                            userPlayer: player,
-                            frameSize: proxy.size,
-                            videoSize: videoSize,
-                            showButtons: true
-                        )
-                        .ignoresSafeArea()
-                        .scaledToFit()
-                        .onDisappear {
-                            player.pause()
-                        }
-                        
-                    } else {
-                        Text("Error")
+                    SPVideoPlayer(
+                        userPlayer: player,
+                        frameSize: proxy.size,
+                        videoSize: videoSize,
+                        showButtons: true
+                    )
+                    .ignoresSafeArea()
+                    .scaledToFit()
+                    .onDisappear {
+                        player.pause()
                     }
                 }
             }

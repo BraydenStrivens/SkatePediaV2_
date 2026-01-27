@@ -63,20 +63,16 @@ struct SelectTrickItemCellToPost: View {
                     maxWidth: proxy.size.width,
                     maxHeight: proxy.size.height
                 )
-                if let size = size {
-                    SPVideoPlayer(
-                        userPlayer: viewModel.player,
-                        frameSize: proxy.size,
-                        videoSize: size,
-                        showButtons: true
-                    )
-                    .ignoresSafeArea()
-                    .scaledToFit()
-                    .onDisappear {
-                        viewModel.player.pause()
-                    }
-                } else {
-                    ProgressView()
+                SPVideoPlayer(
+                    userPlayer: viewModel.player,
+                    frameSize: proxy.size,
+                    videoSize: size,
+                    showButtons: true
+                )
+                .ignoresSafeArea()
+                .scaledToFit()
+                .onDisappear {
+                    viewModel.player.pause()
                 }
             }
             .frame(width: cellSize.width, height: cellSize.height)
