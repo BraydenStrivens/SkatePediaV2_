@@ -46,9 +46,13 @@ final class NotificationsViewModel: ObservableObject {
     @MainActor
     func initialNotificationFetch(userId: String) async {
         do {
-            initialFetchState = .loading
+            /// Resets the previous initial fetch. Necessary for when the user selects a filter and the filtered notifications are initially fetched.
+            self.lastDocument = nil
+            self.notifications.removeAll()
             
-            if case .all = notificationFilter {
+            initialFetchState = .loading
+
+            if notificationFilter == .all {
                 
                 let (initialBatch, lastDocument) = try await NotificationManager.shared.fetchNotifications(
                     userId: userId,
@@ -82,10 +86,11 @@ final class NotificationsViewModel: ObservableObject {
     
     @MainActor
     func fetchMoreNotifications(userId: String) async {
+        guard notifications.count % batchCount == 0 else { return }
+        isFetchingMore = true
+
         do {
-            isFetchingMore = true
-            
-            if case .all = notificationFilter {
+            if notificationFilter == .all {
                 let (currentBatch, lastDocument) = try await NotificationManager.shared.fetchNotifications(
                     userId: userId,
                     count: batchCount,
@@ -106,15 +111,14 @@ final class NotificationsViewModel: ObservableObject {
                 if let lastDocument { self.lastDocument = lastDocument }
                 
             }
-        
-            isFetchingMore = false
-            
         } catch let error as FirestoreError {
             self.error = .firestore(error)
             
         } catch {
             self.error = .unknown
         }
+        
+        isFetchingMore = false
     }
     
     func handleFriendRequest(notification: Notification, accept: Bool) async throws {

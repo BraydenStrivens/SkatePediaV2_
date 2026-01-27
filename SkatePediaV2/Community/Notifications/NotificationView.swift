@@ -14,7 +14,7 @@ struct NotificationView: View {
     let user: User
         
     var body: some View {
-        VStack {
+        VStack(spacing: 0) {
             tabSelector
                 .padding(.top, 8)
 
@@ -73,11 +73,8 @@ struct NotificationView: View {
                             }
                             .onTapGesture {
                                 if filter != viewModel.notificationFilter {
-                                    // Emptys current notifications array
-                                    viewModel.notifications.removeAll()
-
-                                    // Changes filter and tries to move the selected tab to the middle of the screen
                                     withAnimation(.easeInOut(duration: 0.25)) {
+                                        // Changes filter and tries to move the selected tab to the middle of the screen
                                         viewModel.notificationFilter = filter
                                         proxy.scrollTo(filter.id, anchor: .center)
                                     }

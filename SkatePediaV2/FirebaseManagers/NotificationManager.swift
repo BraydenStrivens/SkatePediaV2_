@@ -60,7 +60,7 @@ final class NotificationManager {
     
     func fetchNotifications(userId: String, count: Int, lastDocument: DocumentSnapshot?) async throws -> (item: [Notification], lastDocument: DocumentSnapshot?) {
         return try await notificationCollection(userId: userId)
-            .order(by: Notification.CodingKeys.dateCreated.rawValue, descending: false)
+            .order(by: Notification.CodingKeys.dateCreated.rawValue, descending: true)
             .limit(to: count)
             .startOptionally(afterDocument: lastDocument)
             .getDocumentsWithSnapshot(as: Notification.self)
@@ -69,7 +69,7 @@ final class NotificationManager {
     func fetchNotificationsByType(userId: String, type: NotificationType, count: Int, lastDocument: DocumentSnapshot?) async throws -> (item: [Notification], lastDocument: DocumentSnapshot?) {
         return try await notificationCollection(userId: userId)
             .whereField(Notification.CodingKeys.notificationType.rawValue, isEqualTo: type.rawValue)
-            .order(by: Notification.CodingKeys.dateCreated.rawValue, descending: false)
+            .order(by: Notification.CodingKeys.dateCreated.rawValue, descending: true)
             .limit(to: count)
             .startOptionally(afterDocument: lastDocument)
             .getDocumentsWithSnapshot(as: Notification.self)

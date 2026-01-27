@@ -119,7 +119,7 @@ struct Notification: Codable, Identifiable, Equatable {
         try container.encode(self.fromUser, forKey: .fromUser)
         try container.encode(self.notificationType, forKey: .notificationType)
         try container.encodeIfPresent(self.toPost, forKey: .toPost)
-        try container.encodeIfPresent(self.toUserId, forKey: .toComment)
+        try container.encodeIfPresent(self.toComment, forKey: .toComment)
         try container.encodeIfPresent(self.fromComment, forKey: .fromComment)
         try container.encodeIfPresent(self.fromMessage, forKey: .fromMessage)
         
