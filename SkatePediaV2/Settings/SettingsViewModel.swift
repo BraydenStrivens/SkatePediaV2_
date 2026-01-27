@@ -45,23 +45,7 @@ final class SettingsViewModel: ObservableObject {
     ///  - userId: The id of an account in the database.
     func deleteUser(userId: String) async throws {
         self.isDeleting = true
-        
-        do {
-            // Deletes the users account
-            try await AuthenticationService.shared.deleteUser()
-        } catch {
-            self.errorMessage = "\(error)"
-            print("COULDNT DELETE AUTH USER: \(error)")
-            return
-        }
-        
-        do {
-            // Deletes all the users data and videos
-            try await UserManager.shared.deleteUserData(userId: userId)
-        } catch {
-            print("COUDLNT DELETE USER DATA: \(error)")
-            self.errorMessage = "\(error)"
-        }
+
         
     }
 }
