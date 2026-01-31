@@ -20,7 +20,7 @@ struct UserPostsView:  View {
             LazyVStack(alignment: .center) {
                 ForEach(viewModel.userPosts) { post in
                     PostCell(user: user, post: post)
-                    .padding(.horizontal, 15)
+//                    .padding(.horizontal, 15)
                 }
             }
         }

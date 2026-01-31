@@ -25,7 +25,7 @@ struct TrickListPreviewView: View {
             ScrollView {
                 VStack(spacing: 10) {
                     if !viewModel.threeStarTricks.isEmpty {
-                        VStack {
+                        VStack(alignment: .leading) {
                             TrickStarRatingView(rating: 3, size: 30)
                             Divider()
                             ListViewByRating(trickList: viewModel.threeStarTricks)

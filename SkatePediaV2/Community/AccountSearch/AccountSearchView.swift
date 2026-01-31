@@ -12,6 +12,7 @@ import SwiftUI
 ///
 struct AccountSearchView: View {
     @StateObject var viewModel = AccountSearchViewModel()
+    @State private var delayedWorkItem: DispatchWorkItem?
     
     // Dismisses the current view when called
     @Environment(\.dismiss) var dismiss
@@ -23,14 +24,29 @@ struct AccountSearchView: View {
             Divider()
             
             searchResults
+            
+            Spacer()
         }
         .padding()
-        .onChange(of: viewModel.search) {
-            // Resets matched users and re-searches whenever a character is inputed or deleted
-            viewModel.clearFoundUsers()
-            Task {
-                try await viewModel.searchUsers()
+        .onChange(of: viewModel.search) { oldValue, newValue in
+            // Minimum string length to query users with is 2
+            guard newValue.count >= 2 else { return }
+            viewModel.isSearching = true
+            // Cancles the previous fetch if it was in progress or scheduled during the 0.3 second delay window
+            delayedWorkItem?.cancel()
+            
+            // Adds a slightly higher delay for backspacing because users type faster then they can backspace
+            let delay = newValue.count > oldValue.count ? 0.3 : 0.6
+            let workItem = DispatchWorkItem {
+                Task {
+                    viewModel.resetSearch()
+                    await viewModel.searchAfterDelay(usernamePrefix: newValue)
+                    let _ = print(newValue)
+                }
             }
+            delayedWorkItem = workItem
+            // Executes search function after 0.3 seconds
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
         }
         .customNavBarItems(title: "Account Search", subtitle: "", backButtonHidden: false)
     }
@@ -38,7 +54,7 @@ struct AccountSearchView: View {
     var searchBar: some View {
         ZStack {
             // Search bar
-            TextField(viewModel.search.isEmpty ? "Search" : viewModel.search, text: $viewModel.search)
+            TextField(viewModel.search, text: $viewModel.search, prompt: Text("Username"))
                 .autocorrectionDisabled()
                 .autocapitalization(.none)
                 .lineLimit(1)
@@ -66,30 +82,31 @@ struct AccountSearchView: View {
         .padding(8)
     }
     
+    @ViewBuilder
     var searchResults: some View {
-        ScrollView {
-            if viewModel.search.isEmpty {
-                Spacer()
-                
+        if viewModel.isSearching {
+            CustomProgressView(placement: .center)
+            
+        } else if viewModel.search.count < 2 {
+            VStack {
                 Text("Enter Username")
-                    .foregroundColor(.primary)
                     .font(.subheadline)
-                
-                Spacer()
-                
-            } else if viewModel.foundUsers.isEmpty {
-                Spacer()
-                
+                Text("A mimimum of 2 characters is required to search.")
+                    .font(.footnote)
+                    .foregroundStyle(.gray)
+            }
+            
+        } else if viewModel.foundUsers.isEmpty {
+            VStack {
                 Text("No users matching:")
-                    .foregroundColor(.primary)
                     .font(.subheadline)
                 Text("'\(viewModel.search)'")
-                    .foregroundColor(.primary)
-                    .font(.headline)
-                
-                Spacer()
-                
-            } else {
+                    .font(.title3)
+                    .fontWeight(.medium)
+            }
+                        
+        } else {
+            ScrollView {
                 LazyVStack(spacing: 10) {
                     ForEach(viewModel.foundUsers) { user in
                         AccountCell(user: user)

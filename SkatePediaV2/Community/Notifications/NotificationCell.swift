@@ -48,7 +48,7 @@ struct NotificationCell: View {
                 Spacer()
                 
                 // Removes the 'ago' from the time ago string. "2h ago" -> "2h"
-                Text(notification.dateCreated.timeAgoString().split(separator: " ")[0])
+                Text(notification.dateCreated.timeAgoString())
                     .font(.caption)
                     .foregroundStyle(.gray)
             }
@@ -127,9 +127,33 @@ struct NotificationCell: View {
         }
     }
     
+    @ViewBuilder
     var messageNotificationCell: some View {
-        VStack {
-            
+        if let messageData = notification.fromMessage {
+            VStack(alignment: .leading) {
+                Text("@\(notification.fromUser.username)")
+                    .font(.body)
+                    .fontWeight(.light)
+                + Text(" sent a message.")
+                    .font(.callout)
+                    .fontWeight(.thin)
+                
+                if let fileType = messageData.fileType {
+                    Text("Sent a \(fileType.rawValue)")
+                        .font(.body)
+                        .fontWeight(.light)
+                    
+                } else if messageData.content.count > 30 {
+                    Text("\(messageData.content.prefix(30))...")
+                        .font(.body)
+                        .fontWeight(.light)
+
+                } else {
+                    Text(messageData.content)
+                        .font(.body)
+                        .fontWeight(.light)
+                }
+            }
         }
     }
     

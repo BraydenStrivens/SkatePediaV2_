@@ -6,28 +6,71 @@
 //
 
 import Foundation
+import FirebaseFirestore
 
-///
-/// Class containing functions for quering users in the database based off of their username.
-///
 final class AccountSearchViewModel: ObservableObject {
-    
-    @Published var search: String = ""
     @Published var foundUsers: [User] = []
+    @Published var search: String = ""
+    @Published var isSearching: Bool = false
+    @Published var isFetchingMore: Bool = false
+    @Published var error: SPError? = nil
     
-    ///
-    /// Queries the database for users whose username matches a string inputted by the current user.
-    ///
+    private var lastDocument: DocumentSnapshot? = nil
+    private let batchCount: Int = 20
+    private var lastFetchCount: Int = 0
+    
     @MainActor
-    func searchUsers() async throws {
-        self.foundUsers = try await UserManager.shared.fetchUserByUsername(searchString: search, includeCurrentUser: true)
+    func searchAfterDelay(usernamePrefix: String) async {
+        do {
+            self.isSearching = true
+            
+            let (initialBatch, lastDocument) = try await UserManager.shared.fetchUserByUsername(
+                searchString: usernamePrefix,
+                count: batchCount,
+                lastDocument: lastDocument
+            )
+            for user in initialBatch {
+                print(user.userId)
+            }
+            self.foundUsers.append(contentsOf: initialBatch)
+            if let lastDocument { self.lastDocument = lastDocument }
+            self.lastFetchCount = initialBatch.count
+            
+        } catch let error as FirestoreError {
+            self.error = .firestore(error)
+            
+        } catch {
+            self.error = .unknown
+        }
+        self.isSearching = false
     }
     
-    ///
-    /// Clears the array of matched users. 
-    ///
     @MainActor
-    func clearFoundUsers() {
-        self.foundUsers = []
+    func fetchMoreUsers() async {
+        guard lastFetchCount == batchCount else { return }
+        
+        do {
+            self.isFetchingMore = true
+            let (currentBatch, lastDocument) = try await UserManager.shared.fetchUserByUsername(
+                searchString: search,
+                count: batchCount,
+                lastDocument: lastDocument
+            )
+            self.foundUsers.append(contentsOf: currentBatch)
+            if let lastDocument { self.lastDocument = lastDocument }
+            self.lastFetchCount = currentBatch.count
+            
+        } catch let error as FirestoreError {
+            self.error = .firestore(error)
+            
+        } catch {
+            self.error = .unknown
+        }
+        self.isFetchingMore = false
+    }
+    
+    func resetSearch() {
+        self.foundUsers.removeAll()
+        self.lastDocument = nil
     }
 }

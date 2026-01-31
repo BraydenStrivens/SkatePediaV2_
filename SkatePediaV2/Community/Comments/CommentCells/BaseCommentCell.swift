@@ -45,7 +45,7 @@ struct BaseCommentCell: View {
             .contextMenu {
                 // Only shows options if the comment or the post belongs to the current user
                 if let currentUid = Auth.auth().currentUser?.uid,
-                   currentUid == baseComment.userData.userId,
+                   currentUid == baseComment.userData.userId ||
                    currentUid == baseComment.postData.ownerUid {
                     commentOptions
                 }

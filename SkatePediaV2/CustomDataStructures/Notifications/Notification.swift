@@ -31,7 +31,7 @@ struct Notification: Codable, Identifiable, Equatable {
     /// Object containing data about a comment made on a post, or a reply to another comment/reply, for which a notification is generated for.
     let fromComment: CommentData?
     /// Object containing data about a sent  message for which a notification is generated for.
-    let fromMessage: MessageData?
+    let fromMessage: UserMessageData?
     
     /// Used to create an initial notification object without an id, that stores all the other information about a notification. This object gets created inside view models and is sent
     /// as a parameter to the NotificationManager. In the NotificationManager, this object is passed to the next init() function to set it's id attribute to a documentID
@@ -44,7 +44,7 @@ struct Notification: Codable, Identifiable, Equatable {
         toPost: PostData? = nil,
         toComment: CommentData? = nil,
         fromComment: CommentData? = nil,
-        fromMessage: MessageData? = nil
+        fromMessage: UserMessageData? = nil
     ) {
         self.id = ""
         self.toUserId = toUserId
@@ -105,7 +105,7 @@ struct Notification: Codable, Identifiable, Equatable {
         self.toPost = try container.decodeIfPresent(PostData.self, forKey: .toPost)
         self.toComment = try container.decodeIfPresent(CommentData.self, forKey: .toComment)
         self.fromComment = try container.decodeIfPresent(CommentData.self, forKey: .fromComment)
-        self.fromMessage = try container.decodeIfPresent(MessageData.self, forKey: .fromMessage)
+        self.fromMessage = try container.decodeIfPresent(UserMessageData.self, forKey: .fromMessage)
     }
     
     /// Encodes a Notification object into a firebase document using the CodingKeys.

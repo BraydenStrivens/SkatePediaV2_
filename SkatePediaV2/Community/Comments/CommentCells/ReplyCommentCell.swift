@@ -36,7 +36,7 @@ struct ReplyCommentCell: View {
         .contextMenu {
             // Only shows options if the reply comment or the post belongs to the current user
             if let currentUid = Auth.auth().currentUser?.uid,
-               currentUid == reply.userData.userId,
+               currentUid == reply.userData.userId ||
                currentUid == reply.postData.ownerUid {
                 replyCommentOptions
             }

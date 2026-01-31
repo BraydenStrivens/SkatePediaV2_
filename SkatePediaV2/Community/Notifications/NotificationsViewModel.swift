@@ -37,6 +37,7 @@ final class NotificationsViewModel: ObservableObject {
     @Published var notifications: [Notification] = []
     @Published var initialFetchState: RequestState = .idle
     @Published var isFetchingMore: Bool = false
+    @Published var preventRefetch: Bool = false
     @Published var notificationFilter: NotificationFilter = .all
     @Published var error: SPError? = nil
     
@@ -46,9 +47,9 @@ final class NotificationsViewModel: ObservableObject {
     @MainActor
     func initialNotificationFetch(userId: String) async {
         do {
-            /// Resets the previous initial fetch. Necessary for when the user selects a filter and the filtered notifications are initially fetched.
+            /// Resets the previous initial fetch. Necessary for when the user selects a filter and the filtered notifications are
+            /// initially fetched.
             self.lastDocument = nil
-            self.notifications.removeAll()
             
             initialFetchState = .loading
 
@@ -59,7 +60,7 @@ final class NotificationsViewModel: ObservableObject {
                     count: batchCount,
                     lastDocument: self.lastDocument
                 )
-                self.notifications.append(contentsOf: initialBatch)
+                self.notifications = initialBatch
                 if let lastDocument { self.lastDocument = lastDocument }
                 
             } else {
@@ -70,10 +71,10 @@ final class NotificationsViewModel: ObservableObject {
                     count: batchCount,
                     lastDocument: self.lastDocument
                 )
-                self.notifications.append(contentsOf: initialBatch)
+                self.notifications = initialBatch
                 if let lastDocument { self.lastDocument = lastDocument }
             }
-            
+
             initialFetchState = .success
             
         } catch let error as FirestoreError {
@@ -88,6 +89,7 @@ final class NotificationsViewModel: ObservableObject {
     func fetchMoreNotifications(userId: String) async {
         guard notifications.count % batchCount == 0 else { return }
         isFetchingMore = true
+        print("FETCHING MORE")
 
         do {
             if notificationFilter == .all {
@@ -109,7 +111,6 @@ final class NotificationsViewModel: ObservableObject {
                 )
                 self.notifications.append(contentsOf: currentBatch)
                 if let lastDocument { self.lastDocument = lastDocument }
-                
             }
         } catch let error as FirestoreError {
             self.error = .firestore(error)

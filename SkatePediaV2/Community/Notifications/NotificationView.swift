@@ -103,6 +103,11 @@ struct NotificationView: View {
                 ForEach(viewModel.notifications) { notification in
                     NotificationCell(user: user, notification: notification)
                         .environmentObject(viewModel)
+                        .task {
+                            if notification == viewModel.notifications.last {
+                                await viewModel.fetchMoreNotifications(userId: user.userId)
+                            }
+                        }
                 }
             }
         }

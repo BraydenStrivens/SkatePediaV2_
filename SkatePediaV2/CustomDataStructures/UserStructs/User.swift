@@ -11,6 +11,7 @@ struct User: Codable, Identifiable, Hashable {
     let userId: String
     let email: String
     var username: String
+    let usernameLowercase: String
     let stance: String
     var photoUrl: String?
     var bio: String?
@@ -32,6 +33,7 @@ struct User: Codable, Identifiable, Hashable {
         self.userId = userId
         self.email = email
         self.username = username
+        self.usernameLowercase = username.lowercased()
         self.stance = stance
         self.photoUrl = photoUrl
         self.bio = bio
@@ -43,6 +45,7 @@ struct User: Codable, Identifiable, Hashable {
         case userId = "user_id"
         case email = "email"
         case username = "username"
+        case usernameLowercase = "username_lowercase"
         case stance = "stance"
         case photoUrl = "profile_pic_url"
         case bio = "bio"
@@ -55,6 +58,7 @@ struct User: Codable, Identifiable, Hashable {
         self.userId = try container.decode(String.self, forKey: .userId)
         self.email = try container.decode(String.self, forKey: .email)
         self.username = try container.decode(String.self, forKey: .username)
+        self.usernameLowercase = try container.decode(String.self, forKey: .usernameLowercase)
         self.stance = try container.decode(String.self, forKey: .stance)
         self.photoUrl = try container.decode(String.self, forKey: .photoUrl)
         self.bio = try container.decode(String.self, forKey: .bio)
@@ -67,6 +71,7 @@ struct User: Codable, Identifiable, Hashable {
         try container.encode(self.userId, forKey: .userId)
         try container.encode(self.email, forKey: .email)
         try container.encode(self.username, forKey: .username)
+        try container.encode(self.usernameLowercase, forKey: .usernameLowercase)
         try container.encode(self.stance, forKey: .stance)
         try container.encode(self.photoUrl, forKey: .photoUrl)
         try container.encode(self.bio, forKey: .bio)
