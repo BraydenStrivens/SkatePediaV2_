@@ -137,7 +137,7 @@ struct CommunityView: View {
             
             // Direct messages view nav link
             CustomNavLink(
-                destination: UserChatsView(),
+                destination: UserChatsView(user: user),
                 label: {
                     Image(systemName: "bubble")
                         .resizable()

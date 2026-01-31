@@ -13,109 +13,100 @@ import AVKit
 
 
 struct ChatMessageCell: View {
+    @StateObject var viewModel: ChatMessageCellViewModel
     
     let currentUser: User
+    let userChat: UserChat
     let message: UserMessage
     private var messageIsCurrentUsers: Bool
     
-    init(currentUser: User, message: UserMessage) {
+    init(currentUser: User, userChat: UserChat, message: UserMessage) {
         self.currentUser = currentUser
+        self.userChat = userChat
         self.message = message
         self.messageIsCurrentUsers = currentUser.userId == message.fromUserId
+        _viewModel = StateObject(wrappedValue: ChatMessageCellViewModel(message: message))
     }
     
     var body: some View {
-        if messageIsCurrentUsers {
-            currentUserCell
-            
-        } else {
-            otherUserCell
+        Group {
+            if messageIsCurrentUsers {
+                currentUserCell
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .bottom),
+                        removal: .move(edge: .trailing)
+                    ))
+                
+            } else {
+                otherUserCell
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .bottom),
+                        removal: .move(edge: .leading)
+                    ))
+            }
         }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 6)
     }
     
     var currentUserCell: some View {
-        HStack {
+        HStack(alignment: .center, spacing: 4) {
             Spacer()
             
             VStack(alignment: .trailing, spacing: 0) {
                 
                 if let fileType = message.fileType { filePreview(fileType: fileType) }
                 
-                HStack {
-                    Text(message.content)
-                        .foregroundStyle(.white)
-                }
-                .frame(maxWidth: UIScreen.screenWidth * 0.8)
-                .padding()
-                .background(Color("AccentColor"))
-                .cornerRadius(8)
+                Text(message.content)
+                    .foregroundStyle(.white)
+                    .fontWeight(.medium)
+                    .frame(minWidth: 50, alignment: .center)
+                    .padding(12)
+                    .background(Color("buttonColor"))
+                    .cornerRadius(20)
             }
+            
+            CircularProfileImageView(photoUrl: currentUser.photoUrl, size: .medium)
         }
+        .padding(.leading, 50)
     }
     
     var otherUserCell: some View {
-        HStack {
+        HStack(alignment: .center, spacing: 4) {
+            CircularProfileImageView(photoUrl: userChat.withUserData.photoUrl, size: .medium)
+
             VStack(alignment: .leading, spacing: 0) {
                 
                 if let fileType = message.fileType { filePreview(fileType: fileType) }
                 
-                HStack {
-                    Text(message.content)
-                        .foregroundStyle(.primary)
-                }
-                .frame(maxWidth: UIScreen.screenWidth * 0.8)
-                .padding()
-                .background {
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(.primary)
-                }
-                
-                Spacer()
+                Text(message.content)
+                    .foregroundStyle(.primary)
+                    .fontWeight(.medium)
+                    .frame(minWidth: 50, alignment: .center)
+                    .padding(12)
+                    .background(.gray.opacity(0.5))
+                    .cornerRadius(20)
             }
             
             Spacer()
         }
-        
-    }
-    
-    func getPlayer(url: URL) -> AVPlayer {
-        let player = AVPlayer(url: url)
-        player.externalPlaybackVideoGravity = .resizeAspectFill
-        
-        return player
+        .padding(.trailing, 50)
     }
     
     @ViewBuilder
     func filePreview(fileType: FileType) -> some View {
-        
-    }
-    
-    var filePreview: some View {
-        HStack {
-            if message.fileType == FileType.video.rawValue {
-                let _ = print("MADE IT HERE")
-                
-                if let url = URL(string: message.fileUrl) {
-                    let player = getPlayer(url: url)
-                    
-                    VideoPlayer(player: player)
-                        .scaledToFit()
-                        .frame(width: UIScreen.screenWidth * 0.8)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                } else {
-                    let _ = print("COULDNT GET VIDEO URL")
-                }
-            } else {
-                KFImage(URL(string: message.fileUrl)!)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: UIScreen.screenWidth * 0.8)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-            }
+        if let player = viewModel.videoPlayer {
+            VideoPlayer(player: player)
+                .scaledToFit()
+                .frame(maxWidth: UIScreen.screenWidth * 0.8)
+                .clipShape(RoundedRectangle(cornerRadius: 5))
+            
+        } else if let image = viewModel.kfiImage {
+            image
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: UIScreen.screenWidth * 0.8)
+                .clipShape(RoundedRectangle(cornerRadius: 5))
         }
     }
 }
-
-//#Preview {
-//    ChatMessageCell()
-//}

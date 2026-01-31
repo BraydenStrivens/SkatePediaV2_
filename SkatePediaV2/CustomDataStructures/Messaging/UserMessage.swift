@@ -9,60 +9,53 @@ import Foundation
 import Firebase
 
 enum FileType: String, Codable {
-    case none = "none"
     case photo = "photo"
     case video = "video"
 }
 
-struct Message: Codable, Identifiable, Equatable {
+struct UserMessage: Codable, Identifiable, Equatable {
     let messageId: String
     let fromUserId: String
     let toUserId: String
     let content: String
-    let fileUrl: String
-    let fileType: String
-    let dateCreated: Timestamp
+    let dateCreated: Date
+    let hiddenBy: [String]
+    let pendingDeletion: Date?
+    let fileUrl: String?
+    let fileType: FileType?
     
     var id: String {
         return messageId
     }
     
-    init(documentId: String, message: Message, fileUrl: String = "", fileType: String = FileType.none.rawValue) {
+    init(
+        fromUserId: String,
+        toUserId: String,
+        content: String,
+        fileUrl: String? = nil,
+        fileType: FileType? = nil
+    ) {
+        self.messageId = ""
+        self.fromUserId = fromUserId
+        self.toUserId = toUserId
+        self.content = content
+        self.dateCreated = Date()
+        self.pendingDeletion = nil
+        self.hiddenBy = []
+        self.fileUrl = fileUrl
+        self.fileType = fileType
+    }
+    
+    init(documentId: String, message: UserMessage, fileUrl: String? = nil) {
         self.messageId = documentId
         self.fromUserId = message.fromUserId
         self.toUserId = message.toUserId
         self.content = message.content
-        self.fileUrl = fileUrl
-        self.fileType = fileType
         self.dateCreated = message.dateCreated
-    }
-    
-    init(data: [String : Any]) {
-        self.messageId = data[Message.CodingKeys.messageId.rawValue] as? String ?? ""
-        self.fromUserId = data[Message.CodingKeys.fromUserId.rawValue]  as? String ?? ""
-        self.toUserId = data[Message.CodingKeys.toUserId.rawValue]  as? String ?? ""
-        self.content = data[Message.CodingKeys.content.rawValue]  as? String ?? ""
-        self.fileUrl = data[Message.CodingKeys.fileUrl.rawValue]  as? String ?? ""
-        self.fileType = data[Message.CodingKeys.fileType.rawValue] as? String ?? FileType.none.rawValue
-        self.dateCreated = data[Message.CodingKeys.dateCreated.rawValue]  as? Timestamp ?? Timestamp()
-    }
-    
-    init(
-        messageId: String,
-        fromUserId: String,
-        toUserId: String,
-        content: String,
-        fileUrl: String = "",
-        fileType: String = FileType.none.rawValue,
-        dateCreated: Timestamp
-    ) {
-        self.messageId = messageId
-        self.fromUserId = fromUserId
-        self.toUserId = toUserId
-        self.content = content
-        self.fileUrl = fileUrl
-        self.fileType = fileType
-        self.dateCreated = dateCreated
+        self.hiddenBy = message.hiddenBy
+        self.pendingDeletion = message.pendingDeletion
+        self.fileUrl = message.fileUrl
+        self.fileType = message.fileType
     }
     
     enum CodingKeys: String, CodingKey {
@@ -70,9 +63,11 @@ struct Message: Codable, Identifiable, Equatable {
         case fromUserId = "from_user_id"
         case toUserId = "to_user_id"
         case content = "content"
+        case dateCreated = "date_created"
+        case hiddenBy = "hidden_by"
+        case pendingDeletion = "pending_deletion"
         case fileUrl = "file_url"
         case fileType = "file_type"
-        case dateCreated = "date_created"
     }
     
     init(from decoder: any Decoder) throws {
@@ -81,9 +76,11 @@ struct Message: Codable, Identifiable, Equatable {
         self.fromUserId = try container.decode(String.self, forKey: .fromUserId)
         self.toUserId = try container.decode(String.self, forKey: .toUserId)
         self.content = try container.decode(String.self, forKey: .content)
-        self.fileUrl = try container.decode(String.self, forKey: .fileUrl)
-        self.fileType = try container.decode(String.self, forKey: .fileType)
-        self.dateCreated = try container.decode(Timestamp.self, forKey: .dateCreated)
+        self.dateCreated = try container.decode(Date.self, forKey: .dateCreated)
+        self.hiddenBy = try container.decode([String].self, forKey: .hiddenBy)
+        self.pendingDeletion = try container.decodeIfPresent(Date.self, forKey: .pendingDeletion)
+        self.fileUrl = try container.decodeIfPresent(String.self, forKey: .fileUrl)
+        self.fileType = try container.decodeIfPresent(FileType.self, forKey: .fileType)
     }
     
     func encode(to encoder: any Encoder) throws {
@@ -92,13 +89,15 @@ struct Message: Codable, Identifiable, Equatable {
         try container.encode(self.fromUserId, forKey: .fromUserId)
         try container.encode(self.toUserId, forKey: .toUserId)
         try container.encode(self.content, forKey: .content)
-        try container.encode(self.fileUrl, forKey: .fileUrl)
-        try container.encode(self.fileType, forKey: .fileType)
         try container.encode(self.dateCreated, forKey: .dateCreated)
+        try container.encode(self.hiddenBy, forKey: .hiddenBy)
+        try container.encodeIfPresent(self.pendingDeletion, forKey: .pendingDeletion)
+        try container.encodeIfPresent(self.fileUrl, forKey: .fileUrl)
+        try container.encodeIfPresent(self.fileType, forKey: .fileType)
     }
     
     // Equality function
-    static func ==(lhs: Message, rhs: Message) -> Bool {
+    static func ==(lhs: UserMessage, rhs: UserMessage) -> Bool {
         return lhs.messageId == rhs.messageId
     }
 }

@@ -90,29 +90,26 @@ final class StorageManager {
         }
     }
     
-    /// Uploads video associated with a post to storage. The name of the video is the post's id.
-    ///
-    /// - Parameters:
-    ///  - videoData: Data about the post's video.
-    ///  - postId: The id of the post in the database.
-    ///
-    /// - Returns: The video url of the post's video in storage.
-    func uploadDirectMessageFile(fileData: Data, messageId: String) async throws -> String? {
+    func uploadDirectMessageVideo(videoUrl: URL, messageId: String) async throws -> String {
         let filename = messageId
         let ref = directMessageFileCollection.child("\(filename)")
         let metadata = StorageMetadata()
         metadata.contentType = "video/quicktime"
         
-        do {
-            let _ = try await ref.putDataAsync(fileData, metadata: metadata)
-            let url = try await ref.downloadURL()
-            
-            print("DEBUG: TRICK ITEM VIDEO SUCCESSFULLY UPLOADED TO STORAGE")
-            return url.absoluteString
-        } catch {
-            print("DEBUG: FAILED TO UPLOAD TRICK ITEM VIDEO TO STORAGE")
-            return nil
-        }
+        let _ = try await ref.putFileAsync(from: videoUrl, metadata: metadata)
+        let url = try await ref.downloadURL()
+        return url.absoluteString
+    }
+    
+    func uploadDirectMessagePhoto(photoData: Data, messageId: String) async throws -> String {
+        let filename = messageId
+        let ref = directMessageFileCollection.child("\(filename)")
+        let metadata = StorageMetadata()
+        metadata.contentType = "image/jpeg"
+        
+        let _ = try await ref.putDataAsync(photoData, metadata: metadata)
+        let url = try await ref.downloadURL()
+        return url.absoluteString
     }
     
     /// Deletes the video associated with a post from storage. The name of this video in storage is the post's id.
