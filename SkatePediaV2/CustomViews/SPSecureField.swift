@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct SPSecureField: View {
+    @Environment(\.colorScheme) var colorScheme
+
     let title: String
     let borderColor: Color
     
@@ -35,10 +37,11 @@ struct SPSecureField: View {
                     Text(title)
                         .padding(.horizontal, 5)
                         .foregroundColor(isTyping ? borderColor : Color.primary)
-                        .background(Color("backgroundColor").opacity(isTyping || !text.isEmpty ? 1 : 0))
+                        .background(colorScheme == .dark ? Color(.systemGray6) : Color(.systemBackground)
+                            .opacity(isTyping || !text.isEmpty ? 1 : 0))
                         .overlay {
                             RoundedRectangle(cornerRadius: 5)
-                                .stroke(isTyping ? borderColor.opacity(isTyping || !text.isEmpty ? 1 : 0) : .primary.opacity(isTyping || !text.isEmpty ? 1 : 0), lineWidth: 1.0)
+                                .stroke(isTyping ? borderColor.opacity(isTyping || !text.isEmpty ? 1 : 0) : .primary.opacity(isTyping || !text.isEmpty ? 1 : 0), lineWidth: 1.5)
                         }
                         .padding(.leading).offset(y: isTyping || !text.isEmpty ? -27 : 0)
                         .onTapGesture {
@@ -62,7 +65,3 @@ struct SPSecureField: View {
         .background(isTyping ? borderColor : Color.primary, in: RoundedRectangle(cornerRadius: 14).stroke(lineWidth: 2))
     }
 }
-//
-//#Preview {
-//    SPSecureField()
-//}

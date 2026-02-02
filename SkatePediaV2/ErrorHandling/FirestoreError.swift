@@ -9,6 +9,7 @@ import Foundation
 import FirebaseFirestore
 
 enum FirestoreError: LocalizedError {
+    
     // Errors thrown locally
     case noDocument
     case decodingFailed
@@ -75,9 +76,7 @@ enum FirestoreError: LocalizedError {
     
     static func mapFirebaseError(_ error: Error) -> FirestoreError {
         let nsError = error as NSError
-        
-        print(nsError)
-        
+                
         guard nsError.domain == FirestoreErrorDomain else {
             return .unknown
         }

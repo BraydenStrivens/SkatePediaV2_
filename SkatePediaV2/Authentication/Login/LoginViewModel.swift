@@ -19,54 +19,54 @@ final class LoginViewModel: ObservableObject {
     @Published var password: String = ""
     @Published var resetEmail: String = ""
     @Published var passwordResetSent: Bool = false
-    @Published var error: AuthError?
-//    @Published var showErrorPopup: Bool = false
+    @Published var loginLoading: Bool = false
+    @Published var error: SPError? = nil
 
-    ///
     /// Valids the login input fields contain characters and attempts to login in the user.
     ///
-    /// - Throws: An error of type "LoginError" that specifies the error.
-    func signIn() async throws {
+    /// - Throws: An error mapped to an SPError object that specifies the error.
+    ///
+    func signIn() async {
+        loginLoading = true
         do {
-            try emptyInputFieldCheck(email, password)
-            
+            try emptyInputFieldCheck(checkPassword: true)
             try await AuthenticationService.shared.login(
                 email: email,
                 password: password
             )
         } catch {
-            throw error
+            self.error = mapToSPError(error: error)
         }
+        loginLoading = false
     }
     
-    ///
-    /// Resets the users password with the email inputed into a text field
-    ///
+    /// Sends a reset password link to the inputted email address.
     func resetPassword() async {
         do {
-            try emptyInputFieldCheck(resetEmail, "uselessValidPassword")
+            try emptyInputFieldCheck(checkPassword: false)
             try await AuthenticationService.shared.resetPassword(email: resetEmail)
             passwordResetSent = true
-        } catch let error as AuthError {
-            self.error = error
-            
         } catch {
-            self.error = AuthError.mapFirebaseError(error)
+            self.error = mapToSPError(error: error)
         }
     }
     
-    ///
     /// Validates that the email and password textfields are not empty,
     ///
-    /// - Throws: An error of type 'LoginError' that specifies the error.
+    /// - Parameters:
+    ///  - checkPassword: Boolean that indicates whether to validate the password input field.
     ///
-    func emptyInputFieldCheck(_ email: String, _ password: String) throws {
+    /// - Throws: An error mapped to an SPError object that specifies the error.
+    ///
+    func emptyInputFieldCheck(checkPassword: Bool) throws {
         guard !email.trimmingCharacters(in: .whitespaces).isEmpty else {
             throw AuthError.emptyEmail
         }
         
-        guard !password.trimmingCharacters(in: .whitespaces).isEmpty else {
-            throw AuthError.emptyPassword
+        if checkPassword {
+            guard !password.trimmingCharacters(in: .whitespaces).isEmpty else {
+                throw AuthError.emptyPassword
+            }
         }
     }
 }

@@ -6,174 +6,176 @@
 //
 
 import SwiftUI
-import Kingfisher
-///
-/// Struct that display the login screen. Contains functionality to log in, register, and reset password.
+
+/// Struct that display the login screen. Contains functionality to log in, navigate to register view, and reset password.
 ///
 struct LoginView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) var colorScheme
     @StateObject var viewModel = LoginViewModel()
     @State var toggleForgotPassword: Bool = false
+
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Logo
-            Image(.appLogo)
-                .resizable()
-                .scaledToFill()
-                .frame(width: UIScreen.screenWidth * 0.85, height: UIScreen.screenWidth * 0.85)
-            
-            Text("Login")
-                .font(.system(size: UIScreen.screenWidth * 0.12))
-                .fontWeight(.semibold)
-                .kerning(1.5)
-                .padding([.bottom], 20)
-            
+        ZStack {
             VStack(spacing: 20) {
-                SPTextField(
-                    title: "Email",
-                    borderColor: Color("AccentColor"),
-                    text: $viewModel.email)
+                // App logo
+                Image(.appLogo)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: UIScreen.main.bounds.height * 0.25)
+                    .padding()
                 
-                SPSecureField(
-                    title: "Password",
-                    borderColor: Color("AccentColor"),
-                    text: $viewModel.password)
+                Spacer()
                 
-                SPButton(
-                    title: "Login",
-                    rank: .primary,
-                    color: Color("buttonColor"),
-                    width: UIScreen.screenWidth * 0.5,
-                    height: 50,
-                    showLoadingAnimation: false) {
-                        // Attempt Login
-                        Task {
-                            do {
-                                try await viewModel.signIn()
-                                
-                            } catch let error as AuthError {
-                                viewModel.error = error
-                            }
+                // Login Box
+                VStack(spacing: 20) {
+                    Text("Login")
+                        .font(.system(size: UIScreen.screenWidth * 0.1))
+                        .fontWeight(.semibold)
+                        .kerning(1.2)
+                    
+                    SPTextField(
+                        title: "Email",
+                        borderColor: Color.accent,
+                        text: $viewModel.email
+                    )
+                    
+                    SPSecureField(
+                        title: "Password",
+                        borderColor: Color.accent,
+                        text: $viewModel.password
+                    )
+                    
+                    // Login button
+                    Button {
+                        Task { await viewModel.signIn() }
+                    } label: {
+                        if viewModel.loginLoading {
+                            CustomProgressView(placement: .center)
+                        } else {
+                            Text("Login")
+                                .font(.title3)
+                                .frame(maxWidth: 250, maxHeight: 50)
+                                .background(Color.button)
+                                .foregroundColor(.white)
+                                .cornerRadius(20)
                         }
                     }
-            }
-            
-            Spacer()
-            
-            // Open forgot password popup button
-            Button {
-                toggleForgotPassword.toggle()
-            } label: {
-                Text("Forgot password?")
-                    .foregroundColor(Color("textAccentColor"))
-                    .font(.body)
-            }
-            .padding(.vertical, 5)
-            
-            // Nagivation to register view
-            NavigationLink(
-                destination: RegisterView(),
-                label: {
-                    Text("Don't have an account?")
-                        .foregroundColor(Color("textAccentColor"))
                 }
-            )
+                .padding()
+                .background(RoundedRectangle(cornerRadius: 25)
+                    .fill(colorScheme == .dark ? Color(.systemGray6) : Color(.systemBackground))
+                    .shadow(color: colorScheme == .dark ? .clear : .black.opacity(0.2),
+                            radius: 10, x: 0, y: 4)
+                )
+                .padding(.horizontal, 20)
+                
+                Spacer()
+                
+                // Links
+                VStack(spacing: 4) {
+                    Button("Forgot password?") {
+                        withAnimation(.spring(duration: 0.3)) {
+                            toggleForgotPassword = true
+                        }
+                    }
+                    .foregroundColor(Color.textAccent)
+                    
+                    NavigationLink("Don't have an account?", destination: RegisterView())
+                        .foregroundColor(Color.textAccent)
+                }
+            }
+            .padding(.vertical)
+            
+            // Reset password card overlay
+            if toggleForgotPassword {
+                // Dimmed background
+                Color.black.opacity(0.5)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        hideResetPasswordCard()
+                    }
+                
+                resetPasswordCard
+                    .zIndex(1)
+                    .frame(maxWidth: 350)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .bottom).combined(with: .opacity),
+                        removal: .move(edge: .trailing).combined(with: .opacity))
+                    )
+            }
         }
-        .padding()
-        .background(Color("backgroundColor"))
-        // Reset password sheet
-        .sheet(isPresented: $toggleForgotPassword, content: {
-            ResetPasswordView(viewModel: viewModel)
-                .presentationDetents([.height(300)])
-        })
         .alert("Error",
                isPresented: Binding(
                 get: { viewModel.error != nil },
                 set: { _ in viewModel.error = nil }
                )
         ) {
-            Button(role: .cancel) {
-                
-            } label: {
-                Text("OK")
-            }
+            Button("OK") {}
         } message: {
             Text(viewModel.error?.errorDescription ?? "Error")
         }
         .alert("Reset Email Sent", isPresented: $viewModel.passwordResetSent) {
-            Button(role: .cancel) {
-                
-            } label: {
-                Text("OK")
-            }
+            Button("OK") { viewModel.passwordResetSent = false }
         } message: {
-            Text("Please check the inputted email address for the password reset link.")
+            Text("Please check the inputted email for the password reset link.")
         }
     }
-}
-
-struct ResetPasswordView: View {
-    @Environment(\.dismiss) private var dismiss
-    @ObservedObject var viewModel: LoginViewModel
     
-    var body: some View {
-        VStack(spacing: 10) {
+    /// Popup containing an text field and button so send a password reset link to the inputted email.
+    ///
+    var resetPasswordCard: some View {
+        VStack(spacing: 20) {
             Text("Reset Password")
                 .font(.largeTitle)
                 .fontWeight(.semibold)
-                .kerning(1.5)
             
-            Text("Enter the email registered with your account to change your password.")
+            Text("Enter your registered email to reset your password.")
                 .font(.body)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 20)
             
-            Divider()
-            
             SPTextField(
                 title: "Email",
-                borderColor: Color("AccentColor"),
+                borderColor: Color.accent,
                 text: $viewModel.resetEmail
             )
-            .padding(.vertical, 10)
             
-            HStack() {
-                Spacer()
-                
-                SPButton(
-                    title: "Cancel",
-                    rank: .secondary,
-                    color: .primary,
-                    width: 100,
-                    height: 40
-                ) {
-                    dismiss()
-                }
-                
-                Spacer()
-                
-                SPButton(
-                    title: "Send",
-                    rank: .primary,
-                    color: Color("buttonColor")
-                        .opacity(viewModel.resetEmail.isEmpty ? 0.5 : 1),
-                    width: 100,
-                    height: 40
-                ) {
+            HStack(spacing: 20) {
+                Button("Cancel") { hideResetPasswordCard() }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 45)
+                    .background(RoundedRectangle(cornerRadius: 15).stroke(.primary))
+                    .foregroundColor(.primary)
+
+                Button("Send") {
                     Task {
                         await viewModel.resetPassword()
-                        dismiss()
+                        hideResetPasswordCard()
                     }
                 }
+                .frame(maxWidth: .infinity)
+                .frame(height: 45)
+                .background(Color.button.opacity(viewModel.resetEmail.isEmpty ? 0.5 : 1))
+                .foregroundColor(.white)
+                .cornerRadius(15)
                 .disabled(viewModel.resetEmail.isEmpty)
-                
-                Spacer()
             }
-            .padding(.vertical, 10)
         }
         .padding()
+        .background(RoundedRectangle(cornerRadius: 25)
+            .fill(colorScheme == .dark ? Color(.systemGray6) : Color(.systemBackground))
+            .shadow(color: colorScheme == .dark ? .clear : .black.opacity(0.2),
+                    radius: 10, x: 0, y: 2)
+        )
+        .padding(.horizontal, 20)
+    }
+    
+    /// Sets the password reset cards toggle boolean to false.
+    func hideResetPasswordCard() {
+        withAnimation(.spring(duration: 0.2)) {
+            toggleForgotPassword = false
+        }
     }
 }
-
-

@@ -8,10 +8,12 @@
 import Foundation
 
 import FirebaseAuth
+import FirebaseFunctions
 
 final class AuthenticationService {
 
     static let shared = AuthenticationService()
+    private let functions = Functions.functions()
     private init() {}
 
     var currentUser: FirebaseAuth.User? {
@@ -29,52 +31,21 @@ final class AuthenticationService {
     }
 
     func login(email: String, password: String) async throws {
-        do {
-            try await Auth.auth().signIn(withEmail: email, password: password)
-            try await UserManager.shared.fetchCurrentUser()
-            
-        } catch let error as AuthError {
-            throw error
-            
-        } catch {
-            throw AuthError.mapFirebaseError(error)
-        }
+        try await Auth.auth().signIn(withEmail: email, password: password)
+        try await UserManager.shared.fetchCurrentUser()
     }
 
     func createUser(email: String, password: String, username: String, stance: String) async throws {
-        let authResult: AuthDataResult
+        let payload: [String : Any] = [
+            "email": email,
+            "password": password,
+            "username": username,
+            "stance": stance
+        ]
+        let result = try await functions.httpsCallable("createInitialUserData")
+            .call(payload)
         
-        do {
-            // Attemps to create a new user
-            authResult = try await Auth.auth().createUser(withEmail: email, password: password)
-            
-        } catch let error as AuthError {
-            throw error
-            
-        } catch {
-            throw AuthError.mapFirebaseError(error)
-        }
-        
-        do {
-            // Attempts to create a user document in firestore database
-            try await UserManager.shared.uploadUserData(
-                id: authResult.user.uid,
-                withEmail: email,
-                username: username,
-                stance: stance
-            )
-            
-            // Creates trick list as a subcollection in the user's document
-            try await TrickListManager.shared.readJSonFile(userId: authResult.user.uid)
-
-        } catch {
-            // If auth successfully creates a user but firestore fails to upload their data, this deletes the
-            // user from auth so the user can recreate their account
-            try await deleteUser()
-            throw FirestoreError.mapFirebaseError(error)
-        }
-        
-        print(authResult.user)
+        try await login(email: email, password: password)
     }
 
     func signOut() throws {
@@ -82,7 +53,7 @@ final class AuthenticationService {
             try Auth.auth().signOut()
             UserManager.shared.reset()
         } catch {
-            throw AuthError.mapFirebaseError(error)
+            throw error
         }
     }
 
@@ -91,22 +62,12 @@ final class AuthenticationService {
             throw URLError(.badURL)
         }
         
-        do {
-            try signOut()
-            try await user.delete()
-        } catch {
-            throw AuthError.mapFirebaseError(error)
-        }
+        try signOut()
+        try await user.delete()
     }
     
     func resetPassword(email: String) async throws {
-        do {
-            try await Auth.auth().sendPasswordReset(withEmail: email)
-        } catch let error as AuthError {
-            throw error
-        } catch {
-            throw AuthError.mapFirebaseError(error)
-        }
+        try await Auth.auth().sendPasswordReset(withEmail: email)
     }
     
     func updatePassword(password: String) async throws {
@@ -114,10 +75,6 @@ final class AuthenticationService {
             throw URLError(.badServerResponse)
         }
         
-        do {
-            try await user.updatePassword(to: password)
-        } catch {
-            throw AuthError.mapFirebaseError(error)
-        }
+        try await user.updatePassword(to: password)
     }
 }

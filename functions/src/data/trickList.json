@@ -1,0 +1,902 @@
+[
+    {
+        "id": "00000001",
+        "name": "Ollie",
+        "stance": "Regular",
+        "abbreviation": "Ollie",
+        "learnFirst": "Riding Comfortably",
+        "learnFirstAbbreviation": "Riding Comfortably",
+        "difficulty": "Easy"
+    },
+    {
+        "id": "00000002",
+        "name": "Backside Shuvit",
+        "stance": "Regular",
+        "abbreviation": "Shuv",
+        "learnFirst": "Ollie",
+        "learnFirstAbbreviation": "Ollie",
+        "difficulty": "Easy"
+    },
+    {
+        "id": "00000003",
+        "name": "Frontside Shuvit",
+        "stance": "Regular",
+        "abbreviation": "FS Shuv",
+        "learnFirst": "Ollie",
+        "learnFirstAbbreviation": "Ollie",
+        "difficulty": "Easy"
+    },
+    {
+        "id": "00000004",
+        "name": "Backside 180",
+        "stance": "Regular",
+        "abbreviation": "Back 180",
+        "learnFirst": "Ollie, Backside Shuvit",
+        "learnFirstAbbreviation": "Ollie, BS Shuv",
+        "difficulty": "Easy"
+    },
+    {
+        "id": "00000005",
+        "name": "Frontside 180",
+        "stance": "Regular",
+        "abbreviation": "FS 180",
+        "learnFirst": "Ollie, Frontside Shuvit",
+        "learnFirstAbbreviation": "Ollie, FS Shuv",
+        "difficulty": "Easy"
+    },
+    {
+        "id": "00000006",
+        "name": "Kickflip",
+        "stance": "Regular",
+        "abbreviation": "Kickflip",
+        "learnFirst": "Ollie",
+        "learnFirstAbbreviation": "Ollie",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00000007",
+        "name": "Heelflip",
+        "stance": "Regular",
+        "abbreviation": "Heelflip",
+        "learnFirst": "Ollie",
+        "learnFirstAbbreviation": "Ollie",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00000008",
+        "name": "Varial Kickflip",
+        "stance": "Regular",
+        "abbreviation": "Varial Flip",
+        "learnFirst": "Backside Shuvit, Kickflip",
+        "learnFirstAbbreviation": "BS Shuv, Kickflip",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00000009",
+        "name": "Hardflip",
+        "stance": "Regular",
+        "abbreviation": "Hardflip",
+        "learnFirst": "Frontside Shuvit, Kickflip",
+        "learnFirstAbbreviation": "FS Shuv, Kickflip",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00000010",
+        "name": "Inward Heelflip",
+        "stance": "Regular",
+        "abbreviation": "Inward Heel",
+        "learnFirst": "Backside Shuvit, Heelflip",
+        "learnFirstAbbreviation": "BS Shuv, Heelflip",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00000011",
+        "name": "Varial Heelflip",
+        "stance": "Regular",
+        "abbreviation": "Varial Heel",
+        "learnFirst": "Frontside Shuvit, Heelflip",
+        "learnFirstAbbreviation": "FS Shuv, Heelflip",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00000012",
+        "name": "Backside Kickflip",
+        "stance": "Regular",
+        "abbreviation": "BS Flip",
+        "learnFirst": "Backside 180, Kickflip",
+        "learnFirstAbbreviation": "BS 180, Kickflip",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00000013",
+        "name": "Frontside Kickflip",
+        "stance": "Regular",
+        "abbreviation": "FS Flip",
+        "learnFirst": "Frontside 180, Kickflip",
+        "learnFirstAbbreviation": "FS 180, Kickflip",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00000014",
+        "name": "Backside Heelflip",
+        "stance": "Regular",
+        "abbreviation": "BS Heel",
+        "learnFirst": "Backside 180, Heelflip",
+        "learnFirstAbbreviation": "BS 180, Heelflip",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00000015",
+        "name": "Frontside Heelflip",
+        "stance": "Regular",
+        "abbreviation": "FS Heel",
+        "learnFirst": "Frontside 180, Heelflip",
+        "learnFirstAbbreviation": "FS 180, Heelflip",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00000016",
+        "name": "Backside 360",
+        "stance": "Regular",
+        "abbreviation": "BS 360",
+        "learnFirst": "Backside 180",
+        "learnFirstAbbreviation": "BS 180",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00000017",
+        "name": "Frontside 360",
+        "stance": "Regular",
+        "abbreviation": "FS 360",
+        "learnFirst": "Frontside 180",
+        "learnFirstAbbreviation": "FS 180",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00000018",
+        "name": "Backside 360 Shuvit",
+        "stance": "Regular",
+        "abbreviation": "BS 3 Shuv",
+        "learnFirst": "Backside Shuvit",
+        "learnFirstAbbreviation": "BS Shuv",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00000019",
+        "name": "Frontside 360 Shuvit",
+        "stance": "Regular",
+        "abbreviation": "FS 3 Shuv",
+        "learnFirst": "Frontside Shuvit",
+        "learnFirstAbbreviation": "FS Shuv",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00000020",
+        "name": "Backside Bigspin",
+        "stance": "Regular",
+        "abbreviation": "BS Bigspin",
+        "learnFirst": "Backside 180, Backside 360 Shuvit",
+        "learnFirstAbbreviation": "BS 180, BS 3 Shuv",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00000021",
+        "name": "Frontside Bigspin",
+        "stance": "Regular",
+        "abbreviation": "FS Bigspin",
+        "learnFirst": "Frontside 180, Frontside 360 Shuvit",
+        "learnFirstAbbreviation": "FS 180, FS 3 Shuv",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00000022",
+        "name": "Tre Flip",
+        "stance": "Regular",
+        "abbreviation": "Tre",
+        "learnFirst": "Kickflip, Backside 360 Shuvit",
+        "learnFirstAbbreviation": "Kickflip, BS 3 Shuv",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00000023",
+        "name": "Laser Flip",
+        "stance": "Regular",
+        "abbreviation": "Laser",
+        "learnFirst": "Heelflip, Frontside 360 Shuvit",
+        "learnFirstAbbreviation": "Heelflip, FS 3 Shuv",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00000024",
+        "name": "Bigspin Kickflip",
+        "stance": "Regular",
+        "abbreviation": "Big Flip",
+        "learnFirst": "Backside Bigspin, Tre Flip",
+        "learnFirstAbbreviation": "BS Bigspin, Tre",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00000025",
+        "name": "Bigspin Heelflip",
+        "stance": "Regular",
+        "abbreviation": "Big Heel",
+        "learnFirst": "Frontside Bigspin, Laser Flip",
+        "learnFirstAbbreviation": "FS Bigspin, Laser",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00000100",
+        "name": "Fakie Ollie",
+        "stance": "Fakie",
+        "abbreviation": "Fakie Ollie",
+        "learnFirst": "Riding Comfortably Fakie",
+        "learnFirstAbbreviation": "Riding Comfortably Fakie",
+        "difficulty": "Easy"
+    },
+    {
+        "id": "00000200",
+        "name": "Fakie Backside Shuvit",
+        "stance": "Fakie",
+        "abbreviation": "Fakie Shuv",
+        "learnFirst": "Fakie Ollie",
+        "learnFirstAbbreviation": "Fakie Ollie",
+        "difficulty": "Easy"
+    },
+    {
+        "id": "00000300",
+        "name": "Fakie Frontside Shuvit",
+        "stance": "Fakie",
+        "abbreviation": "Fakie FS Shuv",
+        "learnFirst": "Fakie Ollie",
+        "learnFirstAbbreviation": "Fakie Ollie",
+        "difficulty": "Easy"
+    },
+    {
+        "id": "00000400",
+        "name": "Fakie Backside 180",
+        "stance": "Fakie",
+        "abbreviation": "Half Cab",
+        "learnFirst": "Fakie Ollie, Fakie Backside Shuvit",
+        "learnFirstAbbreviation": "Fakie Ollie, Fakie Shuv",
+        "difficulty": "Easy"
+    },
+    {
+        "id": "00000500",
+        "name": "Fakie Frontside 180",
+        "stance": "Fakie",
+        "abbreviation": "FS Half Cab",
+        "learnFirst": "Fakie Ollie, Fakie Frontside Shuvit",
+        "learnFirstAbbreviation": "Fakie Ollie, Fakie FS Shuv",
+        "difficulty": "Easy"
+    },
+    {
+        "id": "00000600",
+        "name": "Fakie Kickflip",
+        "stance": "Fakie",
+        "abbreviation": "Fakie Flip",
+        "learnFirst": "Fakie Ollie",
+        "learnFirstAbbreviation": "Fakie Ollie",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00000700",
+        "name": "Fakie Heelflip",
+        "stance": "Fakie",
+        "abbreviation": "Fakie Heel",
+        "learnFirst": "Fakie Ollie",
+        "learnFirstAbbreviation": "Fakie Ollie",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00000800",
+        "name": "Fakie Varial Kickflip",
+        "stance": "Fakie",
+        "abbreviation": "Fakie Varial Flip",
+        "learnFirst": "Fakie Backside Shuvit, Fakie Kickflip",
+        "learnFirstAbbreviation": "Fakie Shuv, Fakie Flip",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00000900",
+        "name": "Fakie Hardflip",
+        "stance": "Fakie",
+        "abbreviation": "Fakie Hardflip",
+        "learnFirst": "Fakie Frontside Shuvit, Fakie Kickflip",
+        "learnFirstAbbreviation": "Fakie FS Shuv, Fakie Flip",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00001000",
+        "name": "Fakie Inward Heelflip",
+        "stance": "Fakie",
+        "abbreviation": "Fakie Inward Heel",
+        "learnFirst": "Fakie Backside Shuvits, Fakie Heelflip",
+        "learnFirstAbbreviation": "Fakie Shuv, Fakie Heel",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00001100",
+        "name": "Fakie Varial Heelflip",
+        "stance": "Fakie",
+        "abbreviation": "Fakie Varial Heel",
+        "learnFirst": "Fakie Frontside Shuvit, Fakie Heelflip",
+        "learnFirstAbbreviation": "Fakie FS Shuv, Fakie Heel",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00001200",
+        "name": "Fakie Backside Kickflip",
+        "stance": "Fakie",
+        "abbreviation": "Half Cab Flip",
+        "learnFirst": "Fakie Backside 180, Fakie Kickflip",
+        "learnFirstAbbreviation": "Half Cab, Fakie Flip",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00001300",
+        "name": "Fakie Frontside Kickflip",
+        "stance": "Fakie",
+        "abbreviation": "Fakie FS Flip",
+        "learnFirst": "Fakie Frontside 180, Fakie Kickflip",
+        "learnFirstAbbreviation": "Fakie FS 180, Fakie Flip",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00001400",
+        "name": "Fakie Backside Heelflip",
+        "stance": "Fakie",
+        "abbreviation": "Fakie BS Heel",
+        "learnFirst": "Fakie Backside 180, Fakie Heelflip",
+        "learnFirstAbbreviation": "Half Cab, Fakie Heel",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00001500",
+        "name": "Fakie Frontside Heelflip",
+        "stance": "Fakie",
+        "abbreviation": "Fakie FS Heel",
+        "learnFirst": "Fakie Frontside 180, Fakie Heelflip",
+        "learnFirstAbbreviation": "Fakie FS 180, Fakie Heel",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00001600",
+        "name": "Fakie Backside 360",
+        "stance": "Fakie",
+        "abbreviation": "Full Cab",
+        "learnFirst": "Fakie Backside 180",
+        "learnFirstAbbreviation": "Half Cab",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00001700",
+        "name": "Fakie Frontside 360",
+        "stance": "Fakie",
+        "abbreviation": "Fakie FS 360",
+        "learnFirst": "Fakie Frontside 180",
+        "learnFirstAbbreviation": "Fakie FS 180",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00001800",
+        "name": "Fakie Backside 360 Shuvit",
+        "stance": "Fakie",
+        "abbreviation": "Fakie 3 Shuv",
+        "learnFirst": "Fakie Backside Shuvit",
+        "learnFirstAbbreviation": "Fakie BS Shuv",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00001900",
+        "name": "Fakie Frontside 360 Shuvit",
+        "stance": "Fakie",
+        "abbreviation": "Fakie FS 3 Shuv",
+        "learnFirst": "Fakie Frontside Shuvit",
+        "learnFirstAbbreviation": "Fakie FS Shuv",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00002000",
+        "name": "Fakie Backside Bigspin",
+        "stance": "Fakie",
+        "abbreviation": "Fakie Bigspin",
+        "learnFirst": "Fakie Backside 180, Fakie Backside 360 Shuvit",
+        "learnFirstAbbreviation": "Fakie BS 180, Fakie 3 Shuv",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00002100",
+        "name": "Fakie Frontside Bigspin",
+        "stance": "Fakie",
+        "abbreviation": "Fakie FS Bigspin",
+        "learnFirst": "Fakie Frontside 180, Fakie Frontside 360 Shuvit",
+        "learnFirstAbbreviation": "Fakie FS 180, Fakie FS 3 Shuv",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00002200",
+        "name": "Fakie Tre Flip",
+        "stance": "Fakie",
+        "abbreviation": "Fakie Tre",
+        "learnFirst": "Fakie Kickflip, Fakie Backside 360 Shuvit",
+        "learnFirstAbbreviation": "Fakie Flip, Fakie BS 3 Shuv",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00002300",
+        "name": "Fakie Laser Flip",
+        "stance": "Fakie",
+        "abbreviation": "Fakie Laser",
+        "learnFirst": "Fakie Heelflip, Fakie Frontside 360 Shuvit",
+        "learnFirstAbbreviation": "Fakie Heel, Fakie FS 3 Shuv",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00002400",
+        "name": "Fakie Bigspin Kickflip",
+        "stance": "Fakie",
+        "abbreviation": "Fakie Big Flip",
+        "learnFirst": "Fakie Backside Bigspin, Fakie Tre Flip",
+        "learnFirstAbbreviation": "Fakie Big Spin, Fakie Tre",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00002500",
+        "name": "Fakie Bigspin Heelflip",
+        "stance": "Fakie",
+        "abbreviation": "Fakie Big Heel",
+        "learnFirst": "Fakie Frontside Bigspin, Fakie Laser Flip",
+        "learnFirstAbbreviation": "Fakie FS Bigspin, Fakie Laser",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00010000",
+        "name": "Switch Ollie",
+        "stance": "Switch",
+        "abbreviation": "SW Ollie",
+        "learnFirst": "Riding Comfortably Switch",
+        "learnFirstAbbreviation": "Riding Comfortably Switch",
+        "difficulty": "Easy"
+    },
+    {
+        "id": "00020000",
+        "name": "Switch Backside Shuvit",
+        "stance": "Switch",
+        "abbreviation": "SW Shuv",
+        "learnFirst": "Switch Ollie",
+        "learnFirstAbbreviation": "SW Ollie",
+        "difficulty": "Easy"
+    },
+    {
+        "id": "00030000",
+        "name": "Switch Frontside Shuvit",
+        "stance": "Switch",
+        "abbreviation": "SW FS Shuv",
+        "learnFirst": "Switch Ollie",
+        "learnFirstAbbreviation": "SW Ollie",
+        "difficulty": "Easy"
+    },
+    {
+        "id": "00040000",
+        "name": "Switch Backside 180",
+        "stance": "Switch",
+        "abbreviation": "SW BS 180",
+        "learnFirst": "Switch Ollie",
+        "learnFirstAbbreviation": "SW Ollie",
+        "difficulty": "Easy"
+    },
+    {
+        "id": "00050000",
+        "name": "Switch Frontside 180",
+        "stance": "Switch",
+        "abbreviation": "SW FS 180",
+        "learnFirst": "Switch Ollie",
+        "learnFirstAbbreviation": "SW Ollie",
+        "difficulty": "Easy"
+    },
+    {
+        "id": "00060000",
+        "name": "Switch Kickflip",
+        "stance": "Switch",
+        "abbreviation": "SW Flip",
+        "learnFirst": "Switch Ollie",
+        "learnFirstAbbreviation": "SW Ollie",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00070000",
+        "name": "Switch Heelflip",
+        "stance": "Switch",
+        "abbreviation": "SW Heel",
+        "learnFirst": "Switch Ollie",
+        "learnFirstAbbreviation": "SW Ollie",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00080000",
+        "name": "Switch Varial Kickflip",
+        "stance": "Switch",
+        "abbreviation": "SW Varial Flip",
+        "learnFirst": "Switch Backside Shuvit, Switch Kickflip",
+        "learnFirstAbbreviation": "SW Shuv, SW Flip",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00090000",
+        "name": "Switch Hardflip",
+        "stance": "Switch",
+        "abbreviation": "SW Hardflip",
+        "learnFirst": "Switch Frontside Shuvit, Switch Kickflip",
+        "learnFirstAbbreviation": "SW FS Shuv, SW Flip",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00100000",
+        "name": "Switch Inward Heelflip",
+        "stance": "Switch",
+        "abbreviation": "SW Inward Heel",
+        "learnFirst": "Switch Backside Shuvit, Switch Heelflip",
+        "learnFirstAbbreviation": "SW Shuv, SW Heel",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00110000",
+        "name": "Switch Varial Heelflip",
+        "stance": "Switch",
+        "abbreviation": "SW Varial Heel",
+        "learnFirst": "Switch Frontside Shuvit, Switch Heelflip",
+        "learnFirstAbbreviation": "SW FS Shuv, SW Heel",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00120000",
+        "name": "Switch Backside Kickflip",
+        "stance": "Switch",
+        "abbreviation": "SW BS Flip",
+        "learnFirst": "Switch Backside 180, Switch Kickflip",
+        "learnFirstAbbreviation": "SW BS 180, SW Flip",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00130000",
+        "name": "Switch Frontside Kickflip",
+        "stance": "Switch",
+        "abbreviation": "SW FS Flip",
+        "learnFirst": "Switch Frontside 180, Switch Kickflip",
+        "learnFirstAbbreviation": "SW FS 180, SW Flip",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00140000",
+        "name": "Switch Backside Heelflip",
+        "stance": "Switch",
+        "abbreviation": "SW BS Heel",
+        "learnFirst": "Switch Backside 180, Switch Heelflip",
+        "learnFirstAbbreviation": "SW BS 180, SW Heel",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00150000",
+        "name": "Switch Frontside Heelflip",
+        "stance": "Switch",
+        "abbreviation": "SW FS Heel",
+        "learnFirst": "Switch Frontside 180, Switch Heelflip",
+        "learnFirstAbbreviation": "SW FS 180, SW Heel",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "00160000",
+        "name": "Switch Backside 360",
+        "stance": "Switch",
+        "abbreviation": "SW BS 360",
+        "learnFirst": "Switch Backside 180",
+        "learnFirstAbbreviation": "SW BS 180",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00170000",
+        "name": "Switch Frontside 360",
+        "stance": "Switch",
+        "abbreviation": "SW FS 360",
+        "learnFirst": "Switch Frontside 180",
+        "learnFirstAbbreviation": "SW FS 180",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00180000",
+        "name": "Switch Backside 360 Shuvit",
+        "stance": "Switch",
+        "abbreviation": "SW BS 3 Shuv",
+        "learnFirst": "Switch Backside Shuvit",
+        "learnFirstAbbreviation": "SW BS Shuv",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00190000",
+        "name": "Switch Frontside 360 Shuvit",
+        "stance": "Switch",
+        "abbreviation": "SW FS 3 Shuv",
+        "learnFirst": "Switch Frontside Shuvit",
+        "learnFirstAbbreviation": "SW FS Shuv",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00200000",
+        "name": "Switch Backside Bigspin",
+        "stance": "Switch",
+        "abbreviation": "SW BS Bigspin",
+        "learnFirst": "Switch Backside 180, Switch Backside 360 Shuvit",
+        "learnFirstAbbreviation": "SW BS 180, SW BS 3 Shuv",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00210000",
+        "name": "Switch Frontside Bigspin",
+        "stance": "Switch",
+        "abbreviation": "SW FS Bigspin",
+        "learnFirst": "Switch Frontside 180, Switch Frontside 360 Shuvit",
+        "learnFirstAbbreviation": "SW FS 180, SW FS 3 Shuv",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00220000",
+        "name": "Switch Tre Flip",
+        "stance": "Switch",
+        "abbreviation": "SW Tre",
+        "learnFirst": "Switch Kickflip, Switch Backside 360 Shuvit",
+        "learnFirstAbbreviation": "SW Flip, SW BS 3 Shuv",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00230000",
+        "name": "Switch Laser Flip",
+        "stance": "Switch",
+        "abbreviation": "SW Laser",
+        "learnFirst": "Switch Heelflip, Switch Frontside 360 Shuvit",
+        "learnFirstAbbreviation": "SW Heel, SW FS 3 Shuv",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00240000",
+        "name": "Switch Bigspin Kickflip",
+        "stance": "Switch",
+        "abbreviation": "SW Big Flip",
+        "learnFirst": "Switch Backside Bigspin, Switch Tre Flip",
+        "learnFirstAbbreviation": "SW BS Bigspin, SW Tre",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "00250000",
+        "name": "Switch Bigspin Heelflip",
+        "stance": "Switch",
+        "abbreviation": "SW Big Heel",
+        "learnFirst": "Switch Frontside Bigspin, Switch Laser Flip",
+        "learnFirstAbbreviation": "SW FS Bigspin, SW Laser",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "01000000",
+        "name": "Nollie",
+        "stance": "Nollie",
+        "abbreviation": "Nollie",
+        "learnFirst": "Riding Comfortably Nollie",
+        "learnFirstAbbreviation": "Riding Comfortably Nollie",
+        "difficulty": "Easy"
+    },
+    {
+        "id": "02000000",
+        "name": "Nollie Frontside Shuvit",
+        "stance": "Nollie",
+        "abbreviation": "Nollie FS Shuv",
+        "learnFirst": "Nollie",
+        "learnFirstAbbreviation": "Nollie",
+        "difficulty": "Easy"
+    },
+    {
+        "id": "03000000",
+        "name": "Nollie Backside Shuvit",
+        "stance": "Nollie",
+        "abbreviation": "Nollie BS Shuv",
+        "learnFirst": "Nollie",
+        "learnFirstAbbreviation": "Nollie",
+        "difficulty": "Easy"
+    },
+    {
+        "id": "04000000",
+        "name": "Nollie Frontside 180",
+        "stance": "Nollie",
+        "abbreviation": "Nollie FS 180",
+        "learnFirst": "Nollie",
+        "learnFirstAbbreviation": "Nollie",
+        "difficulty": "Easy"
+    },
+    {
+        "id": "05000000",
+        "name": "Nollie Backside 180",
+        "stance": "Nollie",
+        "abbreviation": "Nollie BS 180",
+        "learnFirst": "Nollie",
+        "learnFirstAbbreviation": "Nollie",
+        "difficulty": "Easy"
+    },
+    {
+        "id": "06000000",
+        "name": "Nollie Kickflip",
+        "stance": "Nollie",
+        "abbreviation": "Nollie Flip",
+        "learnFirst": "Nollie",
+        "learnFirstAbbreviation": "Nollie",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "07000000",
+        "name": "Nollie Heelflip",
+        "stance": "Nollie",
+        "abbreviation": "Nollie Heel",
+        "learnFirst": "Nollie",
+        "learnFirstAbbreviation": "Nollie",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "08000000",
+        "name": "Nollie Varial Kickflip",
+        "stance": "Nollie",
+        "abbreviation": "Nollie Varial Flip",
+        "learnFirst": "Nollie Frontside Shuvit",
+        "learnFirstAbbreviation": "Nollie FS Shuv",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "09000000",
+        "name": "Nollie Hardflip",
+        "stance": "Nollie",
+        "abbreviation": "Nollie Hardflip",
+        "learnFirst": "Nollie Backside Shuvit, Nollie Kickflip",
+        "learnFirstAbbreviation": "Nollie BS Shuv, Nollie Kickflip",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "10000000",
+        "name": "Nollie Inward Heelflip",
+        "stance": "Nollie",
+        "abbreviation": "Nollie Inward Heel",
+        "learnFirst": "Nollie Frontside Shuvit, Nollie Heelflip",
+        "learnFirstAbbreviation": "Nollie FS Shuv, Nollie Heel",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "11000000",
+        "name": "Nollie Varial Heelflip",
+        "stance": "Nollie",
+        "abbreviation": "Nollie Varial Heel",
+        "learnFirst": "Nollie Backside Shuvit, Nollie Heelflip",
+        "learnFirstAbbreviation": "Nollie BS Shuv, Nollie Heel",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "12000000",
+        "name": "Nollie Frontside Kickflip",
+        "stance": "Nollie",
+        "abbreviation": "Nollie FS Flip",
+        "learnFirst": "Nollie Frontside 180, Nollie Kickflip",
+        "learnFirstAbbreviation": "Nollie FS 180, Nollie Flip",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "13000000",
+        "name": "Nollie Backside Kickflip",
+        "stance": "Nollie",
+        "abbreviation": "Nollie BS Flip",
+        "learnFirst": "Nollie Backside 180, Nollie Kickflip",
+        "learnFirstAbbreviation": "Nollie BS 180, Nollie Flip",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "14000000",
+        "name": "Nollie Frontside Heelflip",
+        "stance": "Nollie",
+        "abbreviation": "Nollie FS Heel",
+        "learnFirst": "Nollie Frontside 180, Nollie Heelflip",
+        "learnFirstAbbreviation": "Nollie FS 180, Nollie Heel",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "15000000",
+        "name": "Nollie Backside Heelflip",
+        "stance": "Nollie",
+        "abbreviation": "Nollie BS Heel",
+        "learnFirst": "Nollie Backside 180, Nollie Heelflip",
+        "learnFirstAbbreviation": "Nollie BS 180, Nollie Heel",
+        "difficulty": "Intermediate"
+    },
+    {
+        "id": "16000000",
+        "name": "Nollie Frontside 360",
+        "stance": "Nollie",
+        "abbreviation": "Nollie FS 360",
+        "learnFirst": "Nollie Frontside 180",
+        "learnFirstAbbreviation": "Nollie FS 180",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "17000000",
+        "name": "Nollie Backside 360",
+        "stance": "Nollie",
+        "abbreviation": "Nollie BS 360",
+        "learnFirst": "Nollie Backside 180",
+        "learnFirstAbbreviation": "Nollie BS 180",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "18000000",
+        "name": "Nollie Frontside 360 Shuvit",
+        "stance": "Nollie",
+        "abbreviation": "Nollie FS 3 Shuv",
+        "learnFirst": "Nollie Frontside Shuvit",
+        "learnFirstAbbreviation": "Nollie FS Shuv",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "19000000",
+        "name": "Nollie Backside 360 Shuvit",
+        "stance": "Nollie",
+        "abbreviation": "Nollie BS 3 Shuv",
+        "learnFirst": "Nollie Backside Shuvit",
+        "learnFirstAbbreviation": "Nollie BS Shuv",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "20000000",
+        "name": "Nollie Frontside Bigspin",
+        "stance": "Nollie",
+        "abbreviation": "Nollie FS Bigspin",
+        "learnFirst": "Nollie Frontside 180, Nollie Frontside 360 Shuvit",
+        "learnFirstAbbreviation": "Nollie FS 180, Nollie FS 3 Shuv",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "21000000",
+        "name": "Nollie Backside Bigspin",
+        "stance": "Nollie",
+        "abbreviation": "Nollie BS Bigspin",
+        "learnFirst": "Nollie Backside 180, Nollie Backside 360 Shuvit",
+        "learnFirstAbbreviation": "Nollie BS 180, Nollie BS 3 Shuv",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "22000000",
+        "name": "Nollie Tre Flip",
+        "stance": "Nollie",
+        "abbreviation": "Nollie Tre",
+        "learnFirst": "Nollie Kickflip, Nollie Frontside 360 Shuvit",
+        "learnFirstAbbreviation": "Nollie Flip, Nollie FS 3 Shuv",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "23000000",
+        "name": "Nollie Laser Flip",
+        "stance": "Nollie",
+        "abbreviation": "Nollie Laser",
+        "learnFirst": "Nollie Heelflip, Nollie Backside 360 Shuvit",
+        "learnFirstAbbreviation": "Nollie Heel, Nollie BS 3 Shuv",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "24000000",
+        "name": "Nollie Bigspin Kickflip",
+        "stance": "Nollie",
+        "abbreviation": "Nollie Big Flip",
+        "learnFirst": "Nollie Frontside Bigspin, Nollie Tre Flip",
+        "learnFirstAbbreviation": "Nollie FS Bigpin, Nollie Tre",
+        "difficulty": "Advanced"
+    },
+    {
+        "id": "25000000",
+        "name": "Nollie Bigspin Heelflip",
+        "stance": "Nollie",
+        "abbreviation": "Nollie Big Heel",
+        "learnFirst": "Nollie Backside Bigspin, Nollie Laser Flip",
+        "learnFirstAbbreviation": "Nollie BS Bigspin, Nollie Laser",
+        "difficulty": "Advanced"
+    }
+]

@@ -7,24 +7,9 @@
 
 import SwiftUI
 
-struct SPTextFieldDemo: View {
-    
-    @State var Fname = ""
-    @State var Lname = ""
-    
-    var body: some View {
-        VStack(spacing: 50) {
-            SPTextField(title: "First Name", borderColor: .blue, text: $Fname)
-            SPTextField(title: "Last Name", borderColor: .red, text: $Lname)
-        }
-        .padding()
-        .background {
-            Color.gray
-        }
-    }
-}
-
 struct SPTextField: View {
+    @Environment(\.colorScheme) var colorScheme
+
     let title: String
     let borderColor: Color
     
@@ -43,10 +28,11 @@ struct SPTextField: View {
             Text(title)
                 .padding(.horizontal, 5)
                 .foregroundColor(isTyping ? borderColor : Color.primary)
-                .background(Color("backgroundColor").opacity(isTyping || !text.isEmpty ? 1 : 0))
+                .background(colorScheme == .dark ? Color(.systemGray6) : Color(.systemBackground)
+                    .opacity(isTyping || !text.isEmpty ? 1 : 0))
                 .overlay {
                     RoundedRectangle(cornerRadius: 5)
-                        .stroke(isTyping ? borderColor.opacity(isTyping || !text.isEmpty ? 1 : 0) : .primary.opacity(isTyping || !text.isEmpty ? 1 : 0), lineWidth: 1.0)
+                        .stroke(isTyping ? borderColor.opacity(isTyping || !text.isEmpty ? 1 : 0) : .primary.opacity(isTyping || !text.isEmpty ? 1 : 0), lineWidth: 1.5)
                 }
                 .padding(.leading).offset(y: isTyping || !text.isEmpty ? -27 : 0)
                 .onTapGesture {
@@ -56,7 +42,3 @@ struct SPTextField: View {
         .animation(.linear(duration: 0.2), value: isTyping)
     }
 }
-
-//#Preview {
-//    SPTextFieldDemo()
-//}

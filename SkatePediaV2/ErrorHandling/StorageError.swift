@@ -8,8 +8,13 @@
 import Foundation
 
 enum StorageError: LocalizedError {
+    case unknown
     
     var errorDescription: String? {
         return ""
+    }
+    
+    static func mapFirebaseError(_ error: Error) -> StorageError {
+        return .unknown
     }
 }

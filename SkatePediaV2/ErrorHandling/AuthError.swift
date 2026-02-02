@@ -8,7 +8,7 @@
 import Foundation
 import FirebaseAuth
 
-enum AuthError: LocalizedError {
+enum AuthError: LocalizedError {    
     // Errors thrown locally
     case emptyEmail
     case emptyPassword
