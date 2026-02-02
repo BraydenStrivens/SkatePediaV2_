@@ -3,7 +3,13 @@
     "@firebase/rules-unit-testing": "^5.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.2.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.29.1",
     "firebase-functions-test": "^3.4.1",
+    "prettier": "^3.8.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
@@ -15,5 +21,9 @@
     "@firebase/storage": "^0.14.0",
     "firebase": "^12.8.0",
     "firebase-admin": "^13.6.0"
+  },
+  "scripts": {
+    "lint": "eslint 'functions/**/*.{ts,js}'",
+    "lint:fix": "eslint 'functions/src/**/*.{ts,js}' --fix"
   }
 }
