@@ -6,7 +6,6 @@ module.exports = {
     },
     parser: "@typescript-eslint/parser",
     parserOptions: {
-        // project: ["./tsconfig.json"],
         ecmaVersion: 2021,
         sourceType: "module",
     },
@@ -20,9 +19,9 @@ module.exports = {
     ],
     overrides: [
         {
-            files: ["*.ts"],
+            files: ["src/**/*.ts"],
             parserOptions: {
-                project: "./functions/tsconfig.json",
+                project: "./tsconfig.json",
                 sourceType: "module",
             },
             rules: {

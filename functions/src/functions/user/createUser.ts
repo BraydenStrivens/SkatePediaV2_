@@ -44,6 +44,7 @@ export const createInitialUserData = onCall(async (request) => {
     let userId: string | null = null;
 
     try {
+        logger.info("CREATING USER");
         // Create user auth
         const userRecord = await admin.auth().createUser({
             email,
@@ -122,10 +123,11 @@ export const createInitialUserData = onCall(async (request) => {
             uid: userId,
         };
     } catch (error: any) {
-        console.error("Error creating user: ", error);
+        logger.error("ERROR CREATING USER: ", error);
         // Delete auth if auth succeed but document creation failed.
         if (userId) {
             await admin.auth().deleteUser(userId);
+            logger.info("DELETED USER AUTH, uid: ", userId);
         }
         // Delete username reservation
         const snap = await usernameRef.get();
@@ -133,6 +135,7 @@ export const createInitialUserData = onCall(async (request) => {
             const data = snap.data()!;
             if (data.reserved_by === userId || (!data.user_id && data.reserved_at)) {
                 await usernameRef.delete().catch(() => {});
+                logger.info("DELETED RESERVED USERNAME, username: ", normalizedUsername);
             }
         }
         if (error.code === "auth/email-already-exists") {
