@@ -14,10 +14,12 @@ struct RootView: View {
     var body: some View {
         Group {
             if authViewModel.isLoading {
-                ProgressView()
+                CustomProgressView(placement: .center)
                 
             } else if authViewModel.userSession != nil {
                 TabbarView()
+                    .environmentObject(authViewModel)
+                
             } else {
                 NavigationView {
                     LoginView()
