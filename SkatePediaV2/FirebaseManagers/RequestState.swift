@@ -7,11 +7,21 @@
 
 import Foundation
 
-enum RequestState {
+enum RequestState: Equatable {
     case idle
     case loading
     case success
     case failure(SPError)
+    
+    static func == (lhs: RequestState, rhs: RequestState) -> Bool {
+        switch (lhs, rhs) {
+        case (.idle, .idle): return true
+        case (.loading, .loading): return true
+        case (.success, .success): return true
+        case (.failure, .failure): return true
+        default: return false
+        }
+    }
 }
 
 extension RequestState {

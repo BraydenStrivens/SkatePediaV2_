@@ -35,7 +35,7 @@ final class CompareViewModel: ObservableObject {
     func fetchTrick(trickId: String) async {
         do {
             self.trickFetchState = .loading
-            self.trick = try await TrickListManager.shared.getTrick(trickId: trickId)
+            self.trick = try await TrickListManager.shared.fetchTrick(trickId: trickId)
             self.trickFetchState = .success
             
         } catch let error as FirestoreError {

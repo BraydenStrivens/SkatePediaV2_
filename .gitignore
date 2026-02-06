@@ -15,7 +15,9 @@ credentials/
 
 # Firebase config
 .firebase/           
-firebase-debug.log        
+firebase-debug.log     
+local-emulator-storage   
+emulator-storage-files
 
 # Firebse Functions / Node
 functions/node_modules/ 

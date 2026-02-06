@@ -14,13 +14,10 @@ import Combine
 
 /// Defines a class that contains functions for fetching and updating data pertaining to a user in the database.
 final class UserManager {
-    
     @Published var currentUser: User?
-    
     static let shared = UserManager()
-    
     init() {
-        Task { try await fetchCurrentUser() }
+//        Task { try await fetchCurrentUser() }
     }
     
     private let userCollection = Firestore.firestore().collection("users")
@@ -31,6 +28,9 @@ final class UserManager {
     
     private func userFriendsListCollection(userId: String) -> CollectionReference {
         userDocument(userId: userId).collection("friends_list")
+    }
+    private func friendDocument(userId: String, friendId: String) {
+        
     }
     
     @MainActor
@@ -63,36 +63,16 @@ final class UserManager {
         }
     }
     
-    func fetchUserByUsername(searchString: String, includeCurrentUser: Bool) async throws -> [User] {
-        var allUsers: [User] = []
+    func fetchUserByUsername(searchString: String, count: Int, lastDocument: DocumentSnapshot?) async throws -> (item: [User], lastDocument: DocumentSnapshot?) {
+        let lowercased = searchString.lowercased()
         
-        if includeCurrentUser {
-            allUsers = try await fetchUsersIncludingCurrent()
-        } else {
-            allUsers = try await fetchUsers()
-        }
-        var matchedUsers: [User] = []
-        
-        for user in allUsers {
-            print("User: \(user.username)")
-            var matched = true
-            
-            for index in 0 ..< searchString.count {
-                let searchChar = String(describing: searchString[index])
-                let usernameChar = String(describing: user.username[index])
-                
-                if searchChar.caseInsensitiveCompare(usernameChar) != .orderedSame {
-                    matched = false
-                    break
-                }
-            }
-            
-            if matched {
-                matchedUsers.append(user)
-            }
-        }
-        
-        return matchedUsers
+        return try await userCollection
+            .order(by: User.CodingKeys.usernameLowercase.rawValue)
+            .start(at: [lowercased])
+            .end(at: [lowercased + "\u{f8ff}"])
+            .startOptionally(afterDocument: lastDocument)
+            .limit(to: count)
+            .getDocumentsWithSnapshot(as: User.self)
     }
     
     func fetchUsersIncludingCurrent() async throws -> [User] {
@@ -110,22 +90,22 @@ final class UserManager {
     }
     
     @MainActor
-    func uploadUserData(id: String, withEmail email: String, username: String, stance: String) async throws {
-        let user = User(
-            userId: id,
-            email: email,
-            username: username,
-            stance: stance,
-            dateCreated: Date()
-        )
-        
-        guard let userData = try? Firestore.Encoder().encode(user) else { return }
-        
-        // Creates a new user document and uploads the users data to it
-        try await Firestore.firestore().collection("users").document(id).setData(userData)
-        
-        // Sets the current logged in user
-        UserManager.shared.currentUser = user
+    func uploadUserData(id: String, withEmail email: String, username: String, stance: UserStance) async throws {
+//        let user = User(
+//            userId: id,
+//            email: email,
+//            username: username,
+//            stance: stance,
+//            dateCreated: Date()
+//        )
+//        
+//        guard let userData = try? Firestore.Encoder().encode(user) else { return }
+//        
+//        // Creates a new user document and uploads the users data to it
+//        try await Firestore.firestore().collection("users").document(id).setData(userData)
+//        
+//        // Sets the current logged in user
+//        UserManager.shared.currentUser = user
     }
     
     func updateUserBio(newBio: String) async throws {
@@ -179,7 +159,7 @@ final class UserManager {
         try await userFriendsListCollection(userId: currentUser.userId).document(friend.userId)
             .setData(friend.asDictionary(), merge: false)
         
-        let currentUserFriendObject = Friend(userId: currentUser.userId, fromUid: currentUser.userId, dateCreated: Timestamp(), isPending: true)
+        let currentUserFriendObject = Friend(userId: currentUser.userId, fromUid: currentUser.userId, dateCreated: Date(), isPending: true)
         
         // Adds a pending friend to the recievers friends list
         try await userFriendsListCollection(userId: friend.userId).document(currentUser.userId)
@@ -188,16 +168,16 @@ final class UserManager {
         print("DEBUG: SENT FRIEND REQUEST TO BOTH USERS")
         
         // Sends notification to the reciever
-        let notification = Notification(
-            id: "",
-            fromUserId: currentUser.userId,
-            toUserId: friend.userId,
-            notificationType: .friendRequest,
-            dateCreated: Timestamp(),
-            seen: false
-        )
+//        let notification = Notification(
+//            id: "",
+//            fromUserId: currentUser.userId,
+//            toUserId: friend.userId,
+//            notificationType: .friendRequest,
+//            dateCreated: Timestamp(),
+//            seen: false
+//        )
         
-        try await NotificationManager.shared.sendNotification(notification: notification)
+//        try await NotificationManager.shared.sendNotification(notification: notification)
         
         print("DEBUG: Friend request notification sent to reciever")
     }

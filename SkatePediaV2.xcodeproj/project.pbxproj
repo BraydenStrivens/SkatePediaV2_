@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		561521FA2D736FF30046BCB6 /* SlidingTabView in Frameworks */ = {isa = PBXBuildFile; productRef = 561521F92D736FF30046BCB6 /* SlidingTabView */; };
 		5625451E2D8485A100765C38 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 5625451D2D8485A100765C38 /* Kingfisher */; };
+		569743362F2E8ECF009BB4AE /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = 569743352F2E8ECF009BB4AE /* FirebaseFunctions */; };
 		56C5B95F2D67D6C200DD2986 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 56C5B95E2D67D6C200DD2986 /* FirebaseAuth */; };
 		56C5B9612D67D6C200DD2986 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 56C5B9602D67D6C200DD2986 /* FirebaseFirestore */; };
 		56C5B9632D67D6C200DD2986 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 56C5B9622D67D6C200DD2986 /* FirebaseStorage */; };
@@ -34,6 +35,7 @@
 				56C5B95F2D67D6C200DD2986 /* FirebaseAuth in Frameworks */,
 				56C5B9612D67D6C200DD2986 /* FirebaseFirestore in Frameworks */,
 				561521FA2D736FF30046BCB6 /* SlidingTabView in Frameworks */,
+				569743362F2E8ECF009BB4AE /* FirebaseFunctions in Frameworks */,
 				56C5B9632D67D6C200DD2986 /* FirebaseStorage in Frameworks */,
 				5625451E2D8485A100765C38 /* Kingfisher in Frameworks */,
 			);
@@ -42,10 +44,18 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		569743342F2E8ECF009BB4AE /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		56DA18292D095FE900E11566 = {
 			isa = PBXGroup;
 			children = (
 				56DA18342D095FE900E11566 /* SkatePediaV2 */,
+				569743342F2E8ECF009BB4AE /* Frameworks */,
 				56DA18332D095FE900E11566 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -83,6 +93,7 @@
 				56C5B9622D67D6C200DD2986 /* FirebaseStorage */,
 				561521F92D736FF30046BCB6 /* SlidingTabView */,
 				5625451D2D8485A100765C38 /* Kingfisher */,
+				569743352F2E8ECF009BB4AE /* FirebaseFunctions */,
 			);
 			productName = SkatePediaV2;
 			productReference = 56DA18322D095FE900E11566 /* SkatePediaV2.app */;
@@ -401,6 +412,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 5625451C2D8485A100765C38 /* XCRemoteSwiftPackageReference "Kingfisher" */;
 			productName = Kingfisher;
+		};
+		569743352F2E8ECF009BB4AE /* FirebaseFunctions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 56C5B95D2D67D6C200DD2986 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFunctions;
 		};
 		56C5B95E2D67D6C200DD2986 /* FirebaseAuth */ = {
 			isa = XCSwiftPackageProductDependency;
