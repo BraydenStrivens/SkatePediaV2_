@@ -7,31 +7,26 @@
 
 import Foundation
 
-
-
 struct Trick: Identifiable, Codable, Equatable, Hashable {
     let id: String
     let name: String
-    let stance: String
+    let stance: TrickStance
     let abbreviation: String
     let learnFirst: String
     let learnFirstAbbreviation: String
-    let difficulty: String
-    let progress: [Int]
-    let hasTrickItems: Bool
-    let hidden: Bool
+    let difficulty: TrickDifficulty
+    var progress: [Int]
+    var hasTrickItems: Bool
+    var hidden: Bool
     
     init(
         id: String,
         name: String,
-        stance: String,
+        stance: TrickStance,
         abbreviation: String,
         learnFirst: String,
         learnFirstAbbreviation: String,
-        difficulty: String,
-        progress: [Int],
-        hasTrickItems: Bool,
-        hidden: Bool
+        difficulty: TrickDifficulty
     ) {
         self.id = id
         self.name = name
@@ -40,9 +35,9 @@ struct Trick: Identifiable, Codable, Equatable, Hashable {
         self.learnFirst = learnFirst
         self.learnFirstAbbreviation = learnFirstAbbreviation
         self.difficulty = difficulty
-        self.progress = progress
-        self.hasTrickItems = hasTrickItems
-        self.hidden = hidden
+        self.progress = []
+        self.hasTrickItems = false
+        self.hidden = false
     }
     
     enum CodingKeys: String, CodingKey {
@@ -62,14 +57,29 @@ struct Trick: Identifiable, Codable, Equatable, Hashable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.id = try container.decode(String.self, forKey: .id)
         self.name = try container.decode(String.self, forKey: .name)
-        self.stance = try container.decode(String.self, forKey: .stance)
+        self.stance = try container.decode(TrickStance.self, forKey: .stance)
         self.abbreviation = try container.decode(String.self, forKey: .abbreviation)
         self.learnFirst = try container.decode(String.self, forKey: .learnFirst)
         self.learnFirstAbbreviation = try container.decode(String.self, forKey: .learnFirstAbbreviation)
-        self.difficulty = try container.decode(String.self, forKey: .difficulty)
+        self.difficulty = try container.decode(TrickDifficulty.self, forKey: .difficulty)
         self.progress = try container.decode([Int].self, forKey: .progress)
         self.hasTrickItems = try container.decode(Bool.self, forKey: .hasTrickItems)
         self.hidden = try container.decode(Bool.self, forKey: .hidden)
+    }
+    
+    func asTrickDictionary() -> [String : Any] {
+        return [
+            "id": id,
+            "name": name,
+            "stance": stance.rawValue,
+            "abbreviation": abbreviation,
+            "learn_first": learnFirst,
+            "learn_first_abbreviation": learnFirstAbbreviation,
+            "difficulty": difficulty.rawValue,
+            "progress_list": progress,
+            "has_trick_items": hasTrickItems,
+            "hidden": hidden
+        ]
     }
     
     // Defines an encoder for encoding a comment object to the comment document in the database

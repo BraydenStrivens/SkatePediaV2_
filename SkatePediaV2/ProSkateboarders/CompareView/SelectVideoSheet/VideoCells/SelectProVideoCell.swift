@@ -51,7 +51,7 @@ struct SelectProVideoCell: View {
                         .foregroundColor(.primary)
                 }
                 
-                Text(video.proData.stance)
+                Text(video.proData.stance.camalCase)
                     .font(.subheadline)
                     .fontWeight(.regular)
                     .foregroundColor(.primary)

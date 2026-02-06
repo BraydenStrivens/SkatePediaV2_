@@ -24,7 +24,7 @@ final class TrickListPreviewViewModel: ObservableObject {
     /// Fetches a user's trick list by stance and sorts it by the progress on each trick.
     ///
     @MainActor
-    func fetchTrickList(userId: String, stance: String) async throws {
+    func fetchTrickList(userId: String, stance: TrickStance) async throws {
         do {
             self.trickList = try await TrickListManager.shared.fetchTricksByStance(userId: userId, stance: stance)
             sortTricks()

@@ -27,7 +27,7 @@ struct AccountCell: View {
                         Text("@\(user.username)")
                             .font(.title3)
                         
-                        Text(user.stance)
+                        Text(user.stance.camalCase)
                             .font(.footnote)
                     }
                     .foregroundColor(.primary)

@@ -36,16 +36,16 @@ struct UserTrickListView: View {
                     
                     Divider()
                     
-                    ForEach(Stance.Stances.allCases) { stance in
+                    ForEach(TrickStance.allCases) { stance in
                         VStack(alignment: .leading) {
                             HStack {
-                                Text(stance.rawValue)
+                                Text(stance.camalCase)
                                     .foregroundColor(.gray)
                                 
                                 Spacer()
                                 
                                 CustomNavLink(
-                                    destination: TrickListPreviewView(userId: user.userId, stance: stance.rawValue),
+                                    destination: TrickListPreviewView(userId: user.userId, stance: stance),
                                     label: {
                                         Image(systemName: "ellipsis")
                                             .foregroundColor(.gray)
@@ -54,28 +54,28 @@ struct UserTrickListView: View {
                             }
                             
                             switch stance {
-                            case Stance.Stances.regular:
+                            case TrickStance.regular:
                                 CustomProgressBar(
                                     header: "",
                                     totalTricks: trickListInfo.totalRegularTricks,
                                     learnedTricks: trickListInfo.learnedRegularTricks,
                                     width: UIScreen.screenWidth * 0.7
                                 )
-                            case Stance.Stances.fakie:
+                            case TrickStance.fakie:
                                 CustomProgressBar(
                                     header: "",
                                     totalTricks: trickListInfo.totalFakieTricks,
                                     learnedTricks: trickListInfo.learnedFakieTricks,
                                     width: UIScreen.screenWidth * 0.7
                                 )
-                            case Stance.Stances._switch:
+                            case TrickStance._switch:
                                 CustomProgressBar(
                                     header: "",
                                     totalTricks: trickListInfo.totalSwitchTricks,
                                     learnedTricks: trickListInfo.learnedSwitchTricks,
                                     width: UIScreen.screenWidth * 0.7
                                 )
-                            case Stance.Stances.nollie:
+                            case TrickStance.nollie:
                                 CustomProgressBar(
                                     header: "",
                                     totalTricks: trickListInfo.totalNollieTricks,

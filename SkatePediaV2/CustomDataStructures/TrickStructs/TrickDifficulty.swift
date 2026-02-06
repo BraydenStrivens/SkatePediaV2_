@@ -6,3 +6,12 @@
 //
 
 import Foundation
+
+enum TrickDifficulty: String, Codable, CaseIterable, Identifiable {
+    case beginner
+    case intermediate
+    case advanced
+    
+    var camalCase: String { return self.rawValue.prefix(1).capitalized + self.rawValue.dropFirst() }
+    var id: String { return self.rawValue }
+}

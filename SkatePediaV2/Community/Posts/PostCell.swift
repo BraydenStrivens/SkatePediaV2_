@@ -73,7 +73,7 @@ struct PostCell: View {
                     }
                     
                     HStack(alignment: .bottom) {
-                        Text(post.userData.stance)
+                        Text(post.userData.stance.camalCase)
                             .font(.body)
                         
                         Spacer()

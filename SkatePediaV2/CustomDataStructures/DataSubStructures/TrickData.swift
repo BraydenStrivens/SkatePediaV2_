@@ -7,11 +7,13 @@
 
 import Foundation
 
-struct TrickData: Codable {
+struct TrickData: Codable, Hashable, Identifiable {
     let trickId: String
     let name: String
     let abbreviatedName: String
-    let stance: String?
+    let stance: TrickStance?
+    
+    var id: String { self.trickId }
     
     init(trick: Trick) {
         self.trickId = trick.id
@@ -24,7 +26,7 @@ struct TrickData: Codable {
         trickId: String,
         name: String,
         abbreviatedName: String,
-        stance: String? = nil
+        stance: TrickStance? = nil
     ) {
         self.trickId = trickId
         self.name = name
@@ -46,7 +48,7 @@ struct TrickData: Codable {
         self.trickId = try container.decode(String.self, forKey: .trickId)
         self.name = try container.decode(String.self, forKey: .name)
         self.abbreviatedName = try container.decode(String.self, forKey: .abbreviatedName)
-        self.stance = try container.decodeIfPresent(String.self, forKey: .stance)
+        self.stance = try container.decodeIfPresent(TrickStance.self, forKey: .stance)
     }
     
     /// Defines an encoder to encode a 'Post' object into a 'post' document.

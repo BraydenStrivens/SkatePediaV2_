@@ -18,7 +18,7 @@ final class RegisterViewModel: ObservableObject {
     @Published var username: String = ""
     @Published var email: String = ""
     @Published var password: String = ""
-    @Published var stance: String = ""
+    @Published var stance: UserStance? = nil
     @Published var error: SPError? = nil
     @Published var isLoading: Bool = false
     
@@ -30,11 +30,15 @@ final class RegisterViewModel: ObservableObject {
         do {
             try validateInputFields()
             
+            guard let stance = stance else {
+                throw SPError.custom("Please select a stance.")
+            }
+            
             try await AuthenticationService.shared.createUser(
                 email: email.trimmingCharacters(in: .whitespaces),
                 password: password.trimmingCharacters(in: .whitespacesAndNewlines),
                 username: username.trimmingCharacters(in: .whitespacesAndNewlines),
-                stance: stance.trimmingCharacters(in: .whitespaces)
+                stance: stance
             )
         } catch {
             self.error = mapToSPError(error: error)
@@ -62,9 +66,6 @@ final class RegisterViewModel: ObservableObject {
         }
         guard password.count >= 6 else {
             throw SPError.custom("Password must be at least 6 characters.")
-        }
-        guard !stance.trimmingCharacters(in: .whitespaces).isEmpty else {
-            throw SPError.custom("Please select a stance.")
         }
     }
 }

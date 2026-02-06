@@ -100,7 +100,7 @@ struct ChatMessagesView: View {
                     Text(withUserData.username)
                         .font(.title)
                         .kerning(0.3)
-                    Text(withUserData.stance)
+                    Text(withUserData.stance.camalCase)
                         .font(.title3)
                     Spacer()
                 }

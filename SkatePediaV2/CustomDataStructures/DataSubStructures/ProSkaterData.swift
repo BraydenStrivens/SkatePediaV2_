@@ -10,10 +10,10 @@ import Foundation
 struct ProSkaterData: Codable {
     let proId: String
     let name: String
-    let stance: String
+    let stance: UserStance
     let photoUrl: String
     
-    init(proId: String, name: String, stance: String, photoUrl: String) {
+    init(proId: String, name: String, stance: UserStance, photoUrl: String) {
         self.proId = proId
         self.name = name
         self.stance = stance
@@ -33,7 +33,7 @@ struct ProSkaterData: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.proId = try container.decode(String.self, forKey: .proId)
         self.name = try container.decode(String.self, forKey: .name)
-        self.stance = try container.decode(String.self, forKey: .stance)
+        self.stance = try container.decode(UserStance.self, forKey: .stance)
         self.photoUrl = try container.decode(String.self, forKey: .photoUrl)
     }
     

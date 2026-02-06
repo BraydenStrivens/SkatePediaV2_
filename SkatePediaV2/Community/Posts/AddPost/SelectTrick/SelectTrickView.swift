@@ -143,7 +143,7 @@ struct SelectTrickView: View {
             let sortedTrickList = viewModel.sortTrickListByStance()
             
             ForEach(sortedTrickList) { listByStance in
-                Text(listByStance.stance)
+                Text(listByStance.stance.camalCase)
                     .foregroundStyle(.gray)
                 
                 ForEach(listByStance.tricks) { trick in

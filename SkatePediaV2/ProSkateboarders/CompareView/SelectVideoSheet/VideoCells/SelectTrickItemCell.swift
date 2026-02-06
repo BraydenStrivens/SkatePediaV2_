@@ -49,7 +49,7 @@ struct SelectTrickItemCell: View {
                             .foregroundColor(.primary)
                     }
                     
-                    Text(user.stance)
+                    Text(user.stance.camalCase)
                         .font(.subheadline)
                         .fontWeight(.regular)
                         .foregroundColor(.primary)

@@ -18,7 +18,7 @@ struct TrickListPreviewView: View {
     @StateObject var viewModel = TrickListPreviewViewModel()
     
     let userId: String
-    let stance: String
+    let stance: TrickStance
 
     var body: some View {
         VStack(alignment: .leading) {
@@ -26,7 +26,7 @@ struct TrickListPreviewView: View {
                 VStack(spacing: 10) {
                     if !viewModel.threeStarTricks.isEmpty {
                         VStack(alignment: .leading) {
-                            TrickStarRatingView(rating: 3, size: 30)
+                            TrickStarRatingView(color: .yellow, rating: 3, size: 30)
                             Divider()
                             ListViewByRating(trickList: viewModel.threeStarTricks)
                         }
@@ -35,7 +35,7 @@ struct TrickListPreviewView: View {
                     
                     if !viewModel.twoStarTricks.isEmpty {
                         VStack {
-                            TrickStarRatingView(rating: 2, size: 30)
+                            TrickStarRatingView(color: .yellow, rating: 2, size: 30)
                             Divider()
                             ListViewByRating(trickList: viewModel.twoStarTricks)
                         }
@@ -44,7 +44,7 @@ struct TrickListPreviewView: View {
                     
                     if !viewModel.oneStarTricks.isEmpty {
                         VStack {
-                            TrickStarRatingView(rating: 1, size: 30)
+                            TrickStarRatingView(color: .yellow, rating: 1, size: 30)
                             Divider()
                             ListViewByRating(trickList: viewModel.oneStarTricks)
                         }
@@ -53,7 +53,7 @@ struct TrickListPreviewView: View {
                     
                     if !viewModel.zeroStarTricks.isEmpty {
                         VStack {
-                            TrickStarRatingView(rating: 0, size: 30)
+                            TrickStarRatingView(color: .yellow, rating: 0, size: 30)
                             Divider()
                             ListViewByRating(trickList: viewModel.zeroStarTricks)
                         }
@@ -93,25 +93,26 @@ struct TrickListPreviewView: View {
 ///  - rating: an integer from [0,3] representing a user's mastery of a trick.
 ///
 struct TrickStarRatingView: View {
+    let color: Color
     let rating: Int
     let size: CGFloat
     
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: size / 2) {
             Image(systemName: rating > 0 ? "star.fill" : "star")
                 .resizable()
                 .frame(width: size, height: size)
-                .foregroundColor(rating > 0 ? .yellow : .primary)
+                .foregroundColor(rating > 0 ? color : .primary)
             
             Image(systemName: rating > 1 ? "star.fill" : "star")
                 .resizable()
                 .frame(width: size, height: size)
-                .foregroundColor(rating > 1 ? .yellow : .primary)
+                .foregroundColor(rating > 1 ? color : .primary)
 
             Image(systemName: rating > 2 ? "star.fill" : "star")
                 .resizable()
                 .frame(width: size, height: size)
-                .foregroundColor(rating > 2 ? .yellow : .primary)
+                .foregroundColor(rating > 2 ? color : .primary)
         }
     }
 }

@@ -81,11 +81,11 @@ struct ProVideosListView: View {
                 
                 if !videosListByStance.videos.isEmpty {
                     
-                    Text(videosListByStance.stance)
+                    Text(videosListByStance.stance.camalCase)
                         .foregroundColor(.gray)
                         .font(.headline)
                     // Adds padding to each header except the top one
-                        .padding([.top], videosListByStance.stance == Stance.Stances.regular.rawValue ? 0 : 5)
+                        .padding([.top], videosListByStance.stance == TrickStance.regular ? 0 : 5)
                     
                     ForEach(videosListByStance.videos) { video in
                         

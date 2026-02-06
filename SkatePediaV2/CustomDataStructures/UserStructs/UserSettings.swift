@@ -7,6 +7,11 @@
 
 import Foundation
 
+struct TrickListSettingsDTO: Codable {
+    let use_trick_abbreviations: Bool?
+    let show_learn_first: Bool?
+}
+
 struct TrickListSettings: Codable, Identifiable, Hashable {
     let useTrickAbbreviations: Bool
     let showLearnFirst: Bool
@@ -18,6 +23,18 @@ struct TrickListSettings: Codable, Identifiable, Hashable {
     init() {
         self.useTrickAbbreviations = false
         self.showLearnFirst = true
+    }
+    
+    init(dto: TrickListSettingsDTO) throws {
+        guard
+            let useTrickAbbreviations = dto.use_trick_abbreviations,
+            let showLearnFirst = dto.show_learn_first
+        else {
+            throw SPError.custom("INCOMPLETE TRICK LIST SETTINGS DOC")
+        }
+        
+        self.useTrickAbbreviations = useTrickAbbreviations
+        self.showLearnFirst = showLearnFirst
     }
     
     enum CodingKeys: String, CodingKey {
@@ -38,8 +55,16 @@ struct TrickListSettings: Codable, Identifiable, Hashable {
     }
     
     static func ==(lhs: TrickListSettings, rhs: TrickListSettings) -> Bool {
-        return lhs.id == rhs.id
+        return (
+            lhs.useTrickAbbreviations == rhs.useTrickAbbreviations &&
+            lhs.showLearnFirst == rhs.showLearnFirst
+        )
     }
+}
+
+struct ProfileSettingsDTO: Codable {
+    let trick_list_data_is_private: Bool?
+    let trick_items_are_private: Bool?
 }
 
 struct ProfileSettings: Codable, Identifiable, Hashable {
@@ -53,6 +78,17 @@ struct ProfileSettings: Codable, Identifiable, Hashable {
     init() {
         self.trickListDataIsPrivate = false
         self.trickItemsArePrivate = false
+    }
+    
+    init(dto: ProfileSettingsDTO) throws {
+        guard
+            let trickListDataIsPrivate = dto.trick_list_data_is_private,
+            let trickItemsArePrivate = dto.trick_items_are_private
+        else {
+            throw SPError.custom("PROFILE SETTINGS INCOMPLETE")
+        }
+        self.trickListDataIsPrivate = trickListDataIsPrivate
+        self.trickItemsArePrivate = trickItemsArePrivate
     }
     
     enum CodingKeys: String, CodingKey {
@@ -73,11 +109,18 @@ struct ProfileSettings: Codable, Identifiable, Hashable {
     }
     
     static func ==(lhs: ProfileSettings, rhs: ProfileSettings) -> Bool {
-        return lhs.id == rhs.id
+        return (
+            lhs.trickListDataIsPrivate == rhs.trickListDataIsPrivate &&
+            lhs.trickItemsArePrivate == rhs.trickItemsArePrivate
+        )
     }
 }
 
-struct Settings: Codable, Identifiable, Hashable {
+struct UserSettingsDTO: Codable {
+    let trick_list_settings: TrickListSettingsDTO?
+    let profile_settings: ProfileSettingsDTO?
+}
+struct UserSettings: Codable, Identifiable, Hashable {
     let trickSettings: TrickListSettings
     let profileSettings: ProfileSettings
     
@@ -88,6 +131,17 @@ struct Settings: Codable, Identifiable, Hashable {
     init() {
         self.trickSettings = TrickListSettings()
         self.profileSettings = ProfileSettings()
+    }
+    
+    init(dto: UserSettingsDTO) throws {
+        guard
+            let trickSettingsDT0 = dto.trick_list_settings,
+            let profileSettingsDTO = dto.profile_settings
+        else {
+            throw SPError.custom("USER SETTINGS INCOMPLETE")
+        }
+        self.trickSettings = try TrickListSettings(dto: trickSettingsDT0)
+        self.profileSettings = try ProfileSettings(dto: profileSettingsDTO)
     }
     
     enum CodingKeys: String, CodingKey {
@@ -107,7 +161,10 @@ struct Settings: Codable, Identifiable, Hashable {
         try container.encode(self.profileSettings, forKey: .profileSettings)
     }
     
-    static func ==(lhs: Settings, rhs: Settings) -> Bool {
-        return lhs.id == rhs.id
+    static func ==(lhs: UserSettings, rhs: UserSettings) -> Bool {
+        return (
+            lhs.trickSettings == rhs.trickSettings &&
+            lhs.profileSettings == rhs.profileSettings
+        )
     }
 }

@@ -10,7 +10,7 @@ import Foundation
 struct ProSkaterVideoArray: Identifiable {
     let id = UUID()
     let videos: [ProSkaterVideo]
-    let stance: String
+    let stance: TrickStance
 }
 
 final class ProVideosListViewModel: ObservableObject {
@@ -35,7 +35,6 @@ final class ProVideosListViewModel: ObservableObject {
         } catch {
             self.fetchState = .failure(.unknown)
         }
-        
     }
 
     func getSortedVideoList() -> [ProSkaterVideoArray] {
@@ -43,9 +42,9 @@ final class ProVideosListViewModel: ObservableObject {
         var fakie: [ProSkaterVideo] = []
         var _switch: [ProSkaterVideo] = []
         var nollie: [ProSkaterVideo] = []
-
+        
         for video in self.videos {
-            let stance = getVideoStance(video: video)
+            let stance = video.trickData.stance
             
             switch(stance) {
             case .regular:
@@ -56,44 +55,16 @@ final class ProVideosListViewModel: ObservableObject {
                 _switch.append(video)
             case .nollie:
                 nollie.append(video)
-            case .none:
-                print("ERROR: NO STANCE FOUND")
+            default:
+                print("ERROR NO STANCE")
             }
         }
         
         return [
-            ProSkaterVideoArray(videos: regular, stance: Stance.Stances.regular.rawValue),
-            ProSkaterVideoArray(videos: fakie, stance: Stance.Stances.fakie.rawValue),
-            ProSkaterVideoArray(videos: _switch, stance: Stance.Stances._switch.rawValue),
-            ProSkaterVideoArray(videos: nollie, stance: Stance.Stances.nollie.rawValue)
+            ProSkaterVideoArray(videos: regular, stance: TrickStance.regular),
+            ProSkaterVideoArray(videos: fakie, stance: TrickStance.fakie),
+            ProSkaterVideoArray(videos: _switch, stance: TrickStance._switch),
+            ProSkaterVideoArray(videos: nollie, stance: TrickStance.nollie)
         ]
     }
-    
-    func getVideoStance(video: ProSkaterVideo) -> StanceType {
-        var zeroCount: Int = 0
-        
-        for char in video.trickData.trickId {
-            if char == "0" { zeroCount += 1 } else { break }
-        }
-                
-        if [6, 7].contains(zeroCount) {
-            return .regular
-        } else if [4, 5].contains(zeroCount) {
-            return .fakie
-        } else if [2, 3].contains(zeroCount) {
-            return ._switch
-        } else if [0, 1].contains(zeroCount) {
-            return .nollie
-        } else {
-            return .none
-        }
-    }
-}
-
-enum StanceType {
-    case regular
-    case fakie
-    case _switch
-    case nollie
-    case none
 }

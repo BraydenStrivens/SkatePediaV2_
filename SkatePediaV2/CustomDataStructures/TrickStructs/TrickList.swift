@@ -9,13 +9,13 @@ import Foundation
 
 struct TrickList: Identifiable, Codable {
     let id: String
-    let stance: String
+    let stance: TrickStance
     let easyTricks: [Trick]
     let intermediateTricks: [Trick]
     let advancedTricks: [Trick]
     
     init(
-        stance: String,
+        stance: TrickStance,
         easyTricks: [Trick],
         intermediateTricks: [Trick],
         advancedTricks: [Trick]

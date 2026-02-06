@@ -15,7 +15,6 @@ struct RegisterView: View {
     @Environment(\.dismiss) var dismiss
     @Environment(\.colorScheme) var colorScheme
     @State var stanceDropdownExpanded: Bool = false
-    private let stanceOptions = ["Regular", "Goofy"]
 
     var body: some View {
         VStack(spacing: 0) {
@@ -102,7 +101,11 @@ struct RegisterView: View {
             VStack {
                 // Toggle
                 HStack {
-                    Text(viewModel.stance == "" ? "Select a stance" : viewModel.stance)
+                    if let currentStance = viewModel.stance {
+                        Text(currentStance.camalCase)
+                    } else {
+                        Text("Select stance")
+                    }
                     
                     Spacer()
                     
@@ -124,14 +127,14 @@ struct RegisterView: View {
                 // Toggled dropdown
                 if stanceDropdownExpanded {
                     VStack {
-                        ForEach(stanceOptions, id: \.self) { option in
+                        ForEach(UserStance.allCases) { stance in
                             HStack {
-                                Text(option)
-                                    .foregroundStyle(viewModel.stance == option ? Color.primary : .gray)
+                                Text(stance.camalCase)
+                                    .foregroundStyle(viewModel.stance == stance ? Color.primary : .gray)
                                 
                                 Spacer()
                                 
-                                if viewModel.stance == option {
+                                if viewModel.stance == stance {
                                     Image(systemName: "checkmark")
                                         .font(.subheadline)
                                 }
@@ -140,7 +143,7 @@ struct RegisterView: View {
                             .padding(.horizontal)
                             .onTapGesture {
                                 withAnimation(.snappy) {
-                                    viewModel.stance = option
+                                    viewModel.stance = stance
                                     stanceDropdownExpanded.toggle()
                                 }
                             }

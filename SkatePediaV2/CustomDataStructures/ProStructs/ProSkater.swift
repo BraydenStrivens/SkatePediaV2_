@@ -10,14 +10,14 @@ import Foundation
 struct ProSkater: Codable, Identifiable, Equatable {
     let id: String
     let name: String
-    let stance: String
+    let stance: UserStance
     let photoUrl: String
     let numberOfTricks: Int
     
     init(
         id: String,
         name: String,
-        stance: String,
+        stance: UserStance,
         photoUrl: String,
         numberOfTricks: Int
     ) {
@@ -40,7 +40,7 @@ struct ProSkater: Codable, Identifiable, Equatable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.id = try container.decode(String.self, forKey: .id)
         self.name = try container.decode(String.self, forKey: .name)
-        self.stance = try container.decode(String.self, forKey: .stance)
+        self.stance = try container.decode(UserStance.self, forKey: .stance)
         self.photoUrl = try container.decode(String.self, forKey: .photoUrl)
         self.numberOfTricks = try container.decode(Int.self, forKey: .numberOfTricks)
     }

@@ -16,7 +16,7 @@ import Foundation
 struct TrickArray: Identifiable {
     let id = UUID()
     let tricks: [Trick]
-    let stance: String
+    let stance: TrickStance
 }
 
 /// Contains functions for fetching a users trick list, storing the tricks, keeping track of the state of the fetch, and sorting the trick list by stance.
@@ -59,23 +59,21 @@ final class SelectTrickViewModel: ObservableObject {
 
         for trick in self.trickList {
             switch(trick.stance) {
-            case Stance.Stances.regular.rawValue:
+            case TrickStance.regular:
                 regular.append(trick)
-            case Stance.Stances.fakie.rawValue:
+            case TrickStance.fakie:
                 fakie.append(trick)
-            case Stance.Stances._switch.rawValue:
+            case TrickStance._switch:
                 _switch.append(trick)
-            case Stance.Stances.nollie.rawValue:
+            case TrickStance.nollie:
                 nollie.append(trick)
-            default:
-                print("ERROR: NO STANCE FOUND")
             }
         }
         return [
-            TrickArray(tricks: regular, stance: Stance.Stances.regular.rawValue),
-            TrickArray(tricks: fakie, stance: Stance.Stances.fakie.rawValue),
-            TrickArray(tricks: _switch, stance: Stance.Stances._switch.rawValue),
-            TrickArray(tricks: nollie, stance: Stance.Stances.nollie.rawValue)
+            TrickArray(tricks: regular, stance: TrickStance.regular),
+            TrickArray(tricks: fakie, stance: TrickStance.fakie),
+            TrickArray(tricks: _switch, stance: TrickStance._switch),
+            TrickArray(tricks: nollie, stance: TrickStance.nollie)
         ]
     }
 }

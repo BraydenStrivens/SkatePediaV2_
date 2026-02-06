@@ -21,7 +21,7 @@ struct ProSkaterCell: View {
                 .kerning(0.2)
             
             HStack {
-                Text(pro.stance)
+                Text(pro.stance.camalCase)
                     .font(.subheadline)
                     .fontWeight(.regular)
                 

@@ -10,7 +10,7 @@ import Foundation
 struct UserData: Codable, Identifiable {
     let userId: String
     let username: String
-    let stance: String
+    let stance: UserStance
     let photoUrl: String
     
     var id: String {
@@ -21,7 +21,7 @@ struct UserData: Codable, Identifiable {
         self.userId = user.userId
         self.username = user.username
         self.stance = user.stance
-        self.photoUrl = user.photoUrl ?? ""
+        self.photoUrl = user.photoUrl
     }
     
     enum CodingKeys: String, CodingKey {
@@ -35,7 +35,7 @@ struct UserData: Codable, Identifiable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.userId = try container.decode(String.self, forKey: .userId)
         self.username = try container.decode(String.self, forKey: .username)
-        self.stance = try container.decode(String.self, forKey: .stance)
+        self.stance = try container.decode(UserStance.self, forKey: .stance)
         self.photoUrl = try container.decode(String.self, forKey: .photoUrl)
     }
     

@@ -81,7 +81,7 @@ struct NewMessageCell: View {
             VStack(alignment: .leading, spacing: 5) {
                 Text("@\(withUser.username)")
                     .font(.title3)
-                Text(withUser.stance)
+                Text(withUser.stance.camalCase)
                     .font(.footnote)
             }
             .foregroundColor(.primary)
