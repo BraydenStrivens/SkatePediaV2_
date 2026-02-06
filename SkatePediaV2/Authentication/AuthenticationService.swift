@@ -32,17 +32,17 @@ final class AuthenticationService {
 
     func login(email: String, password: String) async throws {
         try await Auth.auth().signIn(withEmail: email, password: password)
-        try await UserManager.shared.fetchCurrentUser()
+//        try await UserManager.shared.fetchCurrentUser()
     }
 
-    func createUser(email: String, password: String, username: String, stance: String) async throws {
+    func createUser(email: String, password: String, username: String, stance: UserStance) async throws {
         let payload: [String : Any] = [
             "email": email,
             "password": password,
             "username": username,
-            "stance": stance
+            "stance": stance.rawValue
         ]
-        let result = try await functions.httpsCallable("createInitialUserData")
+        let _ = try await functions.httpsCallable("createInitialUserData")
             .call(payload)
         
         try await login(email: email, password: password)
