@@ -146,7 +146,7 @@ struct AddPostView: View {
                     Spacer()
                     
                     if viewModel.showProgress {
-                        TrickStarRatingView(rating: trickItem.progress, size: 15)
+                        TrickStarRatingView(color: .yellow, rating: trickItem.progress, size: 15)
                     }
                 }
 

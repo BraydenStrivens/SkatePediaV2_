@@ -85,7 +85,7 @@ struct PostCell: View {
                         Spacer()
                         
                         if post.showTrickItemRating {
-                            TrickStarRatingView(rating: post.trickItemData.progress, size: 20)
+                            TrickStarRatingView(color: .yellow, rating: post.trickItemData.progress, size: 20)
                         }
                     }
                 }

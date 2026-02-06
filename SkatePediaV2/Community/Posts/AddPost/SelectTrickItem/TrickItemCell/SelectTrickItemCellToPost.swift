@@ -48,7 +48,7 @@ struct SelectTrickItemCellToPost: View {
                         .foregroundColor(trickItem.id == (selectItemViewModel.selectedTrickItem?.id ?? "") ? Color("AccentColor") : .primary)
                 }
                 
-                TrickStarRatingView(rating: trickItem.progress, size: 20)
+                TrickStarRatingView(color: .yellow, rating: trickItem.progress, size: 20)
             }
             .padding(.horizontal)
             

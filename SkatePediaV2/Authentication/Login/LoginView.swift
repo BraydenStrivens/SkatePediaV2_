@@ -56,12 +56,12 @@ struct LoginView: View {
                         } else {
                             Text("Login")
                                 .font(.title3)
-                                .frame(maxWidth: 250, maxHeight: 50)
-                                .background(Color.button)
-                                .foregroundColor(.white)
-                                .cornerRadius(20)
                         }
                     }
+                    .frame(maxWidth: 250, maxHeight: 50)
+                    .background(Color.button)
+                    .foregroundColor(.white)
+                    .cornerRadius(20)
                 }
                 .padding()
                 .background(RoundedRectangle(cornerRadius: 25)

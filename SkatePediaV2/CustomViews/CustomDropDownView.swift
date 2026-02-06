@@ -81,11 +81,3 @@ struct CustomDropDownView: View {
         }
     }
 }
-
-#Preview {
-    CustomDropDownView(title: "Make", prompt: "Select", options: [
-        "Lambo",
-        "Ferrari",
-        "Aston Martin"
-    ], selection: .constant("Lambo"))
-}

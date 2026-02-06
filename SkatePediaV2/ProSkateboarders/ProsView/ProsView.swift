@@ -69,26 +69,12 @@ struct ProsView: View {
             }
             .padding()
             
-        case .failure(let firestoreError):
-            VStack {
-                Spacer()
-                Text(firestoreError.errorDescription ?? "Something went wrong...")
-                
-                Button {
-                    Task {
-                        await viewModel.fetchProSkaters()
-                    }
-                } label: {
-                    Text("Try Again")
-                }
-                .foregroundColor(Color("buttonColor"))
-                .padding()
-                .background {
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color("buttonColor"))
-                }
-                Spacer()
-            }
+        case .failure(let spError):
+            ContentUnavailableView(
+                "Error",
+                systemImage: "exclamation.triangle",
+                description: Text(spError.errorDescription ?? "Something went wrong...")
+            )
         }
     }
     
