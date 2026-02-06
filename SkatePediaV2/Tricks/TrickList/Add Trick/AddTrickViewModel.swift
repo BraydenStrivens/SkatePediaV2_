@@ -16,10 +16,9 @@ final class AddTrickViewModel: ObservableObject {
     
     @Published var trickName: String = ""
     @Published var abbreviatedName: String = ""
-    @Published var difficulty: String = "Easy"
+    @Published var difficulty: TrickDifficulty = .beginner
     @Published var learnFirst: [String] = []
     @Published var learnFirstAbbreviation: [String] = []
-    
     @Published var addTrickState: RequestState = .idle
 
     var addButtonIsDisabled: Bool {
@@ -33,10 +32,10 @@ final class AddTrickViewModel: ObservableObject {
     ///
     private func validate() throws {
         guard !trickName.trimmingCharacters(in: .whitespaces).isEmpty else {
-            throw FirestoreError.custom("Please enter a trick name.")
+            throw SPError.custom("Please enter a trick name.")
         }
         guard !learnFirst.isEmpty else {
-            throw FirestoreError.custom("Please select at least one 'learn first' trick.")
+            throw SPError.custom("Please select at least one 'learn first' trick.")
         }
         if abbreviatedName.trimmingCharacters(in: .whitespaces).isEmpty {
             abbreviatedName = trickName
@@ -52,12 +51,10 @@ final class AddTrickViewModel: ObservableObject {
     ///  - stance: The stance of the new trick being uploaded.
     ///  - trickListInfo: The trick list info of the current user.
     ///
-    func addTrickToList(userId: String, stance: String, trickListInfo: TrickListInfo) async {
+    func addTrickToList(stance: TrickStance, trickList: [Trick]) -> Trick? {
         do {
             try validate()
-            addTrickState = .loading
-            
-            try await getLearnFirstTrickAbbreviations(userId: userId)
+            getLearnFirstTrickAbbreviations(trickList: trickList)
             
             let trick: Trick = Trick(
                 id: UUID().uuidString,
@@ -66,21 +63,15 @@ final class AddTrickViewModel: ObservableObject {
                 abbreviation: abbreviatedName,
                 learnFirst: convertArrayToString(array: self.learnFirst),
                 learnFirstAbbreviation: convertArrayToString(array: self.learnFirstAbbreviation),
-                difficulty: difficulty,
-                progress: [],
-                hasTrickItems: false,
-                hidden: false
+                difficulty: difficulty
             )
-            try await TrickListManager.shared.uploadNewTrick(userId: userId, trick: trick, trickListInfo: trickListInfo)
-            
-            addTrickState = .success
-            
-        } catch let error as FirestoreError {
-            addTrickState = .failure(.firestore(error))
+
+            return trick
             
         } catch {
-            addTrickState = .failure(.unknown)
+            addTrickState = .failure(mapToSPError(error: error))
         }
+        return nil
     }
     
     /// Converts an array of 'Trick' objects into an array of Strings containing the names of each trick.
@@ -90,15 +81,12 @@ final class AddTrickViewModel: ObservableObject {
     ///
     /// - Returns: An array of strings containing the names of each trick in the users trick list.
     ///
-    func getTrickNames(trickList: [[Trick]]) -> [String] {
+    func getTrickNames(trickList: [Trick]) -> [String] {
         var trickNames: [String] = []
         
-        for list in trickList {
-            for trick in list {
-                trickNames.append(trick.name)
-            }
+        for trick in trickList {
+            trickNames.append(trick.name)
         }
-        
         return trickNames
     }
     
@@ -119,9 +107,9 @@ final class AddTrickViewModel: ObservableObject {
                 string += "\(item), "
             }
             
+            // Remove the ", " at the end
             string.removeLast(2)
         }
-        
         return string
     }
     
@@ -133,19 +121,17 @@ final class AddTrickViewModel: ObservableObject {
     ///
     ///  - Throws: An error thrown from Firebase specifying why the tricks couldn't be fetched.
     ///
-    func getLearnFirstTrickAbbreviations(userId: String) async throws {
-        do {
-            var fetchedTricks: [Trick]? = nil
-
-            fetchedTricks = try await TrickListManager.shared.fetchTricksByName(userId: userId, trickNameList: learnFirst)
+    func getLearnFirstTrickAbbreviations(trickList: [Trick]) {
+        guard !learnFirst.isEmpty else { return }
+        
+        for trickName in learnFirst {
+            let trickObj = trickList.first(where: { $0.name == trickName })
             
-            if let fetchedTricks = fetchedTricks {
-                for trick in fetchedTricks {
-                    learnFirstAbbreviation.append(trick.abbreviation)
-                }
+            if let trickObj = trickObj {
+                learnFirstAbbreviation.append(trickObj.abbreviation)
+            } else {
+                learnFirstAbbreviation.append(trickName)
             }
-        } catch {
-            throw error
         }
     }
 }

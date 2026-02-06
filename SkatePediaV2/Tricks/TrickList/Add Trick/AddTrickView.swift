@@ -24,16 +24,15 @@ import SwiftUI
 ///  - trickListInfo: A struct containing info about the user's trick list
 ///
 struct AddTrickView: View {
-    @EnvironmentObject var trickListViewModel: TrickListViewModel
-    @StateObject var viewModel = AddTrickViewModel()
+    @EnvironmentObject var trickListVM: TrickListViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
+    @StateObject var viewModel = AddTrickViewModel()
     
-    let userId: String
-    let stance: String
-    let trickList: [[Trick]]
-    let trickListInfo: TrickListInfo
+    let stance: TrickStance
+    let trickList: [Trick]
     
-    private let difficulties: [String] = ["Easy", "Intermediate", "Advanced"]
+    private let difficulties: [String] = ["Beginner", "Intermediate", "Advanced"]
     
     var body: some View {
         NavigationStack {
@@ -52,13 +51,13 @@ struct AddTrickView: View {
                     Text("Difficulty:")
                     
                     Spacer()
-                        
-                    Menu(viewModel.difficulty, systemImage: "chevron.down") {
-                        ForEach(difficulties, id: \.self) { difficulty in
+                    
+                    Menu(viewModel.difficulty.camalCase, systemImage: "chevron.down") {
+                        ForEach(TrickDifficulty.allCases) { difficulty in
                             Button {
                                 viewModel.difficulty = difficulty
                             } label: {
-                                Text(difficulty)
+                                Text(difficulty.camalCase)
                             }
                         }
                     }
@@ -67,41 +66,38 @@ struct AddTrickView: View {
                 
                 selectLearnFirstSection
             }
-            .customNavBarItems(title: "Add Trick", subtitle: "", backButtonHidden: false)
             .padding()
             .background {
                 RoundedRectangle(cornerRadius: 15)
-                    .strokeBorder(Color.primary.opacity(0.2), lineWidth: 1)
-                    .fill(Color(uiColor: UIColor.systemBackground))
+                    .fill(colorScheme == .dark ? Color(.systemGray5) : .white)
+                    .shadow(color: colorScheme == .dark ? .clear : .black.opacity(0.5),
+                            radius: 4,
+                            y: 3
+                    )
             }
-            .shadow(color: .gray.opacity(0.5), radius: 4, x: 0, y: 3)
             .padding()
             .toolbar {
                 // Add trick button
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         Task {
-                            await viewModel.addTrickToList(userId: userId, stance: stance, trickListInfo: trickListInfo)
-                            
-                            // Closes the sheet and re-fetches the user's trick list
-                            // data if the upload is successful
-                            if case .success = viewModel.addTrickState {
+                            let newTrick = viewModel.addTrickToList(
+                                stance: stance,
+                                trickList: trickList
+                            )
+                            if let newTrick = newTrick {
                                 dismiss()
-                                await trickListViewModel.loadTrickListView(userId: userId)
+                                await trickListVM.addTrick(newTrick: newTrick)
                             }
                         }
                     } label: {
-                        if case .loading = viewModel.addTrickState {
-                            ProgressView()
-                        } else {
-                            Text("Add")
-                                .foregroundColor(viewModel.addButtonIsDisabled ?
-                                    .gray.opacity(0.6) : Color("buttonColor")
-                                )
-                                .disabled(viewModel.addButtonIsDisabled)
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                        }
+                        Text("Add")
+                            .foregroundColor(viewModel.addButtonIsDisabled ?
+                                .gray.opacity(0.6) : Color("buttonColor")
+                            )
+                            .disabled(viewModel.addButtonIsDisabled)
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
                     }
                     .padding()
                 }
@@ -120,11 +116,10 @@ struct AddTrickView: View {
         .alert("Error Adding Trick",
                isPresented: .constant(viewModel.addTrickState.hasError)
         ) {
-            Button("OK", role: .cancel) {
-                viewModel.addTrickState = .idle
-            }
+            Button("OK", role: .cancel) { viewModel.addTrickState = .idle }
+            
         } message: {
-            Text(viewModel.addTrickState.error?.errorDescription ?? "")
+            Text(viewModel.addTrickState.error?.errorDescription ?? "Something went wrong...")
         }
     }
     
@@ -141,27 +136,34 @@ struct AddTrickView: View {
                     
                     ForEach(trickNames, id: \.self) { name in
                         Button {
-                            viewModel.learnFirst.append(name)
+                            // Append trick if not already in array
+                            let index = viewModel.learnFirst.firstIndex(where: { $0 == name })
+                            if index == nil {
+                                viewModel.learnFirst.append(name)
+                            }
                         } label: {
                             Text(name)
                         }
                     }
                 }
+                
                 Spacer()
                 
-                Button(role: .destructive) {
+                Button() {
                     let _ = viewModel.learnFirst.popLast()
                 } label: {
                     Image(systemName: "delete.backward")
                 }
+                .tint(Color.accent)
             }
             
             // Converts the array of selected tricks to a string for display in the view
             Text(viewModel.convertArrayToString(array: viewModel.learnFirst))
-                .frame(height: 20)
-                .font(.caption)
-                .lineLimit(1)
+                .font(.callout)
+                .lineLimit(2)
                 .multilineTextAlignment(.trailing)
+                .foregroundStyle(.gray)
+                .brightness(0.1)
         }
     }
 }

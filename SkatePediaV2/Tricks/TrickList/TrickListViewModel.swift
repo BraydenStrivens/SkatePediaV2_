@@ -6,136 +6,121 @@
 //
 
 import Foundation
-import FirebaseFirestore
-import FirebaseAuth
 import SwiftUI
 import Combine
+import FirebaseAuth
+import FirebaseFirestore
+
+struct ExpandedCardKey: Hashable {
+    let stance: TrickStance
+    let difficulty: TrickDifficulty
+    
+    var defaultsKey: String {
+        "trick_list_expanded.\(stance.rawValue).\(difficulty.rawValue)"
+    }
+}
 
 /// Manages the data fetched or updated from the user's trick list collection. Contains functions for
 /// fetching the users trick list and trick list data and functions for hiding and deleting tricks.
 ///
 @MainActor
 final class TrickListViewModel: ObservableObject {
-    @Published var user: User = .emptyStruct
-    @Published var trickListInfo: TrickListInfo = .emptyStruct
+    @Published private(set) var user: User
+    @Published private(set) var trickListData: TrickListData
+    @Published private(set) var trickList: [Trick] = []
+    @Published var expandedByKey: [ExpandedCardKey : Bool] = [:]
+    @Published var requestState: RequestState = .idle
+    @Published var error: SPError? = nil
     
-    // Trick lists by stance that will be sorted by difficutly
-    @Published var regularTrickList: [[Trick]] = []
-    @Published var fakieTrickList: [[Trick]] = []
-    @Published var switchTrickList: [[Trick]] = []
-    @Published var nollieTrickList: [[Trick]] = []
-        
-    @Published var getTrickListFetchState: RequestState = .idle
-    @Published var error: FirestoreError? = nil
+    private let defaults = UserDefaults.standard
+    private var cancellable: AnyCancellable?
+    private let trickListManager = TrickListManager.shared
     
-    init() {
-        guard let uid = Auth.auth().currentUser?.uid else {
-            self.getTrickListFetchState = .failure(SPError.unknown)
-            return
-        }
+    init(authVM: AuthenticationViewModel) {
+        let user = authVM.user!
+        self.user = user
+        self.trickListData = user.trickListData
         
-        if case .idle = getTrickListFetchState {
-            Task {
-                await loadTrickListView(userId: uid)
+        authVM.$user
+            .compactMap { $0?.trickListData }
+            .removeDuplicates()
+            .assign(to: &$trickListData)
+        
+        loadCardExpandedStates()
+    }
+    
+    func loadCardExpandedStates() {
+        for stance in TrickStance.allCases {
+            for difficulty in TrickDifficulty.allCases {
+                let key = ExpandedCardKey(stance: stance, difficulty: difficulty)
+                expandedByKey[key] = defaults.bool(forKey: key.defaultsKey)
             }
         }
     }
     
-    /// Fetches the current user's information, the user's trick list info, and all of the tricks in the user's trick list. Validates the fetched data
-    /// and handles errors accordingly.
-    ///
-    /// - Parameters:
-    ///  - userId: The id of the current user.
-    ///
-    func loadTrickListView(userId: String) async {
+    func isExpanded(for stance: TrickStance, with difficulty: TrickDifficulty) -> Bool {
+        let key = ExpandedCardKey(stance: stance, difficulty: difficulty)
+        return expandedByKey[key] == true
+    }
+    
+    func toggleCardExpansion(for stance: TrickStance, with difficulty: TrickDifficulty) {
+        let key = ExpandedCardKey(stance: stance, difficulty: difficulty)
+        let currentValue = expandedByKey[key] ?? false
+        defaults.set(!currentValue, forKey: key.defaultsKey)
+        withAnimation(.smooth) {
+            expandedByKey[key] = !currentValue
+        }
+    }
+    
+    func tricks(for stance: TrickStance) -> [Trick] {
+        trickList.filter { $0.stance == stance && !$0.hidden }
+    }
+    
+    func tricks(for stance: TrickStance, and difficulty: TrickDifficulty) -> [Trick] {
+        trickList.filter { $0.stance == stance && !$0.hidden }.filter { $0.difficulty == difficulty }
+    }
+    
+    func initializeTrickListView() async {
+        guard requestState == .idle else { return }
+        requestState = .loading
         do {
-            self.getTrickListFetchState = .loading
+            self.trickList = try await trickListManager.initializeTrickList(userId: user.userId)
+            requestState = .success
             
-            if self.user == .emptyStruct {
-                self.user = try await UserManager.shared.fetchUser(withUid: userId) ?? .emptyStruct
-            }
-            try await fetchTrickListInfo(userId: userId)
-            try await fetchUserTrickLists(userId: userId)
-            
-            try validateFetch()
+        } catch {
+            requestState = .failure(mapToSPError(error: error))
+        }
+    }
+    
+    func addTrick(newTrick: Trick) async {
+        do {
+            try await trickListManager.uploadTrick(userId: user.userId, newTrick: newTrick)
+            try trickListManager.updateCache(newTrickList: trickList)
 
-            self.getTrickListFetchState = .success
+            let key = ExpandedCardKey(
+                stance: newTrick.stance,
+                difficulty: newTrick.difficulty
+            )
+            expandedByKey[key] = true
+            self.trickList.append(newTrick)
             
-        } catch let error as FirestoreError {
-            self.getTrickListFetchState = .failure(.firestore(error))
+            withAnimation(.smooth) {
+                defaults.set(true, forKey: key.defaultsKey)
+            }
             
         } catch {
-            self.getTrickListFetchState = .failure(.unknown)
+            self.error = mapToSPError(error: error)
         }
     }
     
-    /// Fetches the user's trick list information.
-    ///
-    /// - Parameters:
-    ///  - userId: The id of the current user.
-    ///
-    /// - Throws: An error returned from firebase specifying the cause of the failed request.
-    ///
-    private func fetchTrickListInfo(userId: String) async throws {
+    func removeTrick(toRemove: Trick) async {
         do {
-            self.trickListInfo = try await TrickListInfoManager.shared.fetchTrickListInfo(userId: userId)
-        } catch {
-            throw error
-        }
-    }
-    
-    /// Fetches the user's trick list and stores them by stance.
-    ///
-    /// - Parameters:
-    ///  - userId: The id of the current user.
-    ///
-    /// - Throws: An error returned from firebase specifying the cause of the failed request.
-    ///
-    private func fetchUserTrickLists(userId: String) async throws {
-        do {
-            self.regularTrickList = try await fetchAndSortTrickListByStance(userId: userId, stance: Stance.Stances.regular.rawValue)
-                        
-            self.fakieTrickList = try await fetchAndSortTrickListByStance(userId: userId, stance: Stance.Stances.fakie.rawValue)
-            
-            self.switchTrickList = try await fetchAndSortTrickListByStance(userId: userId, stance: Stance.Stances._switch.rawValue)
-            
-            self.nollieTrickList = try await fetchAndSortTrickListByStance(userId: userId, stance: Stance.Stances.nollie.rawValue)
-        } catch {
-            throw error
-        }
-    }
-    
-    /// Fetches the tricks for a given stance from the user's trick list.
-    ///
-    /// - Parameters:
-    ///  - userId: The id of the current user.
-    ///  - stance: The stance of the tricks to be fetched.
-    ///
-    /// - Throws: An error returned from firebase specifying the cause of the failed request.
-    ///
-    private func fetchAndSortTrickListByStance(userId: String, stance: String) async throws -> [[Trick]] {
-        do {
-            let trickList = try await TrickListManager.shared.fetchTricksByStance(userId: userId, stance: stance)
-            
-            let sortedTrickList = TrickListManager.shared.sortTrickListByDifficulty(unsortedTrickList: trickList)
-            
-            return sortedTrickList
+            try await trickListManager.deleteTrick(userId: user.userId, toRemove: toRemove)
+            self.trickList.removeAll(where: { $0.id == toRemove.id })
+            try trickListManager.updateCache(newTrickList: trickList)
             
         } catch {
-            throw error
-        }
-    }
-    
-    /// Validates that the current user and their trick list info was successfully fetched.
-    ///
-    /// - Throws: A custom error that specifyies the data that failed to be fetched.
-    ///
-    private func validateFetch() throws {
-        if user == .emptyStruct {
-            throw FirestoreError.custom("Failed to fetch current user.")
-        }
-        if trickListInfo == .emptyStruct {
-            throw FirestoreError.custom("Failed to fetch trick list information.")
+            self.error = mapToSPError(error: error)
         }
     }
     
@@ -146,18 +131,21 @@ final class TrickListViewModel: ObservableObject {
     ///  - userId: The id of the current user.
     ///  - trick: A 'Trick' object containing information about the trick to be hidden.
     ///
-    func hideTrick(userId: String, trick: Trick) async {
+    func hideTrick(trick: Trick) async {
         do {
-            try await TrickListManager.shared.hideTrick(userId: userId, trick: trick)
+            var updated = trick
+            updated.hidden = true
+            
+            try await trickListManager.updateTrick(userId: user.userId, trick: updated)
+            let index = trickList.firstIndex(where: { $0.id == updated.id })
+            
+            guard let index = index else { throw SPError.custom("Error updating trick.") }
+            self.trickList[index] = updated
+            
+            try trickListManager.updateCache(newTrickList: trickList)
 
-            // Re-fetch trick list to update the view
-            await loadTrickListView(userId: userId)
-            
-        } catch let error as FirestoreError {
-            self.error = error
-            
         } catch {
-            self.error = FirestoreError.unknown
+            self.error = mapToSPError(error: error)
         }
     }
     
@@ -167,40 +155,29 @@ final class TrickListViewModel: ObservableObject {
     ///  - userId: The id of the current user.
     ///  - stance: The stance corresponding to the list of tricks to reset.
     ///
-    func resetHiddenTricks(userId: String, stance: String) async {
-        do {
-            try await TrickListManager.shared.resetHiddenTricks(userId: userId, stance: stance)
-            
-            // Re-fetch trick list to update the view
-            await loadTrickListView(userId: userId)
-            
-        } catch let error as FirestoreError {
-            self.error = error
-            
-        } catch {
-            self.error = FirestoreError.unknown
+    func resetHiddenTricks(for stance: TrickStance) async {
+        var newExpandedByKey = expandedByKey
+        trickList = trickList.map { trick in
+            if trick.stance == stance && trick.hidden {
+                var updated = trick
+                updated.hidden = false
+                
+                let key = ExpandedCardKey(stance: stance, difficulty: trick.difficulty)
+                newExpandedByKey[key] = true
+                defaults.set(true, forKey: key.defaultsKey)
+                
+                return updated
+            }
+            return trick
         }
-    }
-    
-    /// Deletes a trick's document from the user's trick list collection. Re-fetches the user's trick data and trick list
-    /// upon success. Handles errors accordingly.
-    ///
-    /// - Parameters:
-    ///  - userId: The id of the current user.
-    ///  - trick: A 'Trick' object containing information about the trick to be deleted.
-    ///
-    func deleteTrick(userId: String, trick: Trick) async {
+        expandedByKey = newExpandedByKey
+        
         do {
-            try await TrickListManager.shared.deleteTrick(userId: userId, trick: trick)
-            
-            // Re-fetch trick list to update the view
-            await loadTrickListView(userId: userId)
-            
-        } catch let error as FirestoreError {
-            self.error = error
-            
+            try trickListManager.updateCache(newTrickList: trickList)
+            try await TrickListManager.shared.resetHiddenTricks(userId: user.userId, stance: stance)
+
         } catch {
-            self.error = FirestoreError.unknown
+            self.error = mapToSPError(error: error)
         }
     }
 }
