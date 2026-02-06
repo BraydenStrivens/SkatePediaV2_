@@ -21,9 +21,5 @@
     "@firebase/storage": "^0.14.0",
     "firebase": "^12.8.0",
     "firebase-admin": "^13.6.0"
-  },
-  "scripts": {
-    "lint": "eslint 'functions/**/*.{ts,js}'",
-    "lint:fix": "eslint 'functions/src/**/*.{ts,js}' --fix"
   }
 }

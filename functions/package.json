@@ -5,6 +5,9 @@
         "lint:fix": "npx eslint 'src/**/*.{ts,js}' --fix",
         "build": "npx tsc",
         "clean": "rm -rf lib",
+        "emulators": "npm run clean && npm run build && firebase emulators:start --import ../local-emulator-storage --only auth,firestore,functions",
+        "emulators:persist": "npm run clean && npm run build && firebase emulators:start --import ../local-emulator-storage --export-on-exit ../local-emulator-storage --only auth,firestore,functions",
+        "emulators:storage-persist": "npm run clean && npm run build && firebase emulators:start --only storage",
         "build:watch": "tsc --watch",
         "serve": "npm run clean && npm run build && firebase emulators:start",
         "shell": "npm run build && firebase functions:shell",
@@ -13,7 +16,7 @@
         "logs": "firebase functions:log"
     },
     "engines": {
-        "node": ">=18 <=20"
+        "node": "20"
     },
     "main": "lib/index.js",
     "dependencies": {

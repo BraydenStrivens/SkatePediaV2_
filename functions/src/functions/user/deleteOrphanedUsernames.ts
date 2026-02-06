@@ -1,4 +1,4 @@
-import * as admin from "firebase-admin";
+import { Timestamp } from "firebase-admin/firestore";
 import { logger } from "firebase-functions/v2";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 
@@ -10,7 +10,7 @@ const RESERVATION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 export const cleanupOrphanedUsernameReservations = onSchedule("every 3 hours", async () => {
     logger.info("Starting username reservation cleanup...");
 
-    const threshold = admin.firestore.Timestamp.fromMillis(Date.now() - RESERVATION_TIMEOUT_MS);
+    const threshold = Timestamp.fromMillis(Date.now() - RESERVATION_TIMEOUT_MS);
 
     try {
         // Queries orphaned RESERVED usernames that are expired
@@ -37,7 +37,7 @@ export const cleanupOrphanedUsernameReservations = onSchedule("every 3 hours", a
             // Limits batch size to 500
             if ((count + 1) % 500 === 0) {
                 await batch.commit();
-                batch = admin.firestore().batch();
+                batch = db.batch();
             }
         }
 

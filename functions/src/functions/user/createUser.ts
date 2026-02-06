@@ -1,17 +1,12 @@
-import * as admin from "firebase-admin";
+import { FieldValue } from "firebase-admin/firestore";
 import { logger } from "firebase-functions/v2";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as validator from "validator";
 
-import { db } from "../../firebase";
+import { db, admin } from "../../firebase";
 import { TRICK_LIST, DEFAULT_SETTINGS, DEFAULT_TRICK_LIST_DATA } from "../../utils/constants";
+import type { CreateUserPayload } from "../../utils/interfaces";
 
-interface CreateUserPayload {
-    email: string;
-    password: string;
-    username: string;
-    stance: string;
-}
 // Reserves username for 5 minutes if a user's account creation fails mid-way
 const USERNAME_RESERVATION_DURATION = 5 * 60 * 1000;
 
@@ -36,7 +31,7 @@ export const createInitialUserData = onCall(async (request) => {
     if (!/^[a-zA-Z0-9_.-]+$/.test(originalUsername)) {
         throw new HttpsError("invalid-argument", "Username contains invalid characters.");
     }
-    if (!stance || !["Regular", "Goofy"].includes(stance)) {
+    if (!stance || !["regular", "goofy"].includes(stance)) {
         throw new HttpsError("invalid-argument", "Invalid stance.");
     }
 
@@ -80,7 +75,7 @@ export const createInitialUserData = onCall(async (request) => {
             }
             // Creates a reserved username doc in the usernames collection
             tx.set(usernameRef, {
-                reserved_at: admin.firestore.FieldValue.serverTimestamp(),
+                reserved_at: FieldValue.serverTimestamp(),
                 reserved_by: userId,
                 status: "reserved",
             });
@@ -94,8 +89,10 @@ export const createInitialUserData = onCall(async (request) => {
             user_id: userId,
             username: originalUsername,
             username_lowercase: normalizedUsername,
+            profile_pic_url: "",
+            bio: "",
             stance,
-            date_created: admin.firestore.FieldValue.serverTimestamp(),
+            date_created: FieldValue.serverTimestamp(),
             unseen_notification_count: 0,
             deleted: false,
             settings: DEFAULT_SETTINGS,
@@ -105,7 +102,18 @@ export const createInitialUserData = onCall(async (request) => {
         // Uploads tricks to user's trick_list sub-collection
         TRICK_LIST.forEach((trick) => {
             const trickRef = userRef.collection("trick_list").doc(trick.id);
-            batch.set(trickRef, trick);
+            batch.set(trickRef, {
+                id: trick.id,
+                name: trick.name,
+                abbreviation: trick.abbreviation,
+                learn_first: trick.learn_first,
+                learn_first_abbreviation: trick.learn_first_abbreviation,
+                difficulty: trick.difficulty,
+                stance: trick.stance,
+                progress_list: [],
+                has_trick_items: false,
+                hidden: false,
+            });
         });
 
         await batch.commit();
@@ -113,8 +121,8 @@ export const createInitialUserData = onCall(async (request) => {
         // Finalize the username as taken
         await usernameRef.update({
             user_id: userId,
-            reserved_by: admin.firestore.FieldValue.delete(),
-            reserved_at: admin.firestore.FieldValue.delete(),
+            reserved_by: FieldValue.delete(),
+            reserved_at: FieldValue.delete(),
             status: "taken",
         });
 
