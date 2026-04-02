@@ -1,3 +1,12 @@
+import type { UserStance, TrickStance, Difficulty } from "./interfaces";
+import jsonTrickList from "../data/trickList.json";
+
+/*
+Defines constant values and the initial value of certain fields in a firestore document.
+ */
+
+export const TRICK_LIST = jsonTrickList;
+
 export const DEFAULT_SETTINGS = {
     trick_list_settings: {
         use_trick_abbreviations: false,
@@ -22,5 +31,22 @@ export const DEFAULT_TRICK_LIST_DATA = {
     nollie_learned: 0,
 };
 
-import jsonTrickList from "../data/trickList.json";
-export const TRICK_LIST = jsonTrickList;
+export const DEFAULT_TRICK_PROGRESS_COUNTS = {
+    0: 0,
+    1: 0,
+    2: 0,
+    3: 0,
+};
+
+export const USER_STANCES: UserStance[] = ["regular", "goofy"] as const;
+export const TRICK_STANCES: TrickStance[] = [
+    "regular",
+    "fakie",
+    "switch",
+    "nollie",
+] as const;
+export const DIFFICULTIES: Difficulty[] = [
+    "beginner",
+    "intermediate",
+    "advanced",
+] as const;

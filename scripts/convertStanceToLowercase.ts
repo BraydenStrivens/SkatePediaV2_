@@ -40,4 +40,4 @@ fs.writeFileSync(
 
 console.log("UPDATED STANCE VALUES TO LOWERCASE");
 
-// export {};
+export {};

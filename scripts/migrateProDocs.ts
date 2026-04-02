@@ -28,3 +28,5 @@ async function copyCollection(collectionName) {
 }
 
 copyCollection("pro_videos").catch(console.error);
+
+export {};
