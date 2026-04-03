@@ -7,31 +7,7 @@
 
 import SwiftUI
 
-private struct TabbarHeightKey: EnvironmentKey {
-    static let defaultValue: CGFloat = 0
-}
 
-extension EnvironmentValues {
-    var tabbarHeight: CGFloat {
-        get { self[TabbarHeightKey.self] }
-        set { self[TabbarHeightKey.self] = newValue }
-    }
-}
-
-struct TabbarAware: ViewModifier {
-    @Environment(\.tabbarHeight) var tabbarHeight
-    
-    func body(content: Content) -> some View {
-        content
-            .padding(.bottom, tabbarHeight)
-    }
-}
-
-extension View {
-    func tabbarAware() -> some View {
-        self.modifier(TabbarAware())
-    }
-}
 
 struct TabbarView: View {
     @EnvironmentObject var userStore: UserStore

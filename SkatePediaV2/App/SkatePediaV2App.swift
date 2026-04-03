@@ -12,7 +12,15 @@ import FirebaseFirestore
 import FirebaseFunctions
 import FirebaseStorage
 
+/// Handles app lifecycle events and performs Firebase configuration on launch.
 class AppDelegate: NSObject, UIApplicationDelegate {
+    /// Called when the app has finished launching.
+        ///
+        /// - Parameters:
+        ///   - application: The singleton app object.
+        ///   - launchOptions: A dictionary indicating the reason the app was launched (if any).
+        ///
+        /// - Returns: `true` if the app launched successfully.
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions:
@@ -24,14 +32,24 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
 }
 
+/// The main entry point of the SkatePediaV2 app.
+///
+/// Initializes global stores, configures UI appearance, and injects environment objects
+/// into the root view.
 @main
 struct SkatePediaV2App: App {
-    // register app delegate for Firebase setup
+    // Register app delegate for Firebase setup
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     
-    @StateObject private var authStore = AuthenticationStore()
     @StateObject var sessionContainer = SessionContainer()
+
+    @StateObject private var authStore = AuthenticationStore()
+    @StateObject private var userStore = UserStore()
+    @StateObject private var trickListStore = TrickListStore()
+    @StateObject private var trickItemStore = TrickItemStore()
+    @StateObject private var postStore = PostStore()
     
+    /// Sets up global UI appearance.
     init() {
         UIView.appearance(whenContainedInInstancesOf: [UIAlertController.self]).tintColor = UIColor(named: "buttonColor")
         UITabBar.appearance().isHidden = true
@@ -43,7 +61,13 @@ struct SkatePediaV2App: App {
                 RootView()
                     .tint(.primary)
             }
+            // Inject environment objects for global state
             .environmentObject(authStore)
+            .environmentObject(userStore)
+            .environmentObject(trickListStore)
+            .environmentObject(trickItemStore)
+            .environmentObject(postStore)
+
             .environmentObject(sessionContainer)
             .environmentObject(sessionContainer.userStore)
             .environmentObject(sessionContainer.trickListStore)
@@ -60,6 +84,9 @@ struct SkatePediaV2App: App {
     }
 }
 
+/// Configures Firebase to use local emulators for development.
+///
+/// Used for local testing without connecting to production services.
 func initializeEmulator() {
     let firestore = Firestore.firestore()
     let settings = firestore.settings
