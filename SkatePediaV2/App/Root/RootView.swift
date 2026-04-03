@@ -7,10 +7,19 @@
 
 import SwiftUI
 
-/// Defines the layout of items in the 'MainMenuView'.
+/// Determines which view to display as the app's root based on authentication state.
+///
+/// - If the auth state is loading, displays a centered `CustomProgressView`.
+/// - If the user is authenticated, displays the `TabbarView` and starts listening to user data.
+/// - If the user is not authenticated, displays the authentication flow via `AuthRootView`.
+///
+/// Additionally, stops listening to user data and clears relevant stores when the user logs out.
 struct RootView: View {
     @EnvironmentObject var authStore: AuthenticationStore
-    @EnvironmentObject var errorStore: ErrorStore
+    @EnvironmentObject var userStore: UserStore
+    @EnvironmentObject var trickListStore: TrickListStore
+    @EnvironmentObject var postStore: PostStore
+    
     @EnvironmentObject var sessionContainer: SessionContainer
     
     var body: some View {
@@ -26,18 +35,14 @@ struct RootView: View {
                     }
                 
             } else {
-                NavigationStack {
-                    LoginViewBuilder(
-                        errorStore: errorStore
-                    )
-                }
+                AuthRootView()
             }
         }
         .onChange(of: authStore.userSession) { _, newSession in
             if newSession == nil {
-                sessionContainer.userStore.stopListening()
-                sessionContainer.trickListStore.clear()
-                sessionContainer.postStore.clear()
+                userStore.stopListening()
+                trickListStore.clear()
+                postStore.clear()
             }
         }
     }

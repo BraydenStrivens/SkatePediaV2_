@@ -10,9 +10,14 @@ import FirebaseFirestore
 import FirebaseAuth
 import SwiftUI
 
+/// View model responsible for handling user registration.
 ///
-/// Defines a class that contains functions for registering new users to the database.
+/// Manages form state, validates user input, and coordinates account creation
+/// through `AuthenticationService`.
 ///
+/// - Parameters:
+///   - errorStore: Used to present errors to the user.
+///   - authService: Service responsible for authentication actions.
 @MainActor
 final class RegisterViewModel: ObservableObject {
     @Published var username: String = ""
@@ -22,29 +27,37 @@ final class RegisterViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     
     private let errorStore: ErrorStore
+    private let authService: AuthenticationService
     
-    init(errorStore: ErrorStore) {
+    init(
+        errorStore: ErrorStore,
+        authService: AuthenticationService = .shared
+    ) {
         self.errorStore = errorStore
+        self.authService = authService
     }
     
-    /// Sends the user input from the RegisterView to the AuthenticationService class to create the user auth
-    /// and upload their doucments.
-    @MainActor
+    /// Attempts to create a new user using the provided input fields.
+    ///
+    /// Validates user input, ensures a stance is selected, and calls
+    /// `AuthenticationService` to create the account.
+    ///
+    /// - Important: Errors are caught and presented via `ErrorStore`.
     func createUser() async {
         isLoading = true
         defer { isLoading = false }
         
         do {
-            try validateInputFields()
-            
             guard let stance = stance else {
                 throw SPError.custom("Please select a stance.")
             }
             
-            try await AuthenticationService.shared.createUser(
-                email: email.trimmingCharacters(in: .whitespaces),
-                password: password.trimmingCharacters(in: .whitespacesAndNewlines),
-                username: username.trimmingCharacters(in: .whitespacesAndNewlines),
+            try validateInputFields()
+
+            try await authService.createUser(
+                email: email,
+                password: password,
+                username: username,
                 stance: stance
             )
         } catch {
@@ -52,11 +65,12 @@ final class RegisterViewModel: ObservableObject {
         }
     }
     
-    /// Validates the input fields in the RegisterView are not empty and ensures the username is 15 characters or less.
-    /// Throws appropriate error if validation fails and that error gets mapped an displayed to the user.
+    /// Validates registration input fields and normalizes their values.
     ///
-    /// - Throws: A custom error object specifying the error.
+    /// Ensures all fields are non-empty, enforces username and password constraints,
+    /// and trims whitespace/newlines from inputs.
     ///
+    /// - Throws: An error describing the validation failure.
     private func validateInputFields() throws {
         guard !username.trimmingCharacters(in: .whitespaces).isEmpty else {
             throw AuthError.emptyUsername
@@ -73,5 +87,9 @@ final class RegisterViewModel: ObservableObject {
         guard password.count >= 6 else {
             throw SPError.custom("Password must be at least 6 characters.")
         }
+        
+        email = email.trimmingCharacters(in: .whitespaces)
+        password = password.trimmingCharacters(in: .whitespacesAndNewlines)
+        username = username.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

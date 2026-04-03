@@ -10,9 +10,14 @@ import FirebaseAuth
 import SwiftUI
 import UIKit
 
+/// View model responsible for handling user login.
 ///
-/// Defines a class that contains functions for logging in a user to the app.
+/// Manages login form state, validates input, and performs authentication
+/// through `AuthenticationService`.
 ///
+/// - Parameters:
+///   - errorStore: Used to present errors to the user.
+///   - authService: Service responsible for authentication actions.
 @MainActor
 final class LoginViewModel: ObservableObject {
     @Published var email: String = ""
@@ -21,22 +26,29 @@ final class LoginViewModel: ObservableObject {
     @Published var loginLoading: Bool = false
     
     private let errorStore: ErrorStore
+    private let authService: AuthenticationService
     
-    init(errorStore: ErrorStore) {
+    init(
+        errorStore: ErrorStore,
+        authService: AuthenticationService = .shared
+    ) {
         self.errorStore = errorStore
+        self.authService = authService
     }
 
-    /// Valids the login input fields contain characters and attempts to login in the user.
+    /// Attempts to sign in the user with the provided credentials.
     ///
-    /// - Throws: An error mapped to an SPError object that specifies the error.
+    /// Validates input fields and calls `AuthenticationService` to perform login.
     ///
+    /// - Important: Errors are caught and presented via `ErrorStore`.
     func signIn() async {
         loginLoading = true
         defer { loginLoading = false }
         
         do {
             try emptyInputFieldCheck()
-            try await AuthenticationService.shared.login(
+            
+            try await authService.login(
                 email: email,
                 password: password
             )
@@ -45,29 +57,9 @@ final class LoginViewModel: ObservableObject {
         }
     }
     
-    /// Sends a reset password link to the inputted email address.
-    func resetPassword() async -> Bool {
-        do {
-            guard !resetEmail.trimmingCharacters(in: .whitespaces).isEmpty else {
-                throw AuthError.emptyEmail
-            }
-            
-            try await AuthenticationService.shared.resetPassword(email: resetEmail)
-            return true
-            
-        } catch {
-            errorStore.present(error, title: "Error Resetting Password")
-            return false
-        }
-    }
-    
-    /// Validates that the email and password textfields are not empty,
+    /// Validates that email and password fields are not empty.
     ///
-    /// - Parameters:
-    ///  - checkPassword: Boolean that indicates whether to validate the password input field.
-    ///
-    /// - Throws: An error mapped to an SPError object that specifies the error.
-    ///
+    /// - Throws: An error describing the validation failure.
     func emptyInputFieldCheck() throws {
         guard !email.trimmingCharacters(in: .whitespaces).isEmpty else {
             throw AuthError.emptyEmail

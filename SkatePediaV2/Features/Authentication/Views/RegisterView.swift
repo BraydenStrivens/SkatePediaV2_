@@ -7,9 +7,7 @@
 
 import SwiftUI
 
-///
-/// Struct that displays the register account screen. Users register with a username, email, password, and skateboard stance.
-///
+/// Registration screen for creating a new account with user details and stance selection.
 struct RegisterView: View {
     @Environment(\.dismiss) var dismiss
     @Environment(\.colorScheme) var colorScheme
@@ -27,61 +25,65 @@ struct RegisterView: View {
             Image(.appLogo)
                 .resizable()
                 .scaledToFit()
-                .frame(height: UIScreen.main.bounds.height * 0.25)
+                .frame(height: UIScreen.main.bounds.height * 0.22)
                 .padding()
             
             Spacer()
             
-            VStack(spacing: 20) {
-
-                Text("Register")
-                    .font(.system(size: UIScreen.screenWidth * 0.1))
-                    .fontWeight(.semibold)
-                    .kerning(1.2)
-                
-                SPTextField(
-                    title: "Username",
-                    borderColor: Color.accent,
-                    text: $viewModel.username)
-                
-                SPTextField(
-                    title: "Email",
-                    borderColor: Color.accent,
-                    text: $viewModel.email)
-                
-                SPSecureField(
-                    title: "Password",
-                    borderColor: Color.accent,
-                    text: $viewModel.password)
-                
-                stanceSelectionDropDown
-                
-                Button {
-                    Task {
-                        await viewModel.createUser()
-                    }
-                } label: {
-                    if viewModel.isLoading {
-                        CustomProgressView(placement: .center)
-                    } else {
-                        Text("Register")
-                            .font(.title3)
-                    }
-                }
-                .disabled(viewModel.isLoading)
-                .frame(maxWidth: 250, maxHeight: 50)
-                .background(Color.button)
-                .foregroundColor(.white)
-                .cornerRadius(20)
-                .contentShape(Rectangle())
-            }
-            .padding()
-            .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 25).protruded)
-            .padding(.horizontal, 20)
+            registerBox
             
             Spacer()
         }
+        .customNavHeader(title: "")
         .padding(.vertical)
+    }
+    
+    var registerBox: some View {
+        VStack(spacing: 20) {
+            Text("Register")
+                .font(.system(size: UIScreen.screenWidth * 0.1))
+                .fontWeight(.semibold)
+                .kerning(1.2)
+            
+            SPTextField(
+                title: "Username",
+                borderColor: Color.accent,
+                text: $viewModel.username)
+            
+            SPTextField(
+                title: "Email",
+                borderColor: Color.accent,
+                text: $viewModel.email)
+            
+            SPSecureField(
+                title: "Password",
+                borderColor: Color.accent,
+                text: $viewModel.password)
+            
+            stanceSelectionDropDown
+            
+            Button {
+                Task {
+                    await viewModel.createUser()
+                }
+            } label: {
+                if viewModel.isLoading {
+                    CustomProgressView(placement: .center)
+                } else {
+                    Text("Register")
+                        .font(.title3)
+                }
+            }
+            .disabled(viewModel.isLoading)
+            .frame(maxWidth: 250, maxHeight: 50)
+            .background(Color.button)
+            .foregroundColor(.white)
+            .cornerRadius(20)
+            .contentShape(Rectangle())
+        }
+        .padding()
+        .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 25).protruded)
+        .padding(.horizontal, 20)
     }
     
     var stanceSelectionDropDown: some View {
@@ -149,8 +151,6 @@ struct RegisterView: View {
             .clipShape(RoundedRectangle(cornerRadius: 20))
             .shadow(color: colorScheme == .dark ? .clear : .black.opacity(0.5), radius: 4)
             .frame(width: 200)
-            
-            
         }
     }
 }
