@@ -45,6 +45,7 @@ struct LoginView: View {
                 } label: {
                     Text("Don't have an account?")
                     Text("Sign Up.")
+                        .fontWeight(.semibold)
                 }
                 .foregroundColor(Color.textAccent)
             }

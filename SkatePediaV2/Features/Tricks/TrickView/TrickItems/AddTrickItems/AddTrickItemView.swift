@@ -14,7 +14,7 @@ import Kingfisher
 ///
 /// - Parameters:
 ///  - userId: The id of an account in the database.
-///  - trick: A 'JsonTrick' object containing data about the trick the trick item is for.
+///  - trick: A 'Trick' object containing data about the trick the trick item is for.
 ///
 struct AddTrickItemView: View {
     @EnvironmentObject var userStore: UserStore

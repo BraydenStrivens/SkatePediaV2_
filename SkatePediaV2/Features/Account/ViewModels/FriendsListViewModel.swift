@@ -1,0 +1,123 @@
+//
+//  FriendsListViewModel.swift
+//  SkatePediaV2
+//
+//  Created by Brayden Strivens on 4/1/25.
+//
+
+import Foundation
+import FirebaseFirestore
+import FirebaseAuth
+
+///
+/// Class that contains functions for fetching and manipulating the current user's friends list.
+///
+final class FriendsListViewModel: ObservableObject {
+    @Published var friendsList: [Friend] = []
+    @Published var pendingFriends: [Friend] = []
+    
+    @Published var isFetchingFriends: Bool = false
+    private var hasMoreFriends: Bool = true
+    private var lastFriendsListDocument: DocumentSnapshot? = nil
+
+    @Published var isFetchingPendingFriends: Bool = false
+    private var hasMorePendingFriends: Bool = true
+    private var lastPendingFriendsDocument: DocumentSnapshot? = nil
+    
+    private let batchSize: Int = 15
+    
+    private let errorStore: ErrorStore
+    private let userService: UserService
+    
+    init(
+        errorStore: ErrorStore,
+        userService: UserService = .shared
+    ) {
+        self.errorStore = errorStore
+        self.userService = userService
+    }
+    
+    ///
+    /// Fetches the user's friends 10 at a time. After fetching each friend, the user data for that friend is fetched.
+    ///
+    @MainActor
+    func fetchFriendsList(for userId: String) async {
+        guard hasMoreFriends else { return }
+        
+        isFetchingFriends = true
+        defer { isFetchingFriends = false }
+        
+        do {
+            print("FETCHING FRIENDS")
+
+            let (currentBatch, lastDocument) = try await userService.fetchUserFriendsList(
+                for: userId,
+                count: batchSize,
+                lastDocument: lastFriendsListDocument
+            )
+            
+            friendsList.append(contentsOf: currentBatch)
+            if let lastDocument { lastFriendsListDocument = lastDocument }
+            hasMoreFriends = currentBatch.count == batchSize
+            
+        } catch {
+            errorStore.present(error, title: "Error Fetching Friends.")
+        }
+    }
+    
+    ///
+    /// Fetches the user's friends 10 at a time. After fetching each friend, the user data for that friend is fetched.
+    ///
+    @MainActor
+    func fetchPendingFriendsList(for userId: String) async {
+        guard hasMorePendingFriends else { return }
+        
+        isFetchingPendingFriends = true
+        defer { isFetchingPendingFriends = false }
+        
+        do {
+            let (currentBatch, lastDocument) = try await userService.fetchPendingFriends(
+                for: userId,
+                count: batchSize,
+                lastDocument: lastPendingFriendsDocument
+            )
+            
+            pendingFriends.append(contentsOf: currentBatch)
+            if let lastDocument { lastPendingFriendsDocument = lastDocument }
+            hasMorePendingFriends = currentBatch.count == batchSize
+            
+        } catch {
+            errorStore.present(error, title: "Error Fetching Pending Friends.")
+        }
+    }
+    
+    @MainActor
+    func handleFriend(
+        _ friend: Friend,
+        accept: Bool
+    ) async {
+        do {
+            if accept {
+                try await userService.acceptFriendRequest(
+                    friend.userId,
+                    for: friend.withUserData.userId
+                )
+                
+                pendingFriends.removeAll(where: { $0.id == friend.id })
+                friendsList.append(friend)
+                
+            } else {
+                userService.removeFriend(
+                    friend.userId,
+                    for: friend.withUserData.userId
+                )
+                
+                pendingFriends.removeAll(where: { $0.id == friend.id })
+                friendsList.removeAll(where: { $0.id == friend.id })
+            }
+            
+        } catch {
+            errorStore.present(error, title: "Error Handling Friend Request")
+        }
+    }
+}

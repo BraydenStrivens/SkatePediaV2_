@@ -11,7 +11,7 @@ import Foundation
 ///
 /// - Parameters:
 ///  - stance: A 'FilterStances' enum that indicates that either all stances, or a specific stance should be filtered.
-///  - trick: A 'JsonTrick' object that represents the individual trick to filter for.
+///  - trick: A 'Trick' object that represents the individual trick to filter for.
 ///
 struct PostFilter: Equatable {
     let stance: FilterStances

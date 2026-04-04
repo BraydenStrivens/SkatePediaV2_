@@ -20,6 +20,7 @@ import SwiftUI
 /// - Uses `tabbarAware()` to apply bottom padding for the custom tab bar height.
 struct TabbarView: View {
     @EnvironmentObject var userStore: UserStore
+    @EnvironmentObject var errorStore: ErrorStore
     
     @Environment(\.colorScheme) private var colorScheme
 
@@ -31,7 +32,7 @@ struct TabbarView: View {
             ProgressView("Loading User...")
             
         } else if let user = userStore.user {
-            tabbar(user.userId)
+            tabbar(user, errorStore)
             
         } else if let error = userStore.blockingError {
             ContentUnavailableView {
@@ -65,7 +66,7 @@ struct TabbarView: View {
     ///
     /// - Parameter userId: The authenticated user's ID.
     /// - Returns: A SwiftUI view containing the tab bar interface.
-    func tabbar(_ userId: String) -> some View {
+    func tabbar(_ user: User, _ errorStore: ErrorStore) -> some View {
         TabView(selection: $currentTab) {
             NavigationStack {
                 TrickListViewContainer()
@@ -89,13 +90,10 @@ struct TabbarView: View {
             .tabbarAware()
             .tag(2)
             
-            NavigationStack {
-                CurrentUserAccountView()
-                    .customNavHeader(
-                        title: "My Account",
-                        showDivider: true
-                    )
-            }
+            AccountRootView(
+                user: user,
+                errorStore: errorStore
+            )
             .tabbarAware()
             .tag(3)
         }
