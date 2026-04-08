@@ -8,6 +8,12 @@
 import Foundation
 import FirebaseFirestore
 
+/// Manages fetching and displaying a preview of a user's posts.
+///
+/// This class handles the initial fetch and pagination of a user's posts,
+/// updating loading states and managing pagination using document snapshots.
+/// It communicates with `PostService` for data retrieval and uses `ErrorStore`
+/// for presenting errors.
 @MainActor
 final class UserPostPreviewViewModel: ObservableObject {
     @Published var userPosts: [Post] = []
@@ -32,6 +38,10 @@ final class UserPostPreviewViewModel: ObservableObject {
         self.postService = postService
     }
     
+    /// Performs the initial fetch of the user's posts.
+    ///
+    /// This method loads the first batch of posts and updates the request state
+    /// accordingly. It will not execute if a request has already been made.
     func initialPostFetch() async {
         guard initialRequestState == .idle else { return }
         
@@ -55,6 +65,10 @@ final class UserPostPreviewViewModel: ObservableObject {
         }
     }
     
+    /// Fetches the next batch of posts for pagination.
+    ///
+    /// This method appends additional posts to the existing list if more data is available.
+    /// Pagination continues only if the previous batch was full.
     func fetchMorePosts() async {
         guard lastBatchCount == batchCount else { return }
         

@@ -74,15 +74,9 @@ struct TabbarView: View {
             .tabbarAware()
             .tag(0)
             
-            NavigationStack {
-                ProsView()
-                    .customNavHeader(
-                        title: "Pro Skaters",
-                        showDivider: true
-                    )
-            }
-            .tabbarAware()
-            .tag(1)
+            ProsRootView()
+                .tabbarAware()
+                .tag(1)
             
             NavigationStack {
                 CommunityViewContainer()

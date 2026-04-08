@@ -60,7 +60,11 @@ struct SPVideoPlayer2: View {
                     Spacer()
                 }
                 .overlay(alignment: .bottom) {
-                    videoSeeker
+                    if viewModel.isAligning {
+                        alignSeeker
+                    } else {
+                        videoSeeker
+                    }
                 }
                 
                 Spacer()
@@ -106,6 +110,51 @@ struct SPVideoPlayer2: View {
                             let progress = max(min(value.location.x / videoSize.width, 1), 0)
                             viewModel.progress = progress
                             viewModel.isSeeking = true
+                        }
+                        .onEnded { _ in
+                            viewModel.seek(to: viewModel.progress)
+                            viewModel.isSeeking = false
+                        }
+                )
+                .offset(x: viewModel.progress * videoSize.width > 15 ? -15 : 0)
+        }
+    }
+    
+    var alignSeeker: some View {
+        ZStack(alignment: .leading) {
+            Rectangle()
+                .fill(seekerBackground)
+            
+            Rectangle()
+                .fill(Color.button)
+                .frame(width: max(videoSize.width * viewModel.progress, 0))
+        }
+        .frame(width: videoSize.width, height: 5)
+        .overlay(alignment: .leading) {
+            Circle()
+                .fill(Color.button)
+                .frame(width: 15, height: 15)
+                .scaleEffect(isDragging ? 1 : 0.001)
+                .frame(width: 35, height: 35)
+                .contentShape(Rectangle())
+                .offset(x: videoSize.width * viewModel.progress)
+                .gesture(
+                    DragGesture()
+                        .updating($isDragging) { _, out, _ in
+                            out = true
+                        }
+                        .onChanged { value in
+                            if viewModel.isAligning {
+                                let progress = max(
+                                    min(value.location.x / videoSize.width, viewModel.alignedEnd), viewModel.alignedStart
+                                )
+                                viewModel.progress = progress
+                                viewModel.isSeeking = true
+                            } else {
+                                let progress = max(min(value.location.x / videoSize.width, 1), 0)
+                                viewModel.progress = progress
+                                viewModel.isSeeking = true
+                            }
                         }
                         .onEnded { _ in
                             viewModel.seek(to: viewModel.progress)

@@ -13,7 +13,11 @@ import FirebaseAuth
 import FirebaseFirestore
 import Firebase
 
-/// Defines a class that contains functions for the 'SettingsView'
+/// Manages the state and actions for the account options (settings) view.
+///
+/// This class handles updating user profile information, managing profile images,
+/// handling authentication actions such as signing out and deleting the account,
+/// and coordinating with services for data persistence and validation.
 @MainActor
 final class AccountOptionsViewModel: ObservableObject {
     @Published private(set) var user: User
@@ -22,6 +26,10 @@ final class AccountOptionsViewModel: ObservableObject {
     @Published var newBio: String
     @Published var deleteProfilePhoto: Bool = false
     @Published var profileImage: Image?
+    
+    /// The selected photo picker item used to load a new profile image.
+    ///
+    /// When set, triggers loading of the image data.
     @Published var selectedItem: PhotosPickerItem? {
         didSet { Task { await loadImage() } }
     }
@@ -35,6 +43,13 @@ final class AccountOptionsViewModel: ObservableObject {
     private let authService: AuthenticationService
     private let userService: UserService
     
+    /// Creates a new `AccountOptionsViewModel`.
+    ///
+    /// - Parameters:
+    ///   - user: The current user whose data will be edited.
+    ///   - errorStore: The shared error store for handling errors.
+    ///   - authService: The authentication service. Defaults to `.shared`.
+    ///   - userService: The user service. Defaults to `.shared`.
     init(
         user: User,
         errorStore: ErrorStore,
@@ -51,6 +66,12 @@ final class AccountOptionsViewModel: ObservableObject {
         self.userService = userService
     }
     
+    /// Updates the user's profile information if any changes were made.
+    ///
+    /// This includes validating and updating the username, stance, bio,
+    /// and profile photo. Only modified fields are persisted.
+    ///
+    /// - Returns: `true` if the update succeeds, otherwise `false`.
     func updateUserProfile() async -> Bool {
         var hasUpdate: Bool = false
         updatingUser = true
@@ -115,6 +136,9 @@ final class AccountOptionsViewModel: ObservableObject {
         }
     }
     
+    /// Signs the current user out of their account.
+    ///
+    /// Any errors during sign-out are presented using the error store.
     func signOut() {
         do {
             try authService.signOut()
@@ -124,6 +148,11 @@ final class AccountOptionsViewModel: ObservableObject {
     }
     
     /// Updates the password of the current user's account.
+    ///
+    /// The password must meet minimum length requirements before being submitted.
+    ///
+    /// - Parameter password: The new password to set.
+    /// - Returns: `true` if the update succeeds, otherwise `false`.
     func updatePassword(password: String) async -> Bool {
         do {
             guard password.count >= 6 else {
@@ -141,7 +170,10 @@ final class AccountOptionsViewModel: ObservableObject {
         }
     }
     
-    /// Deletes the user account from the database and storage.
+    /// Deletes the current user's account.
+    ///
+    /// This removes the user from authentication, database, and storage.
+    /// Any errors are presented using the error store.
     func deleteUser() async {
         self.isDeleting = true
         defer { isDeleting = false }
@@ -153,6 +185,10 @@ final class AccountOptionsViewModel: ObservableObject {
         }
     }
     
+    /// Loads the selected image from the photo picker.
+    ///
+    /// Converts the selected item into a `UIImage` for uploading and a SwiftUI `Image`
+    /// for previewing in the UI.
     private func loadImage() async {
         guard let item = selectedItem else { return }
         guard let data = try? await item.loadTransferable(type: Data.self) else { return }
@@ -162,6 +198,9 @@ final class AccountOptionsViewModel: ObservableObject {
         self.profileImage = Image(uiImage: uiImage)
     }
     
+    /// Resets all editable fields back to the current user's saved values.
+    ///
+    /// This clears any selected images and restores original profile data.
     func resetEdit() {
         profileImage = nil
         selectedItem = nil

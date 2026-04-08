@@ -52,7 +52,11 @@ final class SPMultiVideoController: ObservableObject {
     }
     
     func toggleLoop() {
-        controllers.forEach { $0.isLooping = true }
+        controllers.forEach { $0.isLooping.toggle() }
+    }
+    
+    func toggleAlign() {
+        controllers.forEach { $0.toggleAlign() }
     }
 
     func seek(to progress: CGFloat) {

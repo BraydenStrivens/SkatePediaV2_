@@ -31,7 +31,7 @@ struct RootView: View {
                 TabbarView()
                     .ignoresSafeArea(.keyboard)
                     .task(id: session.uid) {
-                        sessionContainer.userStore.startListening(uid: session.uid)
+                        userStore.startListening(uid: session.uid)
                     }
                 
             } else {

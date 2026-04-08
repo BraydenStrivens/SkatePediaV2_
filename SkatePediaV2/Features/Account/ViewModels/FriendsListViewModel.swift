@@ -9,9 +9,12 @@ import Foundation
 import FirebaseFirestore
 import FirebaseAuth
 
+/// Manages fetching and handling the current user's friends and pending friend requests.
 ///
-/// Class that contains functions for fetching and manipulating the current user's friends list.
-///
+/// This class is responsible for loading paginated friends data,
+/// handling incoming friend requests, and updating the UI state accordingly.
+/// It interacts with `UserService` for network operations and uses
+/// `ErrorStore` to present any errors to the user.
 final class FriendsListViewModel: ObservableObject {
     @Published var friendsList: [Friend] = []
     @Published var pendingFriends: [Friend] = []
@@ -29,6 +32,11 @@ final class FriendsListViewModel: ObservableObject {
     private let errorStore: ErrorStore
     private let userService: UserService
     
+    /// Creates a new `FriendsListViewModel`.
+    ///
+    /// - Parameters:
+    ///   - errorStore: The shared error store used for error handling.
+    ///   - userService: The service used for fetching and updating user data. Defaults to `.shared`.
     init(
         errorStore: ErrorStore,
         userService: UserService = .shared
@@ -37,9 +45,12 @@ final class FriendsListViewModel: ObservableObject {
         self.userService = userService
     }
     
+    /// Fetches a paginated batch of the user's friends list.
     ///
-    /// Fetches the user's friends 10 at a time. After fetching each friend, the user data for that friend is fetched.
+    /// This method retrieves friends in batches and appends them to the existing list.
+    /// Pagination is handled using the last fetched document snapshot.
     ///
+    /// - Parameter userId: The unique identifier of the user whose friends are being fetched.
     @MainActor
     func fetchFriendsList(for userId: String) async {
         guard hasMoreFriends else { return }
@@ -65,9 +76,12 @@ final class FriendsListViewModel: ObservableObject {
         }
     }
     
+    /// Fetches a paginated batch of the user's pending friend requests.
     ///
-    /// Fetches the user's friends 10 at a time. After fetching each friend, the user data for that friend is fetched.
+    /// This method retrieves pending friends in batches and appends them to the existing list.
+    /// Pagination is handled using the last fetched document snapshot.
     ///
+    /// - Parameter userId: The unique identifier of the user whose pending requests are being fetched.
     @MainActor
     func fetchPendingFriendsList(for userId: String) async {
         guard hasMorePendingFriends else { return }
@@ -91,6 +105,14 @@ final class FriendsListViewModel: ObservableObject {
         }
     }
     
+    /// Handles accepting or rejecting a friend request. Also used to remove an already accepted friend.
+    ///
+    /// If accepted, the friend is moved from the pending list to the friends list.
+    /// If rejected, the friend is removed from both lists.
+    ///
+    /// - Parameters:
+    ///   - friend: The friend request to handle.
+    ///   - accept: A Boolean indicating whether to accept (`true`) or reject (`false`) the request.
     @MainActor
     func handleFriend(
         _ friend: Friend,

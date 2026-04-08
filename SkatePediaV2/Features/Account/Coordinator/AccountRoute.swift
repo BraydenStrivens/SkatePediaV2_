@@ -7,14 +7,19 @@
 
 import Foundation
 
-/// Represents the navigation destinations from the account tab's flow.
+/// This enum defines all possible routes that can be navigated to from
+/// the account section of the app.
 ///
-/// Currently supports:
-/// - `friendsList`: Navigates to the friends list screen.enum AccountRoute: Hashable
-/// - `profileOptions`: Navigates to the profile options screen.enum AccountRoute: Hashable
-/// - `profileSettings`: Navigates to the profile settings screen.enum AccountRoute: Hashable
-/// - `trickListSettings`: Navigates to the trick list settings screen.enum AccountRoute: Hashable
-
+/// Supported destinations include:
+/// - `friendsList`: Displays the user's friends list.
+/// - `userPosts`: Shows posts created by the user.
+/// - `userTricks`: Displays trick progresses associated with the user for a given stance.
+/// - `accountOptions`: Opens the account options screen.
+/// - `profileSettings`: Opens the profile settings screen.
+/// - `trickItemSettings`: Opens trick related settings screen.
+/// - `aboutSkatePedia`: Displays information about the app.
+/// - `termsOfService`: Shows the terms of service.
+/// - `privacyPolicy`: Shows the privacy policy.
 enum AccountRoute: Hashable {
     case friendsList
     case userPosts

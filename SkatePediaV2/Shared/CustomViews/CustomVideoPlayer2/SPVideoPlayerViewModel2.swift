@@ -16,6 +16,10 @@ final class SPVideoPlayerViewModel2: ObservableObject {
     @Published var seekStep: CGFloat = 0.05
     @Published var progress: CGFloat = 0
     @Published var isSeeking: Bool = false
+    
+    @Published var isAligning: Bool = false
+    @Published var alignedStart: CGFloat = 0
+    @Published var alignedEnd: CGFloat = 1
 
     let player: AVPlayer
     private var timeObserver: Any?
@@ -58,6 +62,10 @@ final class SPVideoPlayerViewModel2: ObservableObject {
     func toggleMuted() {
         isMuted = !isMuted
         player.isMuted = isMuted
+    }
+    
+    func toggleAlign() {
+        isAligning.toggle()
     }
 
     func setPlaybackSpeed(_ speed: Float) {
