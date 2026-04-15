@@ -13,9 +13,11 @@ import SwiftUI
 /// Ensures content is not obscured by a tab bar.
 struct TabbarAware: ViewModifier {
     @Environment(\.tabbarHeight) var tabbarHeight
+    @StateObject private var keyboard = KeyboardObserver()
     
     func body(content: Content) -> some View {
         content
+//            .padding(.bottom, keyboard.height == 0 ? tabbarHeight : 0)
             .padding(.bottom, tabbarHeight)
     }
 }

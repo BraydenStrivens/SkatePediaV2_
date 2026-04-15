@@ -344,12 +344,12 @@ export async function deleteUserPostsWithComments(userId: string) {
 export async function deletePostById(trickItemId: string) {
     const postRef = db.collection("posts").doc(trickItemId);
 
+    const postSnap = await postRef.get();
+    if (!postSnap.exists) return;
+
     await postRef.update({
         pending_deletion: true,
     });
-
-    const postSnap = await postRef.get();
-    if (!postSnap.exists) return;
 
     await deleteCommentsForPost(trickItemId);
 

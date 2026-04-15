@@ -14,6 +14,7 @@ import Combine
 /// This class listens for keyboard show and hide notifications and updates
 /// the `height` property to match the keyboard's current height. It can
 /// be used in SwiftUI views to adjust layouts when the keyboard appears.
+@MainActor
 class KeyboardObserver: ObservableObject {
     
     /// The current height of the keyboard. Updates automatically when the keyboard shows or hides.

@@ -21,6 +21,7 @@ import SwiftUI
 struct TabbarView: View {
     @EnvironmentObject var userStore: UserStore
     @EnvironmentObject var errorStore: ErrorStore
+    @EnvironmentObject var trickListStore: TrickListStore
     
     @Environment(\.colorScheme) private var colorScheme
 
@@ -68,11 +69,10 @@ struct TabbarView: View {
     /// - Returns: A SwiftUI view containing the tab bar interface.
     func tabbar(_ user: User, _ errorStore: ErrorStore) -> some View {
         TabView(selection: $currentTab) {
-            NavigationStack {
-                TrickListViewContainer()
-            }
-            .tabbarAware()
-            .tag(0)
+            TrickListRootView(user: user, trickListStore: trickListStore)
+                .tabbarAware()
+                .ignoresSafeArea(.keyboard)
+                .tag(0)
             
             ProsRootView()
                 .tabbarAware()
@@ -89,6 +89,7 @@ struct TabbarView: View {
                 errorStore: errorStore
             )
             .tabbarAware()
+            .ignoresSafeArea(.keyboard)
             .tag(3)
         }
         .environment(\.tabbarHeight, tabbarHeight)
