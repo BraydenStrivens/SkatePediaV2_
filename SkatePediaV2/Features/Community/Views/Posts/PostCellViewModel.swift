@@ -13,24 +13,30 @@ import AVKit
 final class PostCellViewModel: ObservableObject {
     var player: AVPlayer
     
-    private let useCases: PostUseCases
+    private let postService: PostService
+    private let postStore: PostStore
     private let errorStore: ErrorStore
     
     init(
         videoUrl: String,
-        useCases: PostUseCases,
+        postService: PostService = .shared,
+        postStore: PostStore,
         errorStore: ErrorStore
     ) {
         self.player = AVPlayer(url: URL(string: videoUrl)!)
-        self.useCases = useCases
+        self.postService = postService
+        self.postStore = postStore
         self.errorStore = errorStore
     }
     
+    @MainActor
     func deletePost(_ toDelete: Post) async {
         do {
-            try await useCases.delete(toDelete)
+            try await postService.deletePost(toDelete.id)
+            postStore.removePost(toDelete.id)
+//            try await useCases.delete(toDelete)
         } catch {
-            await errorStore.present(error, title: "Error Deleting Post")
+            errorStore.present(error, title: "Error Deleting Post")
         }
     }
 }

@@ -6,3 +6,11 @@
 //
 
 import Foundation
+
+@MainActor
+struct CommunityBuilder {
+    static func build(postStore: PostStore, errorStore: ErrorStore) -> CommunityView {
+        let viewModel = CommunityViewModel(postStore: postStore, errorStore: errorStore)
+        return CommunityView(viewModel: viewModel)
+    }
+}

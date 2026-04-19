@@ -20,14 +20,14 @@ final class AccountSearchViewModel: ObservableObject {
     private var lastFetchCount: Int = 0
     
     private let errorStore: ErrorStore
-    private let useCases: UserUseCases
+    private let userService: UserService
     
     init(
         errorStore: ErrorStore,
-        useCases: UserUseCases
+        userService: UserService = .shared
     ) {
         self.errorStore = errorStore
-        self.useCases = useCases
+        self.userService = userService
     }
     
     @MainActor
@@ -36,7 +36,7 @@ final class AccountSearchViewModel: ObservableObject {
         defer { isSearching = false }
         
         do {
-            let (initialBatch, lastDocument) = try await useCases.fetchUserByUsername(
+            let (initialBatch, lastDocument) = try await userService.fetchUserByUsername(
                 searchString: usernamePrefix,
                 count: batchCount,
                 lastDocument: lastDocument
@@ -58,7 +58,7 @@ final class AccountSearchViewModel: ObservableObject {
         defer { isFetchingMore = false }
         
         do {
-            let (currentBatch, lastDocument) = try await useCases.fetchUserByUsername(
+            let (currentBatch, lastDocument) = try await userService.fetchUserByUsername(
                 searchString: search,
                 count: batchCount,
                 lastDocument: lastDocument

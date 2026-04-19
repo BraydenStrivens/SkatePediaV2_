@@ -6,3 +6,16 @@
 //
 
 import Foundation
+
+struct NotificationBuilder {
+    
+    static func build(
+        user: User,
+        errorStore: ErrorStore,
+        notificationStore: NotificationStore
+    ) -> NotificationView {
+        
+        let viewModel = NotificationViewModel(notificationStore: notificationStore, errorStore: errorStore)
+        return NotificationView(user: user, viewModel: viewModel)
+    }
+}

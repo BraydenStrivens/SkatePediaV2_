@@ -44,18 +44,21 @@ final class NotificationViewModel: ObservableObject {
     
     private var lastDocument: DocumentSnapshot? = nil
     private let batchCount: Int = 15
-    
-    private let notificationUseCases: NotificationUseCases
-    private let userUseCases: UserUseCases
+
+    private let notificationService: NotificationService
+    private let notificationStore: NotificationStore
+    private let userService: UserService
     private let errorStore: ErrorStore
     
     init(
-        notificationUseCases: NotificationUseCases,
-        userUseCases: UserUseCases,
+        notificationService: NotificationService = .shared,
+        notificationStore: NotificationStore,
+        userService: UserService = .shared,
         errorStore: ErrorStore
     ) {
-        self.notificationUseCases = notificationUseCases
-        self.userUseCases = userUseCases
+        self.notificationService = notificationService
+        self.notificationStore = notificationStore
+        self.userService = userService
         self.errorStore = errorStore
     }
 
@@ -65,19 +68,22 @@ final class NotificationViewModel: ObservableObject {
             /// Resets the previous initial fetch. Necessary for when the user selects a filter and the filtered notifications are
             /// initially fetched.
             self.lastDocument = nil
-            notificationUseCases.resetNotifications()
+            notificationStore.resetNotificaitons()
             
             initialFetchState = .loading
             
-            let (lastDocument, hasMore) = try await notificationUseCases.fetchNotifications(
+            let type = notificationFilter == .all ? nil : notificationFilter.notificationType
+
+            let (initialBatch, lastDocument) = try await notificationService.fetchNotifications(
                 for: userId,
-                filter: notificationFilter,
+                type: type,
                 count: batchCount,
                 lastDocument: lastDocument
             )
+            notificationStore.addNotifications(initialBatch)
 
             if let lastDocument { self.lastDocument = lastDocument }
-            self.hasMore = hasMore
+            self.hasMore = initialBatch.count == batchCount
             
             initialFetchState = .success
             
@@ -94,15 +100,17 @@ final class NotificationViewModel: ObservableObject {
         defer { isFetchingMore = false }
 
         do {
-            let (lastDocument, hasMore) = try await notificationUseCases.fetchNotifications(
+            let type = notificationFilter == .all ? nil : notificationFilter.notificationType
+
+            let (currentBatch, lastDocument) = try await notificationService.fetchNotifications(
                 for: userId,
-                filter: notificationFilter,
+                type: type,
                 count: batchCount,
                 lastDocument: lastDocument
             )
 
             if let lastDocument { self.lastDocument = lastDocument }
-            self.hasMore = hasMore
+            self.hasMore = currentBatch.count == batchCount
             
         } catch {
             errorStore.present(error, title: "Error Fetching Notifications")
@@ -117,21 +125,25 @@ final class NotificationViewModel: ObservableObject {
     ) async throws {
         
         do {
-            try await userUseCases.handleFriendRequest(
-                senderUid: notification.fromUser.userId,
-                for: userId,
-                accept: accept
-            )
+            if accept {
+                try await userService.acceptFriendRequest(notification.fromUser.userId, for: userId)
+                
+            } else {
+                userService.removeFriend(notification.fromUser.userId, for: userId)
+            }
+
         } catch {
             errorStore.present(error, title: "Error Handling Friend Request")
         }
     }
     
+    @MainActor
     func markNotificationAsSeen(notification: Notification) async {
         guard notification.seen == false else { return }
         
         do {
-            try await notificationUseCases.markNotifcationAsRead(notification: notification)
+            try await notificationService.markNotifcationAsRead(notification: notification)
+            notificationStore.markAsSeen(for: notification.id)
         } catch {
             // Ignore
         }
@@ -140,7 +152,7 @@ final class NotificationViewModel: ObservableObject {
     func resetUserUnseenNotifcationCount(for user: User) async {
         guard user.unseenNotificationCount > 0 else { return }
         do {
-            try await userUseCases.resetUserUnseenNotificationCount(userId: user.userId)
+            try await userService.updateUserUnseenNotificationCount(for: user.userId)
         } catch {
             // Ignore
         }

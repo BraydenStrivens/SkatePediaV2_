@@ -48,6 +48,7 @@ struct SkatePediaV2App: App {
     @StateObject private var trickListStore = TrickListStore()
     @StateObject private var trickItemStore = TrickItemStore()
     @StateObject private var postStore = PostStore()
+    @StateObject private var notificationStore = NotificationStore()
     
     /// Sets up global UI appearance.
     init() {
@@ -67,6 +68,7 @@ struct SkatePediaV2App: App {
             .environmentObject(trickListStore)
             .environmentObject(trickItemStore)
             .environmentObject(postStore)
+            .environmentObject(notificationStore)
 
             .environmentObject(sessionContainer)
             .environmentObject(sessionContainer.userStore)

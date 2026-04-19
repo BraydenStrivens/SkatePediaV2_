@@ -78,11 +78,9 @@ struct TabbarView: View {
                 .tabbarAware()
                 .tag(1)
             
-            NavigationStack {
-                CommunityViewContainer()
-            }
-            .tabbarAware()
-            .tag(2)
+            CommunityRootView()
+                .tabbarAware()
+                .tag(2)
             
             AccountRootView(
                 user: user,

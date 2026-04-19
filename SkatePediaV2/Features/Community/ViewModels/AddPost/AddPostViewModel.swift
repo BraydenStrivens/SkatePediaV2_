@@ -23,16 +23,19 @@ final class AddPostViewModel: ObservableObject {
     @Published var isUploading: Bool = false
     
     private let errorStore: ErrorStore
-    private let useCases: PostUseCases
+    private let postStore: PostStore
+    private let postService: PostService
     let player: AVPlayer?
     
     init(
         errorStore: ErrorStore,
-        useCases: PostUseCases,
+        postService: PostService = .shared,
+        postStore: PostStore,
         videoUrl: String
     ) {
         self.errorStore = errorStore
-        self.useCases = useCases
+        self.postService = postService
+        self.postStore = postStore
         self.player = AVPlayer(url: URL(string: videoUrl)!)
     }
     
@@ -56,8 +59,12 @@ final class AddPostViewModel: ObservableObject {
                 trick: trick,
                 trickItem: trickItem
             )
+            let postId = FirebaseHelpers.generateFirebaseId()
+            let newPost = Post(postId: postId, request: request)
             
-            try await useCases.upload(request)
+            try await postService.uploadPost(newPost: newPost)
+            postStore.addPost(newPost)
+//            try await useCases.upload(request)
             return true
             
         } catch {

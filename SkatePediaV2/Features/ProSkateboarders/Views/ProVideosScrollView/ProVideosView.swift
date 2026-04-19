@@ -13,6 +13,8 @@ struct ProVideosView: View {
     let videos: [ProSkaterVideo]
     let selectedVideo: ProSkaterVideo
     
+    @StateObject private var videoFeedManager = VideoFeedManager()
+    
     @State private var selectedId: ProSkaterVideo.ID?
     
     /// Initializes the view with a list of videos and an initially selected video
@@ -42,6 +44,7 @@ struct ProVideosView: View {
                         spacing: 0
                     )
                     .id(video.id)
+                    .environmentObject(videoFeedManager)
                 }
             }
             .scrollTargetLayout()

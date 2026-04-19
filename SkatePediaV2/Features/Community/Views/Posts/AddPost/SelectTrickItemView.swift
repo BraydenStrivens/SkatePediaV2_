@@ -16,10 +16,11 @@ import AVKit
 ///  - trick: A 'Trick' object containing information about the selected trick.
 ///
 struct SelectTrickItemView: View {
+    @EnvironmentObject private var router: CommunityRouter
+    
     @Environment(\.dismiss) var dismiss
     @StateObject var viewModel = SelectTrickItemViewModel()
     
-    @Binding var uploadPostPath: NavigationPath
     let user: User
     let trick: Trick
         
@@ -53,6 +54,10 @@ struct SelectTrickItemView: View {
                 )
             }
         }
+        .customNavHeader(
+            title: "Select a Trick Item",
+            background: Color(.systemBackground)
+        )
         .toolbar {
             ToolbarItem(placement: .principal) {
                 VStack {
@@ -113,13 +118,8 @@ struct SelectTrickItemView: View {
             HStack(alignment: .center) {
                 Spacer()
                 Button {
-                    uploadPostPath.append(
-                        UploadPostRoutes.addPost(
-                            user: user,
-                            trick: trick,
-                            trickItem: selectedTrickItem
-                        )
-                    )
+                    router.push(.addPost(user: user, trick: trick, trickItem: selectedTrickItem))
+                    
                 } label: {
                     HStack {
                         Text("Continue")

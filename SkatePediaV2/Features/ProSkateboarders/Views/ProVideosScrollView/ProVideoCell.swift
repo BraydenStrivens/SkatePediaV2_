@@ -15,6 +15,7 @@ import FirebaseFirestore
 /// Includes a "Compare" button for navigating to the compare view.
 struct ProVideoCell: View {
     @EnvironmentObject private var router: ProsRouter
+    @EnvironmentObject private var videoFeedManager: VideoFeedManager
     
     @Environment(\.colorScheme) private var colorScheme
     

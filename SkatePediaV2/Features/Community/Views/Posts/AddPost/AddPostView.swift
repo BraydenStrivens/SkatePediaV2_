@@ -61,6 +61,10 @@ struct AddPostView: View {
                 postOptions
             }
         }
+        .customNavHeader(
+            title: "Post Trick Item",
+            showDivider: true
+        )
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {

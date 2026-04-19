@@ -10,7 +10,7 @@ import SwiftUI
 ///
 /// Struct that displays the account searching feature to the user.
 ///
-struct AccountSearchView: View {
+struct AccountSearchView: View {    
     @Environment(\.dismiss) var dismiss
     
     @State private var delayedWorkItem: DispatchWorkItem?

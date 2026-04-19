@@ -14,6 +14,9 @@ import SwiftUI
 /// - Parameters:
 ///   - viewModel: The view model providing the user's posts and handling pagination.
 struct UserPostsView:  View {
+    @EnvironmentObject private var errorStore: ErrorStore
+    @EnvironmentObject private var postStore: PostStore
+    
     @ObservedObject var viewModel: UserPostPreviewViewModel
 
     var posts: [Post] {
@@ -24,12 +27,17 @@ struct UserPostsView:  View {
         ScrollView(showsIndicators: false) {
             LazyVStack(alignment: .center, spacing: 0) {
                 ForEach(viewModel.userPosts) { post in
-                    PostCellContainer(user: viewModel.user, post: post)
-                        .task {
-                            if post == viewModel.userPosts.last! {
-                                await viewModel.fetchMorePosts()
-                            }
+                    PostCellBuilder.build(
+                        user: viewModel.user,
+                        post: post,
+                        errorStore: errorStore,
+                        postStore: postStore
+                    )
+                    .task {
+                        if post == viewModel.userPosts.last! {
+                            await viewModel.fetchMorePosts()
                         }
+                    }
                 }
                 
                 if viewModel.isFetchingMore {

@@ -18,8 +18,6 @@ struct ProVideosListView: View {
     @EnvironmentObject private var proViewVM: ProsViewModel
     
     @StateObject var viewModel = ProVideosListViewModel()
-    @State private var selectedStance: TrickStance = .regular
-    @State var transitionDirection: (insertion: Edge, removal: Edge) = (.trailing, .leading)
     
     var proSkater: ProSkater?
     
@@ -111,57 +109,12 @@ struct ProVideosListView: View {
     
     /// Displays videos separated by stance with a tab selector
     func separatedTrickList(_ proSkater: ProSkater) -> some View {
-        VStack {
-            tabSelector
-            
+        TrickStanceTabView { stance in
             videoListByStance(
                 proSkater: proSkater,
-                stance: selectedStance,
+                stance: stance,
                 allProVideos: viewModel.videos
             )
-            .padding(.horizontal)
-            .id(selectedStance)
-            .transition(
-                .asymmetric(
-                    insertion: .move(edge: transitionDirection.insertion)
-                        .combined(with: .scale(scale: 0.98)),
-                    removal: .move(edge: transitionDirection.removal)
-                )
-            )
-        }
-    }
-    
-    /// Tab selector for filtering videos by stance
-    var tabSelector: some View {
-        HStack(spacing: 0) {
-            ForEach(TrickStance.allCases) { stance in
-                let isCurrentTab = selectedStance == stance
-                
-                Text(stance.camalCase)
-                    .font(.body)
-                    .fontWeight(isCurrentTab ? .semibold : .regular)
-                    .padding(.vertical, 8)
-                    .frame(maxWidth: .infinity)
-                    .background {
-                        Rectangle()
-                            .fill(colorScheme == .dark
-                                  ? (isCurrentTab ? Color(.systemGray5) : .clear)
-                                  : (isCurrentTab ? Color(.systemBackground) : .clear)
-                            )
-                            .shadow(color: colorScheme == .dark
-                                    ? .clear
-                                    : .black.opacity(0.4), radius: 4, y: 3
-                            )
-                            .overlay(alignment: .bottom) {
-                                Rectangle()
-                                    .fill(isCurrentTab ? Color.accent : Color.clear)
-                                    .frame(height: 2)
-                            }
-                    }
-                    .onTapGesture {
-                        selectStanceTab(newStance: stance)
-                    }
-            }
         }
     }
     
@@ -192,20 +145,6 @@ struct ProVideosListView: View {
                     Divider()
                 }
             }
-        }
-    }
-    
-    /// Handles selection of a stance tab with proper transition animations
-    func selectStanceTab(newStance: TrickStance) {
-        guard newStance != selectedStance else { return }
-        
-        if newStance.index > selectedStance.index {
-            transitionDirection = (.trailing, .leading)
-        } else {
-            transitionDirection = (.leading, .trailing)
-        }
-        withAnimation(.snappy(duration: 0.25, extraBounce: 0)) {
-            self.selectedStance = newStance
         }
     }
 }

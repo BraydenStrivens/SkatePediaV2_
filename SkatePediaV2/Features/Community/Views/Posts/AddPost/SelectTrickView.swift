@@ -15,13 +15,14 @@ import SwiftUI
 ///  - user: A 'User' object containing information about the current user.
 ///  
 struct SelectTrickView: View {
+    @EnvironmentObject private var router: CommunityRouter
+    
     @Environment(\.dismiss) var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @StateObject var viewModel = SelectTrickViewModel()
     
     @State private var currentTab: TrickStance = .regular
     
-    @Binding var uploadPostPath: NavigationPath
     let user: User
     
     private func trickDisplayName(_ trick: Trick) -> String {
@@ -59,7 +60,10 @@ struct SelectTrickView: View {
                                     semiSortedTrickList
                                     
                                 } else {
-                                    sortedTrickList
+                                    TrickStanceTabView { stance in
+                                        let sortedTrickList = viewModel.tricks(for: stance)
+                                        trickListByStance(trickListByStance: sortedTrickList)
+                                    }
                                 }
                             }
                             .padding()
@@ -77,6 +81,10 @@ struct SelectTrickView: View {
                 )
             }
         }
+        .customNavHeader(
+            title: "Select a Trick",
+            showDivider: true
+        )
         .task {
             await viewModel.fetchTricksWithTrickItems(userId: user.userId)
         }
@@ -113,8 +121,7 @@ struct SelectTrickView: View {
         VStack {
             ForEach(viewModel.trickList) { trick in
                 Button {
-                    uploadPostPath.append(UploadPostRoutes.selectTrickItem(user: user, trick: trick))
-
+                    router.push(.selectTrickItem(user: user, trick: trick))
                 } label: {
                     HStack {
                         Text(trickDisplayName(trick))
@@ -148,8 +155,7 @@ struct SelectTrickView: View {
                     VStack(alignment: .leading) {
                         ForEach(filteredList) { trick in
                             Button {
-                                uploadPostPath.append(UploadPostRoutes.selectTrickItem(user: user, trick: trick))
-
+                                router.push(.selectTrickItem(user: user, trick: trick))
                             } label: {
                                 HStack {
                                     Text(trickDisplayName(trick))
@@ -170,25 +176,7 @@ struct SelectTrickView: View {
         }
     }
     
-    /// Lists all the tricks in four separate vertical lists sepearated by stance. Contains a tab selector for selecting the stance.
-    ///
-    var sortedTrickList: some View {
-        VStack {
-            stanceTabSelector
-                        
-            Group {
-                ForEach(TrickStance.allCases) { stance in
-                    if stance == currentTab {
-                        let sortedTrickList = viewModel.tricks(for: stance)
-                        trickListByStance(trickListByStance: sortedTrickList)
-                    }
-                }
-            }
-        }
-    }
-    
     /// Tab selector for the sorted trick list. Updates the list with animations.
-    ///
     var stanceTabSelector: some View {
         HStack(spacing: 0) {
             ForEach(TrickStance.allCases) { stance in
@@ -233,11 +221,11 @@ struct SelectTrickView: View {
             } else {
                 ForEach(trickListByStance) { trick in
                     Button {
-                        uploadPostPath.append(UploadPostRoutes.selectTrickItem(user: user, trick: trick))
-
+                        router.push(.selectTrickItem(user: user, trick: trick))
                     } label: {
                         HStack {
                             Text(trickDisplayName(trick))
+                            
                             Spacer()
                             Image(systemName: "chevron.right")
                         }
