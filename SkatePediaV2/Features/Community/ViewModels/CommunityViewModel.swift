@@ -24,16 +24,16 @@ final class CommunityViewModel: ObservableObject {
     private var lastDocument: DocumentSnapshot?
     private var cancellables = Set<AnyCancellable>()
     
-    private let useCases: PostUseCases
+    private let postService: PostService
     private let postStore: PostStore
     private let errorStore: ErrorStore
     
     init(
-        useCases: PostUseCases,
+        postService: PostService = .shared,
         postStore: PostStore,
         errorStore: ErrorStore
     ) {
-        self.useCases = useCases
+        self.postService = postService
         self.postStore = postStore
         self.errorStore = errorStore
         
@@ -53,7 +53,8 @@ final class CommunityViewModel: ObservableObject {
         
         do {
             initialRequestState = .loading
-            let (currentBatch, lastDocument) = try await useCases.fetchPostBatch(
+
+            let (currentBatch, lastDocument) = try await postService.fetchPosts(
                 filter: postFilter,
                 batchSize: batchSize,
                 lastDocument: lastDocument
@@ -81,7 +82,7 @@ final class CommunityViewModel: ObservableObject {
         defer { fetchingMore = false }
         
         do {
-            let (currentBatch, lastDocument) = try await useCases.fetchPostBatch(
+            let (currentBatch, lastDocument) = try await postService.fetchPosts(
                 filter: postFilter,
                 batchSize: batchSize,
                 lastDocument: lastDocument
