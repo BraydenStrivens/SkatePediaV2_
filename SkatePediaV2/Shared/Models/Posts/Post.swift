@@ -27,21 +27,6 @@ struct Post: Codable, Identifiable, Hashable {
     
     var user: User?
     var trick: Trick?
-
-    init(
-        postId: String,
-        request: UploadPostRequest
-    ) {
-        self.postId = postId
-        self.commentCount = 0
-        self.content = request.content
-        self.showTrickItemRating = request.showTrickItemRating
-        self.dateCreated = Date()
-        self.userData = UserData(user: request.user)
-        self.trickData = TrickData(trick: request.trick)
-        self.trickItemData = TrickItemData(trickItem: request.trickItem)
-        self.videoData = request.trickItem.videoData
-    }
     
     init(
         postId: String,

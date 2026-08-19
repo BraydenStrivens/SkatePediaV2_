@@ -18,6 +18,9 @@ import SwiftUI
 ///   - user: The current user being displayed.
 struct CurrentUserAccountView: View {
     @EnvironmentObject private var router: AccountRouter
+    @EnvironmentObject private var trickListStore: TrickListStore
+    @EnvironmentObject private var userStore: UserStore
+    
     @Environment(\.colorScheme) private var colorScheme
     
     @State private var currentTab: AccountViewTab = .Tricks
@@ -27,18 +30,30 @@ struct CurrentUserAccountView: View {
     
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 14) {
                 profileDetailsView
+                
+                favoriteTricks
                 
                 tabSelector
                 
                 Group {
                     switch currentTab {
                     case .Tricks:
-                        UserTrickListProgressView(user: user)
+                        UserTrickListProgressView(
+                            user: user,
+                            onNavigate: { stance in
+                                router.push(.userTricks(stance: stance))
+                            }
+                        )
                         
                     case .Posts:
-                        UserPostPreviewsView(user: user, viewModel: postsVM)
+                        UserPostPreviewsView(
+                            user: user,
+                            onNavigate: {
+                                router.push(.userPosts)
+                            },
+                            viewModel: postsVM)
                     }
                 }
                 .padding(14)
@@ -55,7 +70,7 @@ struct CurrentUserAccountView: View {
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button {
-                    router.push(.friendsList)
+                    router.push(.relationships)
                 } label: {
                     Image(systemName: "person.2.circle")
                 }
@@ -74,34 +89,75 @@ struct CurrentUserAccountView: View {
     ///
     /// Includes profile image, username, stance, and bio.
     var profileDetailsView: some View {
-        HStack(alignment: .top, spacing: 12) {
-            CircularProfileImageView(
-                photoUrl: user.profilePhoto?.photoUrl,
-                size: .xLarge
-            )
-            
-            VStack(alignment: .leading, spacing: 5) {
-                HStack(spacing: 12) {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                CircularProfileImageView(
+                    photoUrl: user.profilePhoto?.photoUrl,
+                    size: .xLarge
+                )
+                
+                VStack(alignment: .leading, spacing: 5) {
                     Text(user.username)
-                        .font(.title3)
+                        .font(.title2)
                         .fontWeight(.bold)
                     
                     Text(user.stance.camalCase)
+                        .foregroundStyle(.gray)
                         .fontWeight(.semibold)
-                        .font(.footnote)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            
+            if !user.bio.isEmpty {
+                CollapsibleTextView(text: user.bio, lineLimit: 4, font: .body)
+            } else {
+                Text("")
+            }
+        }
+    }
+    
+    private func favoriteTricksDisplayString(
+        ids favoriteTrickIds: [String]
+    ) -> String {
+        let names: [String] = favoriteTrickIds.compactMap { trickId in
+            guard let trick = trickListStore.trick(trickId) else {
+                return nil
+            }
+            
+            return userStore.getTrickName(trick)
+        }
+        
+        return names.joined(separator: " ,  ")
+    }
+    
+    var favoriteTricks: some View {
+        Group {
+            if let favoriteTrickIds = user.favoriteTricks {
+        
+                FlowLayout(alignment: .center, spacing: 8) {
+                    
+                    ForEach(favoriteTrickIds, id: \.self) { trickId in
+                        if let trick = trickListStore.trick(trickId) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "star.fill")
+                                    .font(.caption2)
+                                
+                                Text(userStore.getTrickName(trick))
+                                    .font(.caption)
+                                    .lineLimit(1)
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(Color.gray.opacity(0.2))
+                            .clipShape(Capsule())
+                        }
+                    }
                 }
                 
-                if !user.bio.isEmpty {
-                    CollapsibleTextView(text: user.bio, lineLimit: 4, font: .body)
-                } else {
-                    Text("")
-                }
+            } else {
+                EmptyView()
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(12)
-        .frame(minHeight: 100, alignment: .top)
-        .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 15).inset)
     }
     
     /// Tab selector for switching between tricks and posts.
@@ -112,35 +168,24 @@ struct CurrentUserAccountView: View {
             ForEach(AccountViewTab.allCases) { tab in
                 let isCurrentTab = currentTab == tab
                 
-                VStack {
+                HStack(spacing: 4) {
+                    Image(systemName: tab == .Tricks
+                          ? isCurrentTab ? "skateboard.fill" : "skateboard"
+                          : isCurrentTab ? "list.bullet.rectangle.portrait.fill" : "list.bullet.rectangle.portrait"
+                    )
+                    
                     Text(tab.rawValue)
                         .font(.subheadline)
                         .fontWeight(isCurrentTab ? .semibold : .regular)
-                        .frame(height: 40)
-                        .frame(maxWidth: 150)
-                        .background {
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(colorScheme == .dark
-                                      ? Color(.systemGray6).opacity(isCurrentTab ? 1 : 0.0)
-                                      : Color(.systemBackground)
-                                )
-                                .stroke(
-                                    LinearGradient(colors: [
-                                        isCurrentTab ? .primary.opacity(0.2) : .clear,
-                                        isCurrentTab ? .black : .clear,
-                                    ],
-                                                   startPoint: .top,
-                                                   endPoint: .bottom
-                                                  )
-                                )
-                                .shadow(color: isCurrentTab
-                                        ? colorScheme == .dark ? .clear : .black.opacity(0.25)
-                                        : .clear,
-                                        radius: 3,
-                                        y: 2
-                                )
-                        }
                 }
+                .frame(maxWidth: 150)
+                .padding(.vertical)
+                .overlay(alignment: .bottom) {
+                    Rectangle()
+                        .fill(isCurrentTab ? .primary : Color.clear)
+                        .frame(height: 2)
+                }
+                .contentShape(Rectangle())
                 .onTapGesture {
                     withAnimation(.easeInOut(duration: 0.3)) {
                         self.currentTab = tab

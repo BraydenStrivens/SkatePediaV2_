@@ -13,9 +13,9 @@ import SwiftUI
 /// Intended to be replaced with the actual privacy policy content in the future.
 struct PrivacyPolicyView: View {
     var body: some View {
-        ContentUnavailableView(
-            "Currently Unavailable",
-            systemImage: "exclamationmark.triangle"
+        SPContentUnavailableView(
+            title: "Currently Unavailable",
+            type: .blockingError
         )
         .customNavHeader(
             title: "Privacy Policy",

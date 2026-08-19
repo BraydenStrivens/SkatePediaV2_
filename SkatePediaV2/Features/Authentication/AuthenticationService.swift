@@ -12,13 +12,19 @@ import FirebaseFunctions
 /// Service responsible for handling authentication with Firebase.
 final class AuthenticationService {
 
+    // MARK: Shared Instance
     static let shared = AuthenticationService()
-    private let functions = Functions.functions()
     private init() {}
+    
+    // MARK: Dependencies
+    private let functions = Functions.functions()
 
+    // MARK: Derived/Private Properties
     var currentUser: FirebaseAuth.User? {
         Auth.auth().currentUser
     }
+    
+    // MARK: Authentication State Listener
 
     /// Adds a listener that is triggered when the authentication state changes.
     ///
@@ -26,7 +32,10 @@ final class AuthenticationService {
     ///   - listener: Closure that receives the current user (or nil if signed out).
     ///
     /// - Returns: A handle used to remove the listener.
-    func addAuthStateListener(_ listener: @escaping (FirebaseAuth.User?) -> Void) -> AuthStateDidChangeListenerHandle {
+    func addAuthStateListener(
+        _ listener: @escaping (FirebaseAuth.User?) -> Void
+    ) -> AuthStateDidChangeListenerHandle {
+        
         Auth.auth().addStateDidChangeListener { _, user in
             listener(user)
         }
@@ -36,10 +45,14 @@ final class AuthenticationService {
     ///
     /// - Parameters:
     ///   - handle: The handle returned when adding the listener.
-    func removeAuthStateListener(_ handle: AuthStateDidChangeListenerHandle) {
+    func removeAuthStateListener(
+        _ handle: AuthStateDidChangeListenerHandle
+    ) {
         Auth.auth().removeStateDidChangeListener(handle)
     }
 
+    // MARK: Login/Logout
+    
     /// Signs in a user using email and password.
     ///
     /// - Parameters:
@@ -47,9 +60,26 @@ final class AuthenticationService {
     ///   - password: The user's password.
     ///
     /// - Throws: An error if authentication fails.
-    func login(email: String, password: String) async throws {
-        try await Auth.auth().signIn(withEmail: email, password: password)
+    func login(
+        email: String,
+        password: String
+    ) async throws {
+        
+        try await Auth.auth().signIn(
+            withEmail: email,
+            password: password
+        )
     }
+    
+    /// Signs out the current user and resets application state.
+    ///
+    /// - Throws: An error if sign-out fails.
+    func signOut() throws {
+        AppResetManager.reset()
+        try Auth.auth().signOut()
+    }
+    
+    // MARK: Account Creation/Deletion
 
     /// Creates a new user and initializes their account data via a backend function,
     /// then signs the user in.
@@ -61,25 +91,27 @@ final class AuthenticationService {
     ///   - stance: The user's selected stance.
     ///
     /// - Throws: An error if user creation or login fails.
-    func createUser(email: String, password: String, username: String, stance: UserStance) async throws {
+    func createUser(
+        email: String,
+        password: String,
+        username: String,
+        stance: UserStance
+    ) async throws {
+        
         let payload: [String : Any] = [
             "email": email,
             "password": password,
             "username": username,
             "stance": stance.rawValue
         ]
-        let _ = try await functions.httpsCallable("createInitialUserData")
+        let _ = try await functions
+            .httpsCallable("createInitialUserData")
             .call(payload)
         
-        try await login(email: email, password: password)
-    }
-
-    /// Signs out the current user and resets application state.
-    ///
-    /// - Throws: An error if sign-out fails.
-    func signOut() throws {
-        AppResetManager.reset()
-        try Auth.auth().signOut()
+        try await login(
+            email: email,
+            password: password
+        )
     }
 
     /// Marks the current user for deletion and signs them out.
@@ -90,9 +122,13 @@ final class AuthenticationService {
             throw URLError(.badURL)
         }
         
-        try await UserManager.shared.markUserAsPendingDeletion(userId: user.uid)
+        try await UserService.shared.markUserAsPendingDeletion(
+            for: user.uid
+        )
         try signOut()
     }
+    
+    // MARK: Password Resetting
     
     /// Sends a password reset email to the specified address.
     ///
@@ -101,7 +137,9 @@ final class AuthenticationService {
     ///
     /// - Throws: An error if the request fails.
     func resetPassword(email: String) async throws {
-        try await Auth.auth().sendPasswordReset(withEmail: email)
+        try await Auth.auth().sendPasswordReset(
+            withEmail: email
+        )
     }
     
     /// Updates the current user's password.
@@ -115,6 +153,8 @@ final class AuthenticationService {
             throw URLError(.badServerResponse)
         }
         
-        try await user.updatePassword(to: password)
+        try await user.updatePassword(
+            to: password
+        )
     }
 }

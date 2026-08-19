@@ -13,7 +13,7 @@ import SwiftUI
 /// - Toggle whether "Learn First" tricks are displayed at the top of trick views.
 /// - Toggle whether trick names are displayed in abbreviated form.
 ///
-/// Settings changes are saved to the user's profile using `UserManager`.
+/// Settings changes are saved to the user's profile using `UserService`.
 ///
 /// Toolbar:
 /// - A "Save" button appears in the toolbar and is enabled only if there are changes.
@@ -28,6 +28,7 @@ struct TrickItemSettingsView: View {
     @State private var useTrickAbbreviations: Bool
     
     let user: User
+    let userService = UserService.shared
     
     init(user: User) {
         self.user = user
@@ -74,10 +75,11 @@ struct TrickItemSettingsView: View {
                     let newSettings = getUpdatedSetting()
                     Task {
                         do {
-                            try await UserManager.shared.updateUserSettings(
-                                userId: user.userId,
-                                newSettings: newSettings
+                            try await userService.updateUserSettings(
+                                newSettings,
+                                for: user.userId
                             )
+
                             currentTrickSettings = newSettings.trickSettings
                         } catch {
                             errorStore.present(error, title: "Error Saving Settings")

@@ -21,22 +21,31 @@ import SwiftUI
 ///   - stance: The stance associated with the tricks.
 ///   - tricks: The list of tricks belonging to this difficulty.
 struct DifficultyCard: View {
-    @EnvironmentObject private var errorStore: ErrorStore
-    @EnvironmentObject private var trickListStore: TrickListStore
-    @Environment(\.colorScheme) var colorScheme
-    @Environment(\.scenePhase) var scenePhase
     
+    // MARK: Environment
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.scenePhase) private var scenePhase
+    @EnvironmentObject private var appEnv: AppEnvironment
+    @EnvironmentObject private var errorStore: ErrorStore
+    
+    // MARK: State
     @State private var isExpanded: Bool
     /// Tracks previously displayed trick IDs to detect newly added tricks.
     @State private var previousTrickIds: Set<String> = []
     
+    // MARK: Parameters
     let userId: String
     let difficulty: TrickDifficulty
     let stance: TrickStance
     let tricks: [Trick]
     
+    // MARK: Derived Properties
     private let defaultsKey: String
+    private var learnedCount: Int {
+        tricks.filter { $0.progressCounts.num3s > 0 }.count
+    }
     
+    // MARK: Init
     init(
         userId: String,
         difficulty: TrickDifficulty,
@@ -57,12 +66,8 @@ struct DifficultyCard: View {
         // Initialize previous IDs for change detection
         _previousTrickIds = State(initialValue: Set(tricks.map(\.id)))
     }
-
-    /// Number of tricks considered "learned" (progress == 3).
-    var learnedCount: Int {
-        tricks.filter { $0.progressCounts.num3s > 0 }.count
-    }
     
+    // MARK: Body
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             cardHeader
@@ -91,11 +96,28 @@ struct DifficultyCard: View {
         }
     }
     
+    // MARK: Functions
+    
+    /// Toggles the expansion state of the card with animation.
+    ///
+    /// Persists the updated state to `UserDefaults`.
+    ///
+    /// - Important:
+    ///   Uses a unique key per stance and difficulty to maintain independent states.
+    private func toggleCardExpansion() {
+        withAnimation(.smooth) {
+            isExpanded.toggle()
+            UserDefaults.standard.set(isExpanded, forKey: defaultsKey)
+        }
+    }
+    
+    // MARK: Subviews
+    
     /// Header displaying difficulty name, progress count, and expand/collapse indicator.
     ///
     /// - Important:
     ///   Tapping the header toggles the expansion state of the card.
-    var cardHeader: some View {
+    private var cardHeader: some View {
         HStack(spacing: 8) {
             Text(difficulty.camalCase)
                 .font(.headline)
@@ -140,15 +162,15 @@ struct DifficultyCard: View {
     ///
     /// - Important:
     ///   Content is only rendered when the card is expanded.
-    var cardBody: some View {
+    private var cardBody: some View {
         VStack(spacing: 0) {
             if isExpanded {
                 ForEach(tricks) { trick in
                     TrickListCellBuilder.build(
                         userId: userId,
                         trick: trick,
-                        errorStore: errorStore,
-                        trickListStore: trickListStore
+                        appEnv: appEnv,
+                        errorStore: errorStore
                     )
                     
                     if trick.id != tricks.last?.id {
@@ -157,19 +179,6 @@ struct DifficultyCard: View {
                     }
                 }
             }
-        }
-    }
-    
-    /// Toggles the expansion state of the card with animation.
-    ///
-    /// Persists the updated state to `UserDefaults`.
-    ///
-    /// - Important:
-    ///   Uses a unique key per stance and difficulty to maintain independent states.
-    private func toggleCardExpansion() {
-        withAnimation(.smooth) {
-            isExpanded.toggle()
-            UserDefaults.standard.set(isExpanded, forKey: defaultsKey)
         }
     }
 }

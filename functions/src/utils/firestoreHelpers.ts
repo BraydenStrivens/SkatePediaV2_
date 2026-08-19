@@ -6,7 +6,14 @@ import type {
 import { FieldValue } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
 
-import type { Trick, TrickItem, User, Post, Comment } from "./interfaces";
+import type {
+    Trick,
+    TrickItem,
+    User,
+    Post,
+    Comment,
+    Relationship,
+} from "./interfaces";
 import { db } from "../firebase";
 
 /*
@@ -47,6 +54,38 @@ export async function fetchUserById(
     return snapshot.data()!;
 }
 
+export async function fetchRelationship(
+    uid1: string,
+    uid2: string,
+    tx?: Transaction,
+): Promise<Relationship | null> {
+    const relationshipId = [uid1, uid2].sort().join("_");
+
+    const relationshipRef = db
+        .collection("relationships")
+        .doc(relationshipId)
+        .withConverter(relationshipConverter);
+
+    const snapshot = tx
+        ? await tx.get(relationshipRef)
+        : await relationshipRef.get();
+
+    if (!snapshot.exists) {
+        return null;
+    }
+
+    return snapshot.data()!;
+}
+
+const relationshipConverter: FirestoreDataConverter<Relationship> = {
+    toFirestore(relationship: Relationship) {
+        return relationship;
+    },
+    fromFirestore(snapshot: QueryDocumentSnapshot): Relationship {
+        return snapshot.data() as Relationship;
+    },
+};
+
 // Validates a user's document exists and is not pending deletion
 export async function assertUserActive(uid: string) {
     const userSnap = await db
@@ -72,6 +111,26 @@ export async function assertUserActive(uid: string) {
     }
 
     return userData;
+}
+
+export async function checkUserBlocked(
+    currentUid: string,
+    otherUid: string,
+) {
+    const userBlockRef = db
+        .collection("user_blocks")
+        .doc(otherUid)
+        .collection("blocked_users")
+        .doc(currentUid);
+
+    const userBlockSnap = await userBlockRef.get();
+
+    if (userBlockSnap.exists) {
+        throw new HttpsError(
+            "permission-denied",
+            "You do not have permissions to perform this operation",
+        );
+    }
 }
 
 /* 2. TRICK ======================================================= */

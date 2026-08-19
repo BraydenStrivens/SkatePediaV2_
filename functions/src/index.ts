@@ -2,6 +2,7 @@ import * as functions from "firebase-functions";
 
 import { cleanupOrphanedUsernameReservations } from "./functions/cleanup/deleteOrphanedUsernames";
 import { sendCommentNotification } from "./functions/notifications/sendCommentNotification";
+import { sendRelationshipRequestNotification } from "./functions/notifications/sendRelationshipRequestNotification";
 import { deleteBaseComment } from "./functions/posts/comments/deleteBaseComment";
 import { deleteReplyComment } from "./functions/posts/comments/deleteReplyComment";
 import { onCommentWritten } from "./functions/posts/comments/onCommentWritten";
@@ -10,12 +11,17 @@ import { uploadReplyComment } from "./functions/posts/comments/uploadReplyCommen
 import { deletePost } from "./functions/posts/deletePost";
 import { onPostUploaded } from "./functions/posts/onPostUpload";
 import { uploadPost } from "./functions/posts/uploadPost";
+import { createRelationship } from "./functions/relationship/createRelationship";
+import { removeRelationship } from "./functions/relationship/removeRelationship";
+import { updateRelationship } from "./functions/relationship/updateRelationship";
 import { deleteTrickItem } from "./functions/trick_items/deleteTrickItem";
 import { onTrickItemWritten } from "./functions/trick_items/onTrickItemWritten";
 import { finalizeTrickItemUpload } from "./functions/trick_items/uploadTrickItem";
 import { deleteCustomTrick } from "./functions/trick_list/deleteCustomTrick";
 import { onTrickWritten } from "./functions/trick_list/onTrickWritten";
 import { uploadTrick } from "./functions/trick_list/uploadTrick";
+import { blockUser } from "./functions/user/blockUser";
+import { createReport } from "./functions/user/createReport";
 import { createInitialUserData } from "./functions/user/createUser";
 import { onUserPendingDeletion } from "./functions/user/onUserPendingDelete";
 import { propagateUserUpdates } from "./functions/user/propagateUserUpdates";
@@ -29,6 +35,7 @@ functions.setGlobalOptions({
 export { createInitialUserData };
 export { onUserPendingDeletion };
 export { propagateUserUpdates };
+export { blockUser };
 
 // Trick List
 export { uploadTrick };
@@ -54,6 +61,15 @@ export { onCommentWritten };
 
 // Notifications
 export { sendCommentNotification };
+export { sendRelationshipRequestNotification };
+
+// Relationships
+export { createRelationship };
+export { updateRelationship };
+export { removeRelationship };
+
+// Reports
+export { createReport };
 
 // Scheduled Cleanup
 export { cleanupOrphanedUsernameReservations };

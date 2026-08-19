@@ -15,16 +15,25 @@ import Foundation
 /// - Parameters:
 ///   - authService: Service responsible for authentication actions.
 final class PasswordResetViewModel: ObservableObject {
-    @Published var resetEmail: String = ""
-
+    
+    // MARK: Published State
     @Published var errorMessage: String = ""
     @Published var successMessage: String = ""
     
+    // MARK: Published Input
+    @Published var resetEmail: String = ""
+    
+    // MARK: Dependencies
     let authService: AuthenticationService
     
-    init(authService: AuthenticationService = .shared) {
+    // MARK: Init
+    init(
+        authService: AuthenticationService = .shared
+    ) {
         self.authService = authService
     }
+    
+    // MARK: Public Actions
     
     /// Attempts to send a password reset email to the provided address.
     ///

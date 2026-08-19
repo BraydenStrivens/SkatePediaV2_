@@ -14,37 +14,42 @@ import SwiftUI
 /// while coordinating between the backend service and local store.
 ///
 /// - Parameters:
-///   - trickListService: Service responsible for fetching and updating trick list data.
-///   - trickListStore: Store managing local trick list state.
+///   - appEnv: Class containing global stores and services.
 ///   - errorStore: Used to present errors to the user.
 @MainActor
 final class TrickListViewModel: ObservableObject {
+    
+    // MARK: Published State
     @Published var requestState: RequestState = .idle
+    @Published var toggleEdit: Bool = false
 
-    private let trickListService: TrickListService
-    private let trickListStore: TrickListStore
+    // MARK: Dependencies
+    private let appEnv: AppEnvironment
     private let errorStore: ErrorStore
     
+    // MARK: Init
     init(
-        trickListService: TrickListService = .shared,
-        trickListStore: TrickListStore,
+        appEnv: AppEnvironment,
         errorStore: ErrorStore
     ) {
-        self.trickListService = trickListService
-        self.trickListStore = trickListStore
+        self.appEnv = appEnv
         self.errorStore = errorStore
     }
+    
+    // MARK: Public Actions
     
     /// Fetches the user's trick list from the backend and updates local state.
     ///
     /// - Parameters:
     ///   - userId: The ID of the user whose trick list should be fetched.
     func fetchTricks(for userId: String) async {
+        guard requestState == .idle else { return }
+        
         do {
             requestState = .loading
             
-            let trickList = try await trickListService.fetchTrickList(userId: userId)
-            trickListStore.initializeTrickList(trickList)
+            let trickList = try await appEnv.trickListService.fetchTrickList(userId: userId)
+            appEnv.trickListStore.initializeTrickList(trickList)
             
             requestState = .success
             
@@ -65,13 +70,13 @@ final class TrickListViewModel: ObservableObject {
         for userId: String,
         stance: TrickStance
     ) async {
-        let hiddenTricksForStance = trickListStore.trickList
+        let hiddenTricksForStance = appEnv.trickListStore.trickList
             .filter({ $0.stance == stance })
             .filter({ $0.hidden })
         
         do {
-            try await trickListService.resetHiddenTricks(userId, for: hiddenTricksForStance)
-            trickListStore.resetHiddenTricksByStanceLocally(stance: stance)
+            try await appEnv.trickListService.resetHiddenTricks(userId, for: hiddenTricksForStance)
+            appEnv.trickListStore.resetHiddenTricksByStanceLocally(stance: stance)
             
         } catch {
             errorStore.present(error, title: "Error Reseting Hidden Tricks")
@@ -84,8 +89,8 @@ final class TrickListViewModel: ObservableObject {
     ///   - userId: The ID of the current user.
     func resetAllHiddenTricks(for userId: String) async {
         do {
-            try await trickListService.resetHiddenTricks(userId, for: trickListStore.trickList)
-            trickListStore.resetAllHiddenTricksLocally()
+            try await appEnv.trickListService.resetHiddenTricks(userId, for: appEnv.trickListStore.trickList)
+            appEnv.trickListStore.resetAllHiddenTricksLocally()
             
         } catch {
             errorStore.present(error, title: "Error Reseting Hidden Tricks")

@@ -19,41 +19,48 @@ import SwiftUI
 ///   - user: The current authenticated user.
 ///   - trickListStore: Store managing trick list data and state.
 struct TrickListRootView: View {
+    
+    // MARK: Environment
     @EnvironmentObject private var errorStore: ErrorStore
     @EnvironmentObject private var trickItemStore: TrickItemStore
     @EnvironmentObject private var postStore: PostStore
+    @EnvironmentObject private var tabRouter: TabRouter
     
+    // MARK: State
     @StateObject private var router = TrickListRouter()
     @StateObject private var trickListSpinnerVM: TrickListSpinnerViewModel
     @StateObject private var trickSpinnerPresetsVM = TrickSpinnerPresetsViewModel()
     
+    // MARK: Parameters
     let user: User
-    let trickListStore: TrickListStore
+    let appEnv: AppEnvironment
     
+    // MARK: Init
     init(
         user: User,
-        trickListStore: TrickListStore
+        appEnv: AppEnvironment
     ) {
         self.user = user
-        self.trickListStore = trickListStore
-        
+        self.appEnv = appEnv
+
         _trickListSpinnerVM = StateObject(
-            wrappedValue: TrickListSpinnerViewModel(trickListStore: trickListStore)
+            wrappedValue: TrickListSpinnerViewModel(appEnv: appEnv)
         )
     }
     
+    // MARK: Body
     var body: some View {
         NavigationStack(path: $router.path) {
             TrickListBuilder.build(
                 user: user,
-                errorStore: errorStore,
-                trickListStore: trickListStore
+                appEnv: appEnv,
+                errorStore: errorStore
             )
             .navigationDestination(for: TrickListRoute.self) { route in
                 switch route {
                 case .trickSpinner:
                     TrickListSpinnerBuilder.build(
-                        trickListStore: trickListStore,
+                        appEnv: appEnv,
                         trickSpinnerPresetsVM: trickSpinnerPresetsVM
                     )
                     
@@ -68,7 +75,7 @@ struct TrickListRootView: View {
                     TrickBuilder.build(
                         userId: userId,
                         trick: trick,
-                        trickItemStore: trickItemStore
+                        appEnv: appEnv
                     )
                     
                 case .trickItem(let userId, let trick, let trickItem):
@@ -76,17 +83,16 @@ struct TrickListRootView: View {
                         userId: userId,
                         trick: trick,
                         trickItem: trickItem,
-                        errorStore: errorStore,
-                        trickItemStore: trickItemStore,
-                        postStore: postStore,
-                        trickListStore: trickListStore
+                        appEnv: appEnv,
+                        errorStore: errorStore
                     )
                     
                 case .addTrickItem(let userId, let trick):
                     AddTrickItemBuilder.build(
                         userId: userId,
                         trick: trick,
-                        trickItemStore: trickItemStore
+                        appEnv: appEnv,
+                        errorStore: errorStore
                     )
                     
                 case .compare(let trickData, let trickItem):
@@ -94,6 +100,24 @@ struct TrickListRootView: View {
                         errorStore: errorStore,
                         trickData: trickData,
                         trickItem: trickItem
+                    )
+                    
+                case .postTrickItem(let user, let trick, let trickItem):
+                    AddPostBuilder.build(
+                        user: user,
+                        trick: trick,
+                        trickItem: trickItem,
+                        postStore: postStore,
+                        errorStore: errorStore,
+                        onSuccess: {
+                            trickItemStore.updateTrickItemPosted(
+                                posted: true,
+                                trickId: trick.id,
+                                trickItemId: trickItem.id
+                            )
+                            router.pop()
+                            tabRouter.navigate(to: .community)
+                        }
                     )
                 }
             }

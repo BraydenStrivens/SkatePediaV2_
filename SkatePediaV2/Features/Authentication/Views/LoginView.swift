@@ -10,19 +10,33 @@ import SwiftUI
 /// Login screen that handles user sign-in, registration navigation,
 /// and password reset presentation.
 struct LoginView: View {
+    
+    // MARK: Environment
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var router: AuthRouter
     
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.colorScheme) var colorScheme
+    // MARK: State
+    @State private var toggleForgotPassword: Bool = false
+    @FocusState private var focusedField: Field?
     
+    // MARK: Parameters
     @ObservedObject var viewModel: LoginViewModel
 
-    @State var toggleForgotPassword: Bool = false
-        
+    // MARK: Private Properties
+    
+    /// Focusable text fields within the view.
+    private enum Field {
+        case email
+        case password
+    }
+
+    // MARK: Init
     init(viewModel: LoginViewModel) {
         _viewModel = ObservedObject(wrappedValue: viewModel)
     }
 
+    // MARK: Body
     var body: some View {
         ZStack {
             VStack(spacing: 20) {
@@ -50,12 +64,17 @@ struct LoginView: View {
                 .foregroundColor(Color.textAccent)
             }
             .padding(.vertical)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                focusedField = nil
+            }
         }
         .fullScreenCover(isPresented: $toggleForgotPassword) {
             PasswordResetView()
         }
-
     }
+    
+    // MARK: Subviews
     
     var loginBox: some View {
         VStack(spacing: 20) {
@@ -69,12 +88,15 @@ struct LoginView: View {
                 borderColor: Color.accent,
                 text: $viewModel.email
             )
+            .keyboardType(.emailAddress)
+            .focused($focusedField, equals: .email)
             
             SPSecureField(
                 title: "Password",
                 borderColor: Color.accent,
                 text: $viewModel.password
             )
+            .focused($focusedField, equals: .password)
             
             Button("Forgot password?") {
                 withAnimation(.spring(duration: 0.3)) {
@@ -93,15 +115,14 @@ struct LoginView: View {
                 } else {
                     Text("Login")
                         .font(.title3)
-                        
+                        .frame(minWidth: 250, minHeight: 50)
+                        .background(Color.button)
+                        .foregroundColor(.white)
+                        .contentShape(Rectangle())
+                        .cornerRadius(20)
                 }
             }
             .disabled(viewModel.loginLoading)
-            .frame(maxWidth: 250, maxHeight: 50)
-            .background(Color.button)
-            .foregroundColor(.white)
-            .contentShape(Rectangle())
-            .cornerRadius(20)
         }
         .padding()
         .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 25).protruded)

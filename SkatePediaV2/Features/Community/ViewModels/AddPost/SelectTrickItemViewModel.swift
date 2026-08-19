@@ -27,10 +27,11 @@ final class SelectTrickItemViewModel: ObservableObject {
         do {
             trickItemFetchState = .loading
             
-            let trickItems = try await TrickItemManager.shared.fetchTrickItems(
+            let trickItems = try await TrickItemService.shared.fetchTrickItemsForTrick(
                 userId: userId,
                 trickId: trickId
             )
+
             self.trickItems = trickItems
             
             trickItemFetchState = .success

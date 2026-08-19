@@ -14,6 +14,7 @@ enum CloudFunctionError: LocalizedError {
     case notFound(message: String)
     case alreadyExists(message: String)
     case failedPrecondition(message: String)
+    case permissionDenied(message: String)
     case internalError(message: String)
     case unknown(message: String)
     
@@ -24,6 +25,7 @@ enum CloudFunctionError: LocalizedError {
         case .notFound(let message): return message
         case .alreadyExists(let message): return message
         case .failedPrecondition(let message): return message
+        case .permissionDenied(let message): return message
         case .internalError(let message): return message
         case .unknown(let message): return message
         }
@@ -48,6 +50,8 @@ enum CloudFunctionError: LocalizedError {
             return .alreadyExists(message: nsError.localizedDescription)
         case .failedPrecondition:
             return .failedPrecondition(message: nsError.localizedDescription)
+        case .permissionDenied:
+            return .permissionDenied(message: nsError.localizedDescription)
         case .internal:
             return .internalError(message: nsError.localizedDescription)
         default:

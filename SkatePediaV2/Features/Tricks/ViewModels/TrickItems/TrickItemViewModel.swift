@@ -26,62 +26,43 @@ import Combine
 ///              within its detail/edit screen lifecycle.
 @MainActor
 final class TrickItemViewModel: ObservableObject {
-    @Published private(set) var trickItem: TrickItem
-    @Published var newNotes: String = ""
-    @Published var newRating: Int = -1
     
+    // MARK: Published State
+    @Published private(set) var post: Post?
     @Published var updateLoading: Bool = false
     @Published var deleteLoading: Bool = false
     
-    @Published private(set) var post: Post?
-    let videoPlayer: AVPlayer
+    // MARK: Input State
+    @Published var newNotes: String = ""
+    @Published var newRating: Int = -1
     
+    // MARK: Dependencies
+    private let appEnv: AppEnvironment
     private let errorStore: ErrorStore
-    private let trickItemService: TrickItemService
-    private let trickItemStore: TrickItemStore
-    private let postService: PostService
-    private let postStore: PostStore
-    private let trickListStore: TrickListStore
     
-    
+    // MARK: Init
     init(
         trickItem: TrickItem,
-        errorStore: ErrorStore,
-        trickItemService: TrickItemService = .shared,
-        trickItemStore: TrickItemStore,
-        postService: PostService = .shared,
-        postStore: PostStore,
-        trickListStore: TrickListStore
+        appEnv: AppEnvironment,
+        errorStore: ErrorStore
     ) {
+        self.appEnv = appEnv
         self.errorStore = errorStore
-        self.trickItemService = trickItemService
-        self.trickItemStore = trickItemStore
-        self.postService = postService
-        self.postStore = postStore
-        self.trickListStore = trickListStore
-        
-        self.trickItem = trickItem
         self.newNotes = trickItem.notes
         self.newRating = trickItem.progress
-        self.videoPlayer = AVPlayer(url: URL(string: trickItem.videoData.videoUrl)!)
     }
+    
+    // MARK: Public Actions
     
     /// Resets edit state to match the current trick item.
     ///
     /// - Parameters:
     ///   - currentTrickItem: The trick item whose values should be restored into edit state.
-    func editToggled(currentTrickItem: TrickItem) {
+    func editToggled(
+        currentTrickItem: TrickItem
+    ) {
         self.newNotes = currentTrickItem.notes
         self.newRating = currentTrickItem.progress
-    }
-    
-    /// Synchronizes local editable state with a new external trick item value.
-    ///
-    /// - Parameters:
-    ///   - newTrickItem: The updated trick item to sync into the view model.
-    func syncUpdates(newTrickItem: TrickItem) {
-        newNotes = newTrickItem.notes
-        newRating = newTrickItem.progress
     }
     
     /// Fetches the post associated with this trick item (if one exists).
@@ -90,9 +71,13 @@ final class TrickItemViewModel: ObservableObject {
     ///   - trickItem: The trick item whose post should be fetched.
     func fetchTrickItemPost(trickItem: TrickItem) async {
         guard trickItem.postedAt != nil else { return }
+        
         do {
-            let trickItemPost = try await postService.fetchTrickItemPost(for: trickItem.id)
-            postStore.addPost(trickItemPost)
+            let trickItemPost = try await appEnv.postService
+                .fetchTrickItemPost(for: trickItem.id)
+            
+            appEnv.postStore.addPost(trickItemPost)
+            
         } catch {
             errorStore.present(error, title: "")
         }
@@ -106,40 +91,36 @@ final class TrickItemViewModel: ObservableObject {
     /// - Parameters:
     ///   - userId: The ID of the current user performing the update.
     ///   - currentTrickItem: The existing trick item before changes.
-    func updateTrickItem(userId: String, currentTrickItem: TrickItem) {
+    func updateTrickItem(
+        userId: String,
+        currentTrickItem: TrickItem
+    ) {
         updateLoading = true
         defer { updateLoading = false }
-        
-        let request = UpdateTrickItemRequest(
-            currentItem: currentTrickItem,
-            userId: userId,
-            newNotes: newNotes,
-            newRating: newRating
-        )
-        
+
         var updatedItem = currentTrickItem
         var updateTrickProgress: Bool = false
         
-        if newNotes != currentTrickItem.notes { updatedItem.notes = newNotes }
+        if newNotes != currentTrickItem.notes {
+            updatedItem.notes = newNotes
+        }
         if newRating != currentTrickItem.progress {
-            updatedItem.progress = request.newRating
+            updatedItem.progress = newRating
             updateTrickProgress = true
         }
         
-        
         do {
-            try trickItemService.updateTrickItem(
-                userId: request.userId,
+            try appEnv.trickItemService.updateTrickItem(
+                userId: userId,
                 updatedTrickItem: updatedItem
             )
             
-            trickItemStore.updateTrickItem(updatedItem)
-            self.trickItem = updatedItem
+            appEnv.trickItemStore.updateTrickItem(updatedItem)
             
             if updateTrickProgress {
-                trickListStore.replaceTrickProgressCountsLocally(
-                    trickId: request.currentItem.trickData.trickId,
-                    oldProgress: request.currentItem.progress,
+                appEnv.trickListStore.replaceTrickProgressCountsLocally(
+                    trickId: currentTrickItem.trickData.trickId,
+                    oldProgress: currentTrickItem.progress,
                     newProgress: updatedItem.progress
                 )
             }
@@ -155,19 +136,31 @@ final class TrickItemViewModel: ObservableObject {
     ///   - toDelete: The trick item to delete.
     ///
     /// - Returns: `true` if deletion succeeded, otherwise `false`.
-    func deleteTrickItem(toDelete: TrickItem) async -> Bool {
+    func deleteTrickItem(
+        toDelete: TrickItem
+    ) async -> Bool {
         deleteLoading = true
         defer { deleteLoading = false }
         
         do {
-            try await trickItemService.deleteTrickItem(trickItemId: toDelete.id)
-            trickItemStore.removeTrickItem(toDelete)
-            trickListStore.updateTrickProgressCountsLocally(
+            try await appEnv.trickItemService.deleteTrickItem(
+                trickItemId: toDelete.id
+            )
+            
+            appEnv.trickItemStore.removeTrickItem(toDelete)
+            
+            appEnv.trickListStore.updateTrickProgressCountsLocally(
                 trickId: toDelete.trickData.trickId,
                 progress: toDelete.progress,
                 increment: false
             )
+            
+            if toDelete.postedAt != nil {
+                appEnv.postStore.removePost(toDelete.id)
+            }
+            
             return true
+            
         } catch {
             errorStore.present(error, title: "Error Deleting Trick Item")
             return false

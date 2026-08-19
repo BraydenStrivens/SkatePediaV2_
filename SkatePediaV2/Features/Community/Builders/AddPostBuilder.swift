@@ -20,8 +20,7 @@ struct AddPostBuilder {
         
         let viewModel = AddPostViewModel(
             errorStore: errorStore,
-            postStore: postStore,
-            videoUrl: trickItem.videoData.videoUrl
+            postStore: postStore
         )
         return AddPostView(
             user: user,

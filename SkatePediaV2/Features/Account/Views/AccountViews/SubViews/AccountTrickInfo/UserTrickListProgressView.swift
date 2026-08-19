@@ -16,15 +16,19 @@ import SwiftUI
 ///   - user: The user whose trick data is being displayed.
 ///   - trickListData: Aggregated trick progress data for the user.
 struct UserTrickListProgressView: View {
-    @EnvironmentObject private var router: AccountRouter
     @Environment(\.colorScheme) private var colorScheme
     
     let user: User
     let trickListData: TrickListData
+    let onNavigate: (TrickStance) -> Void
     
-    init(user: User) {
+    init(
+        user: User,
+        onNavigate: @escaping (TrickStance) -> Void
+    ) {
         self.user = user
         self.trickListData = user.trickListData
+        self.onNavigate = onNavigate
     }
     
     private let progressBarWidth: CGFloat = UIScreen.screenWidth * 0.6
@@ -61,7 +65,7 @@ struct UserTrickListProgressView: View {
                         switch stance {
                         case .regular:
                             Button {
-                                router.push(.userTricks(stance))
+                                onNavigate(stance)
                             } label: {
                                 CustomProgressBar(
                                     showHeader: false,
@@ -73,7 +77,7 @@ struct UserTrickListProgressView: View {
                             
                         case .fakie:
                             Button {
-                                router.push(.userTricks(stance))
+                                onNavigate(stance)
                             } label: {
                                 CustomProgressBar(
                                     showHeader: false,
@@ -85,7 +89,7 @@ struct UserTrickListProgressView: View {
                             
                         case ._switch:
                             Button {
-                                router.push(.userTricks(stance))
+                                onNavigate(stance)
                             } label: {
                                 CustomProgressBar(
                                     showHeader: false,
@@ -97,7 +101,7 @@ struct UserTrickListProgressView: View {
                             
                         case .nollie:
                             Button {
-                                router.push(.userTricks(stance))
+                                onNavigate(stance)
                             } label: {
                                 CustomProgressBar(
                                     showHeader: false,

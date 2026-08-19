@@ -7,15 +7,23 @@
 
 import Foundation
 
+@MainActor
 struct NotificationBuilder {
     
     static func build(
         user: User,
         errorStore: ErrorStore,
-        notificationStore: NotificationStore
+        appEnv: AppEnvironment
     ) -> NotificationView {
         
-        let viewModel = NotificationViewModel(notificationStore: notificationStore, errorStore: errorStore)
-        return NotificationView(user: user, viewModel: viewModel)
+        let viewModel = NotificationViewModel(
+            appEnv: appEnv,
+            errorStore: errorStore
+        )
+        
+        return NotificationView(
+            user: user,
+            viewModel: viewModel
+        )
     }
 }

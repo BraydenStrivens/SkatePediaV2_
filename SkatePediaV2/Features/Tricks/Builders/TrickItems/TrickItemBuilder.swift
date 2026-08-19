@@ -20,30 +20,23 @@ struct TrickItemBuilder {
     ///   - userId: The ID of the current user.
     ///   - trick: The parent trick associated with the trick item.
     ///   - trickItem: The specific trick item being displayed.
+    ///   - appEnv: Class containing global stores and services.
     ///   - errorStore: Store used for presenting errors.
-    ///   - trickItemStore: Store managing trick item data.
-    ///   - postStore: Store managing posts related to the trick item.
-    ///   - trickListStore: Store managing the broader trick list state.
     ///
     /// - Returns: A fully configured `TrickItemView`.
     static func build(
         userId: String,
         trick: Trick,
         trickItem: TrickItem,
-        errorStore: ErrorStore,
-        trickItemStore: TrickItemStore,
-        postStore: PostStore,
-        trickListStore: TrickListStore
-        
+        appEnv: AppEnvironment,
+        errorStore: ErrorStore
     ) -> TrickItemView {
+        
         let viewModel = TrickItemViewModel(
             trickItem: trickItem,
-            errorStore: errorStore,
-            trickItemStore: trickItemStore,
-            postStore: postStore,
-            trickListStore: trickListStore
+            appEnv: appEnv,
+            errorStore: errorStore 
         )
-        
         return TrickItemView(
             userId: userId,
             trickItem: trickItem,

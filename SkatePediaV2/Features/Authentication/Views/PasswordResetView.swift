@@ -9,11 +9,16 @@ import SwiftUI
 
 /// Screen for requesting a password reset via email.
 struct PasswordResetView: View {
+    
+    // MARK: Environment
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     
+    // MARK: State
     @StateObject var viewModel = PasswordResetViewModel()
+    @FocusState private var emailFocused: Bool
     
+    // MARK: Body
     var body: some View {
         VStack(spacing: 20) {
             Text("Reset Password")
@@ -32,6 +37,8 @@ struct PasswordResetView: View {
                 borderColor: Color.accent,
                 text: $viewModel.resetEmail
             )
+            .keyboardType(.emailAddress)
+            .focused($emailFocused)
             
             HStack(spacing: 20) {
                 Button("Cancel") { dismiss() }
@@ -56,7 +63,16 @@ struct PasswordResetView: View {
         .padding()
         .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 20).protruded)
         .padding(.horizontal, 20)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            emailFocused = false
+        }
+        .onAppear {
+            emailFocused = true
+        }
     }
+    
+    // MARK: Subviews
     
     var messagePopups: some View {
         Group {

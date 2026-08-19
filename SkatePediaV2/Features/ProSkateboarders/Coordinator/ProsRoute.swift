@@ -16,14 +16,14 @@ enum ProsRoute: Hashable {
     /// Navigates to a list of professional skater videos.
     ///
     /// - Parameters:
-    ///   - videos: The array of pro skater videos to display.
+    ///   - proId: The id of the pro skater whose videos are being display.
     ///   - selectedVideo: The currently selected video to start playback from.
-    case proVideos([ProSkaterVideo], ProSkaterVideo)
+    case proVideos(proId: String, selectedVideo: ProSkaterVideo)
     
     /// Navigates to the comparison view between a trick and a professional skater.
     ///
     /// - Parameters:
     ///   - trickData: The trick data to compare.
     ///   - proVideo: The professional skater video to compare against.
-    case compare(TrickData, ProSkaterVideo)
+    case compare(trickData: TrickData, proVideo: ProSkaterVideo)
 }

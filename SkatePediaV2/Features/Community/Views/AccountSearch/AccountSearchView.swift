@@ -14,6 +14,7 @@ struct AccountSearchView: View {
     @Environment(\.dismiss) var dismiss
     
     @State private var delayedWorkItem: DispatchWorkItem?
+    @FocusState private var textFieldFocused: Bool
     
     @ObservedObject var viewModel: AccountSearchViewModel
     let currentUser: User
@@ -37,6 +38,9 @@ struct AccountSearchView: View {
             Spacer()
         }
         .padding()
+        .onAppear { textFieldFocused = true }
+        .contentShape(Rectangle())
+        .onTapGesture { textFieldFocused = false }
         .onChange(of: viewModel.search) { oldValue, newValue in
             // Minimum string length to query users with is 2
             guard newValue.count >= 2 else { return }
@@ -66,6 +70,7 @@ struct AccountSearchView: View {
                 .autocapitalization(.none)
                 .lineLimit(1)
                 .foregroundColor(.primary)
+                .focused($textFieldFocused)
             
             // Clear search bar button
             HStack {

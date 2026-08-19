@@ -21,9 +21,11 @@ import Foundation
 /// - `termsOfService`: Shows the terms of service.
 /// - `privacyPolicy`: Shows the privacy policy.
 enum AccountRoute: Hashable {
-    case friendsList
+    case userAccount(currentUser: User, otherUser: User)
+    case relationships
+    case blockedUsers(currentUser: User)
     case userPosts
-    case userTricks(TrickStance)
+    case userTricks(stance: TrickStance)
     case accountOptions
     case profileSettings
     case trickItemSettings

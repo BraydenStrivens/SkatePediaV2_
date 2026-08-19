@@ -23,6 +23,8 @@ struct AccountOptionsView: View {
 
     @Environment(\.colorScheme) private var colorScheme
     
+    @AppStorage("appTheme") private var appTheme = AppTheme.system.rawValue
+    
     @State private var toggleUpdatePassword: Bool = false
     @State private var toggleDeleteAccountVerifyer: Bool = false
     @State private var newPassword: String = ""
@@ -47,45 +49,65 @@ struct AccountOptionsView: View {
                 }
                 
                 settingsViewSection(header: "Settings") {
-                    Button {
-                        router.push(.profileSettings)
-                    } label: {
-                        Text("Profile Settings")
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Theme: ")
+                            .font(.caption)
+                            .foregroundStyle(.gray)
+                                                
+                        Picker("Appearance", selection: $appTheme) {
+                            ForEach(AppTheme.allCases) { theme in
+                                Text(theme.displayName)
+                                    .tag(theme.rawValue)
+                            }
+                        }
+                        .pickerStyle(.segmented)
                     }
-
+                    
                     Divider()
                     
-                    Button {
-                        router.push(.trickItemSettings)
-                    } label: {
-                        Text("Trick Item Settings")
-                    }
+                    settingsCell(
+                        title: "Profile Settings",
+                        navigationAction: {
+                            router.push(.profileSettings)
+                        }
+                    )
+
+                    Divider()
+                       
+                    settingsCell(
+                        title: "Trick Settings",
+                        navigationAction: {
+                            router.push(.trickItemSettings)
+                        }
+                    )
                 }
                 
                 settingsViewSection(header: "App Information") {
-                    Button {
-                        router.push(.aboutSkatePedia)
-                    } label: {
-                        Text("About SkatePedia")
-
-                    }
+                    
+                    settingsCell(
+                        title: "About SkatePedia",
+                        navigationAction: {
+                            router.push(.aboutSkatePedia)
+                        }
+                    )
 
                     Divider()
                     
-                    Button {
-                        router.push(.termsOfService)
-                    } label: {
-                        Text("Terms of Service")
-                    }
+                    settingsCell(
+                        title: "Terms of Service",
+                        navigationAction: {
+                            router.push(.termsOfService)
+                        }
+                    )
 
                     Divider()
-                    
-                    Button {
-                        router.push(.privacyPolicy)
-                    } label: {
-                        Text("Privacy Policy")
 
-                    }
+                    settingsCell(
+                        title: "Privacy Policy",
+                        navigationAction: {
+                            router.push(.privacyPolicy)
+                        }
+                    )
                 }
                 
                 settingsViewSection(header: "Manage Account") {
@@ -126,6 +148,19 @@ struct AccountOptionsView: View {
             title: "Settings",
             showDivider: true
         )
+    }
+    
+    private func settingsCell(
+        title: String,
+        navigationAction: @escaping () -> Void
+    ) -> some View {
+        Button {
+            navigationAction()
+        } label: {
+            Text(title)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+        }
     }
     
     func settingsViewSection<Content: View>(
@@ -187,3 +222,5 @@ struct AccountOptionsView: View {
         }
     }
 }
+
+

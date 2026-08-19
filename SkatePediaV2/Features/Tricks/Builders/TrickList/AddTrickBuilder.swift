@@ -21,19 +21,27 @@ struct AddTrickBuilder {
     ///   - userId: The ID of the current user creating the trick.
     ///   - stance: The stance associated with the trick being created.
     ///   - trickList: The existing list of tricks, used for validation or display.
+    ///   - appEnv: Class containing global stores and services.
     ///   - errorStore: Store used for presenting errors.
-    ///   - trickListStore: Store responsible for managing trick list data.
     ///
     /// - Returns: A fully configured `AddTrickView`.
     static func build(
         userId: String,
         stance: TrickStance,
         trickList: [Trick],
-        errorStore: ErrorStore,
-        trickListStore: TrickListStore
+        appEnv: AppEnvironment,
+        errorStore: ErrorStore
     ) -> AddTrickView {
         
-        let viewModel = AddTrickViewModel(errorStore: errorStore, trickListStore: trickListStore)
-        return AddTrickView(userId: userId, stance: stance, trickList: trickList, viewModel: viewModel)
+        let viewModel = AddTrickViewModel(
+            appEnv: appEnv,
+            errorStore: errorStore
+        )
+        return AddTrickView(
+            userId: userId,
+            stance: stance,
+            trickList: trickList,
+            viewModel: viewModel
+        )
     }
 }

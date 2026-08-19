@@ -20,14 +20,19 @@ import UIKit
 ///   - authService: Service responsible for authentication actions.
 @MainActor
 final class LoginViewModel: ObservableObject {
-    @Published var email: String = ""
-    @Published var password: String = ""
-    @Published var resetEmail: String = ""
+    
+    // MARK: Published State
     @Published var loginLoading: Bool = false
     
+    // MARK: Published Input
+    @Published var email: String = ""
+    @Published var password: String = ""
+    
+    // MARK: Dependencies
     private let errorStore: ErrorStore
     private let authService: AuthenticationService
     
+    // MARK: Init
     init(
         errorStore: ErrorStore,
         authService: AuthenticationService = .shared
@@ -35,6 +40,8 @@ final class LoginViewModel: ObservableObject {
         self.errorStore = errorStore
         self.authService = authService
     }
+    
+    // MARK: Public Actions
 
     /// Attempts to sign in the user with the provided credentials.
     ///
@@ -56,6 +63,8 @@ final class LoginViewModel: ObservableObject {
             errorStore.present(error, title: "Error Signing In")
         }
     }
+    
+    // MARK: Private Helpers
     
     /// Validates that email and password fields are not empty.
     ///

@@ -9,17 +9,33 @@ import SwiftUI
 
 /// Registration screen for creating a new account with user details and stance selection.
 struct RegisterView: View {
-    @Environment(\.dismiss) var dismiss
-    @Environment(\.colorScheme) var colorScheme
     
+    // MARK: Environment
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
+        
+    // MARK: State
+    @State private var stanceDropdownExpanded: Bool = false
+    @FocusState private var focusedField: Field?
+    
+    // MARK: Parameters
     @ObservedObject var viewModel: RegisterViewModel
+
+    // MARK: Private Properties
     
-    @State var stanceDropdownExpanded: Bool = false
+    /// Focusable text fields within the view.
+    private enum Field {
+        case username
+        case email
+        case password
+    }
     
+    // MARK: Init
     init(viewModel: RegisterViewModel) {
         _viewModel = ObservedObject(wrappedValue: viewModel)
     }
 
+    // MARK: Body
     var body: some View {
         VStack(spacing: 0) {
             Image(.appLogo)
@@ -36,7 +52,13 @@ struct RegisterView: View {
         }
         .customNavHeader(title: "")
         .padding(.vertical)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            focusedField = nil
+        }
     }
+    
+    // MARK: Subviews
     
     var registerBox: some View {
         VStack(spacing: 20) {
@@ -48,17 +70,24 @@ struct RegisterView: View {
             SPTextField(
                 title: "Username",
                 borderColor: Color.accent,
-                text: $viewModel.username)
+                text: $viewModel.username
+            )
+            .focused($focusedField, equals: .username)
             
             SPTextField(
                 title: "Email",
                 borderColor: Color.accent,
-                text: $viewModel.email)
+                text: $viewModel.email
+            )
+            .keyboardType(.emailAddress)
+            .focused($focusedField, equals: .email)
             
             SPSecureField(
                 title: "Password",
                 borderColor: Color.accent,
-                text: $viewModel.password)
+                text: $viewModel.password
+            )
+            .focused($focusedField, equals: .password)
             
             stanceSelectionDropDown
             
@@ -72,20 +101,20 @@ struct RegisterView: View {
                 } else {
                     Text("Register")
                         .font(.title3)
+                        .frame(minWidth: 250, minHeight: 50)
+                        .background(Color.button)
+                        .foregroundColor(.white)
+                        .contentShape(Rectangle())
+                        .cornerRadius(20)
                 }
             }
             .disabled(viewModel.isLoading)
-            .frame(maxWidth: 250, maxHeight: 50)
-            .background(Color.button)
-            .foregroundColor(.white)
-            .cornerRadius(20)
-            .contentShape(Rectangle())
         }
         .padding()
         .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 25).protruded)
         .padding(.horizontal, 20)
     }
-    
+        
     var stanceSelectionDropDown: some View {
         HStack(alignment: .top) {
             Text("Stance:")

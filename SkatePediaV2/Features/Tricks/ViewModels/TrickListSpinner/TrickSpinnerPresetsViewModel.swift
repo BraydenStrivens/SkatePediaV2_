@@ -9,64 +9,151 @@ import Foundation
 
 /// View model responsible for managing Trick Spinner presets.
 ///
-/// Handles persistence, retrieval, and mutation of user-created presets
-/// using `UserDefaults`.
+/// `TrickSpinnerPresetsViewModel` coordinates:
+/// - Loading persisted spinner presets from local storage
+/// - Persisting preset changes to `UserDefaults`
+/// - Adding, updating, and deleting presets
+/// - Publishing preset changes for SwiftUI presentation
 ///
-/// - Important: Presets are stored locally and encoded/decoded using JSON.
+/// Persistence Design:
+/// Presets are stored locally using `UserDefaults` and encoded/decoded
+/// using `JSONEncoder` and `JSONDecoder`.
+///
+/// Concurrency Design:
+/// This view model intentionally avoids full `@MainActor` isolation.
+/// Encoding and decoding work are performed off the main actor whenever
+/// possible, while SwiftUI-related state mutations are isolated to focused
+/// `@MainActor` helper methods.
 final class TrickSpinnerPresetsViewModel: ObservableObject {
+    
+    // MARK: Published State
     @Published var presets: [SpinnerPreset] = []
     
+    // MARK: Private Properties
     private let key = "spinner_presets"
     
+    // MARK: Init
     init() {
         load()
     }
     
-    /// Saves the current presets to local storage.
+    // MARK: MainActor Helpers
+
+    /// Replaces the current presets array.
     ///
-    /// Encodes the presets array and persists it to `UserDefaults`.
-    func save() {
-        if let data = try? JSONEncoder().encode(presets) {
-            UserDefaults.standard.set(data, forKey: key)
-        }
+    /// - Parameter presets: The presets to display.
+    @MainActor
+    private func updatePresets(_ presets: [SpinnerPreset]) {
+        self.presets = presets
+    }
+
+    /// Returns a snapshot of the current presets array.
+    ///
+    /// This snapshot allows encoding work to occur off the main actor.
+    ///
+    /// - Returns: The current presets.
+    @MainActor
+    private func presetsSnapshot() -> [SpinnerPreset] {
+        presets
     }
     
-    /// Loads presets from local storage.
+    // MARK: Private Helpers
+
+    /// Loads persisted presets from local storage.
     ///
-    /// Decodes stored data from `UserDefaults` into the presets array.
-    func load() {
-        guard let data = UserDefaults.standard.data(forKey: key) else { return }
+    /// This method:
+    /// - Reads encoded preset data from `UserDefaults`
+    /// - Decodes stored JSON into `[SpinnerPreset]`
+    /// - Applies decoded presets through a MainActor helper
+    private func load() {
+        Task {
+            guard let data = UserDefaults.standard.data(forKey: key) else {
+                return
+            }
+
+            guard let decoded = try? JSONDecoder()
+                .decode([SpinnerPreset].self, from: data)
+            else { return }
+
+            await updatePresets(decoded)
+        }
+    }
+
+    /// Persists the current presets array to local storage.
+    ///
+    /// This method:
+    /// - Captures a snapshot of current presets
+    /// - Encodes presets into JSON data off the main actor
+    /// - Stores encoded data in `UserDefaults`
+    private func save() async {
+        let presets = await presetsSnapshot()
+
+        guard let data = try? JSONEncoder().encode(presets) else {
+            return
+        }
         
-        if let decoded = try? JSONDecoder().decode([SpinnerPreset].self, from: data) {
-            presets = decoded
+        UserDefaults.standard.set(data, forKey: key)
+    }
+
+    // MARK: Public Actions
+
+    /// Adds a new spinner preset.
+    ///
+    /// This method:
+    /// - Appends the provided preset
+    /// - Updates published UI state
+    /// - Persists updated presets to local storage
+    ///
+    /// - Parameter newPreset: The preset to add.
+    func addPreset(
+        _ newPreset: SpinnerPreset
+    ) async {
+        let updatedPresets = await presetsSnapshot() + [newPreset]
+        
+        await updatePresets(updatedPresets)
+        await save()
+    }
+
+    /// Updates an existing spinner preset.
+    ///
+    /// This method:
+    /// - Replaces the matching preset
+    /// - Updates published UI state
+    /// - Persists updated presets to local storage
+    ///
+    /// - Parameter updatedPreset: The updated preset.
+    func updatePreset(
+        _ updatedPreset: SpinnerPreset
+    ) async {
+        var updatedPresets = await presetsSnapshot()
+        
+        guard let index = updatedPresets.firstIndex(
+            where: { $0.id == updatedPreset.id }
+        ) else {
+            return
         }
+        
+        updatedPresets[index] = updatedPreset
+        
+        await updatePresets(updatedPresets)
+        await save()
     }
-    
-    /// Adds a new preset and persists the updated list.
+
+    /// Deletes a spinner preset.
     ///
-    /// - Parameters:
-    ///   - newPreset: The preset to add.
-    func addPreset(_ newPreset: SpinnerPreset) {
-        presets.append(newPreset)
-        save()
-    }
-    
-    /// Updates an existing preset and persists the changes.
+    /// This method:
+    /// - Removes the matching preset
+    /// - Updates published UI state
+    /// - Persists updated presets to local storage
     ///
-    /// - Parameters:
-    ///   - updatedPreset: The preset with updated values.
-    func updatePreset(_ updatedPreset: SpinnerPreset) {
-        guard let index = presets.firstIndex(where: { $0.id == updatedPreset.id }) else { return }
-        presets[index] = updatedPreset
-        save()
-    }
-    
-    /// Deletes a preset and persists the updated list.
-    ///
-    /// - Parameters:
-    ///   - preset: The preset to delete.
-    func deletePreset(_ preset: SpinnerPreset) {
-        presets.removeAll(where: { $0.id == preset.id})
-        save()
+    /// - Parameter preset: The preset to delete.
+    func deletePreset(
+        _ preset: SpinnerPreset
+    ) async {
+        let updatedPresets = await presetsSnapshot()
+            .filter { $0.id != preset.id }
+        
+        await updatePresets(updatedPresets)
+        await save()
     }
 }

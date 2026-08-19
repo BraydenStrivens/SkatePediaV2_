@@ -17,9 +17,11 @@ import AVKit
 ///  - user: A 'User' object containing information about the current user.
 ///  - trickItem: A 'TrickItem' object containing information about the trick item the post is based off of.
 ///  - trick: A 'Trick' object containing information about the trick the trick item is uploaded for.
-///
 struct AddPostView: View {
+    @EnvironmentObject private var userStore: UserStore
     @Environment(\.colorScheme) private var colorScheme
+    
+    @FocusState private var textFieldFocused: Bool
     
     @ObservedObject var viewModel: AddPostViewModel
     let user: User
@@ -65,6 +67,9 @@ struct AddPostView: View {
             title: "Post Trick Item",
             showDivider: true
         )
+        .scrollDismissesKeyboard(.immediately)
+        .contentShape(Rectangle())
+        .onTapGesture { textFieldFocused = false }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -104,15 +109,9 @@ struct AddPostView: View {
                 }
                 
                 HStack(spacing: 10) {
-                    Group {
-                        if user.settings.trickSettings.useTrickAbbreviations {
-                            Text(trick.abbreviation)
-                        } else {
-                            Text(trick.name)
-                        }
-                    }
-                    .font(.caption)
-                    .lineLimit(1)                        
+                    Text(userStore.getTrickName(trick))
+                        .font(.caption)
+                        .lineLimit(1)
                     
                     Spacer()
                     
@@ -130,21 +129,23 @@ struct AddPostView: View {
             
             // Video Player
             GeometryReader { proxy in
-                let size = CustomVideoPlayer.getNewAspectRatio(
+                let videoSize = CustomVideoPlayer.getNewAspectRatio(
                     baseWidth: trickItem.videoData.width,
                     baseHeight: trickItem.videoData.height,
                     maxWidth: proxy.size.width,
                     maxHeight: proxy.size.height)
                 
                 SPVideoPlayer(
-                    userPlayer: viewModel.player,
+                    url: URL(string: trickItem.videoData.videoUrl)!,
                     frameSize: proxy.size,
-                    videoSize: size,
-                    showButtons: true
+                    videoSize: videoSize,
+                    buttonType: .simple
                 )
-                .onDisappear {
-                    viewModel.player?.pause()
-                }
+                .frame(
+                    width: proxy.size.width,
+                    height: proxy.size.height,
+                    alignment: .bottom
+                )
             }
             
             // Post content and comments symbol
@@ -184,6 +185,7 @@ struct AddPostView: View {
                 .frame(maxWidth: .infinity)
                 .padding(12)
                 .border(.gray.opacity(0.3), width: 1)
+                .focused($textFieldFocused)
             
             // Use trick item notes toggle
             HStack {

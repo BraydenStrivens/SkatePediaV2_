@@ -24,25 +24,25 @@ import SwiftUI
 ///   - trick: The trick being displayed.
 ///   - viewModel: View model responsible for fetching trick items and pro videos.
 struct TrickView: View {
-    @EnvironmentObject private var router: TrickListRouter 
-    @EnvironmentObject var userStore: UserStore
-    @EnvironmentObject var trickListStore: TrickListStore
-    @EnvironmentObject var trickItemStore: TrickItemStore
     
-    @Environment(\.colorScheme) var colorScheme
+    // MARK: Environment
+    @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject private var router: TrickListRouter
+    @EnvironmentObject private var userStore: UserStore
+    @EnvironmentObject private var trickItemStore: TrickItemStore
+    @EnvironmentObject private var prosStore: ProsStore
     
+    // MARK: Parameters
     @StateObject var viewModel: TrickViewModel
-    
-    /// Used to capture available width for horizontally paging pro video previews.
-    @State private var cellWidth: CGFloat = 0
-    
     let userId: String
     let trick: Trick
     
-    var trickItems: [TrickItem] {
+    // MARK: Derived Properties
+    private var trickItems: [TrickItem] {
         trickItemStore.trickItems(for: trick.id)
     }
     
+    // MARK: Init
     init(
         userId: String,
         trick: Trick,
@@ -53,25 +53,29 @@ struct TrickView: View {
         _viewModel = StateObject(wrappedValue: viewModel)
     }
     
+    // MARK: Body
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 12) {
-                if userStore.trickSettings?.showLearnFirst == true {
-                    learnFirstSection
+                Group {
+                    if userStore.trickSettings?.showLearnFirst == true {
+                        learnFirstSection
+                    }
+                    
+                    addTrickItemButton
+                    
+                    trickItemsSection
                 }
-                
-                addTrickItemButton
-                
-                trickItemsSection
+                .padding(.horizontal, 10)
                 
                 proPreviewsSection
                 
                 Spacer()
             }
-            .padding(10)
+            .padding(.vertical, 10)
         }
         .customNavHeader(
-            title: trick.displayName(useAbbreviation: userStore.trickSettings?.useTrickAbbreviations == true),
+            title: userStore.getTrickName(trick),
             showDivider: true
         )
         .task {
@@ -80,7 +84,10 @@ struct TrickView: View {
         }
     }
     
-    var learnFirstSection: some View {
+    // MARK: Subviews
+    
+    /// Displays the tricks that should be learned first if the user has it enabled in their `TrickSettings`
+    private var learnFirstSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Learn First:")
                 .font(.caption)
@@ -102,7 +109,7 @@ struct TrickView: View {
         }
     }
     
-    var addTrickItemButton: some View {
+    private var addTrickItemButton: some View {
         Button {
             router.push(.addTrickItem(userId: userId, trick: trick))
             
@@ -117,7 +124,9 @@ struct TrickView: View {
         .frame(maxWidth: .infinity, alignment: .trailing)
     }
     
-    var trickItemsSection: some View {
+    /// Displays the fetch state of the user's trick items for a trick. Displays a vertical list of the trick items if the
+    /// fetch is successful.
+    private var trickItemsSection: some View {
         VStack(alignment: .leading){
             Text("Trick Items:")
                 .font(.caption)
@@ -130,16 +139,8 @@ struct TrickView: View {
                     
                 case .success:
                     if trickItems.isEmpty {
-                        ContentUnavailableView {
-                            VStack {
-                                Text("No Trick Items")
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                                Text("Upload a trick item and start analyzing your skateboarding!")
-                                    .font(.callout)
-                                    .foregroundStyle(.gray)
-                            }
-                        }
+                        NoTrickItemsCell(userId: userId, trick: trick)
+
                     } else {
                         ForEach(trickItems) { trickItem in
                             TrickItemCell(
@@ -150,15 +151,13 @@ struct TrickView: View {
                         }
                     }
                 case .failure(let sPError):
-                    ContentUnavailableView(
-                        "Error Fetching Trick Items",
-                        systemImage: "exclamationmark.triangle",
-                        description: Text(sPError.errorDescription ?? "Something went wrong...")
+                    SPContentUnavailableView(
+                        title: "Error Fetching Trick Items",
+                        description: sPError.errorDescription,
+                        type: .blockingError
                     )
                 }
             }
-            .padding()
-            .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 15).inset)
         }
     }
     
@@ -166,11 +165,17 @@ struct TrickView: View {
     ///
     /// Uses paging behavior and dynamically measures cell width to ensure
     /// full-screen-like horizontal swiping experience.
-    var proPreviewsSection: some View {
+    private var proPreviewsSection: some View {
         VStack(alignment: .leading) {
-            Text("Pro Videos:")
-                .font(.caption)
-                .foregroundStyle(.gray)
+            HStack {
+                Text("Pro Videos:")
+                Spacer()
+                Text("\(prosStore.proVideos(forTrick: trick.id).count)")
+            }
+            .padding(.horizontal, 10)
+            .font(.caption)
+            .foregroundStyle(.gray)
+
             
             Group {
                 switch viewModel.proVideosFetchState {
@@ -178,45 +183,39 @@ struct TrickView: View {
                     CustomProgressView(placement: .center)
 
                 case .success:
-                    if viewModel.proVideos.isEmpty {
-                        ContentUnavailableView(
-                            "No Pro Videos",
-                            systemImage: "",
-                            description: Text("Pro videos are currently unavailable for this trick.")
+                    if prosStore.proVideos(forTrick: trick.id).isEmpty {
+                        SPContentUnavailableView(
+                            title: "No Pro Videos",
+                            description: "Pro videos are currently unavailable for this trick."
                         )
                         
                     } else {
                         ScrollView(.horizontal) {
                             LazyHStack(spacing: 0) {
-                                ForEach(viewModel.proVideos) { proVideo in
+                                ForEach(prosStore.proVideos(forTrick: trick.id)) { proVideo in
                                     ProTrickPreview(video: proVideo)
-                                    .frame(width: cellWidth)
-                                    .scrollTargetLayout()
+                                        .containerRelativeFrame(
+                                            .horizontal,
+                                            count: 1,
+                                            span: 1,
+                                            spacing: 0
+                                        )
+                                        .scrollTargetLayout()
                                 }
                             }
                         }
                         .scrollTargetBehavior(.paging)
                     }
-                case .failure(let spError):
-                    ContentUnavailableView(
-                        "Error Fetching Trick Items",
-                        systemImage: "exclamationmark.triangle",
-                        description: Text(spError.errorDescription ?? "Something went wrong...")
+                case .failure(let sPError):
+                    SPContentUnavailableView(
+                        title: "Error Fetching Pro Videos",
+                        description: sPError.errorDescription,
+                        type: .blockingError
                     )
                 }
             }
             .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 15).inset)
-        }
-        .background {
-            /// Measures available width for paging calculations.
-            GeometryReader { proxy in
-                Color.clear
-                    .preference(key: WidthPreferenceKey.self, value: proxy.size.width)
-                    .onPreferenceChange(WidthPreferenceKey.self) { width in
-                        guard width > 0 else { return }
-                        cellWidth = width
-                    }
-            }
+            .padding(.horizontal, 4)
         }
     }
 }

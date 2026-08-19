@@ -15,24 +15,23 @@ import FirebaseAuth
 /// while coordinating updates between services and local stores.
 ///
 /// - Parameters:
-///   - trickItemService: Service responsible for fetching trick item data.
-///   - trickItemStore: Store managing local trick item state.
+///   - appEnv: Class containing global stores and services.
 @MainActor
 final class TrickViewModel: ObservableObject {
-    @Published var proVideos: [ProSkaterVideo] = []
+    
+    // MARK: Published State
     @Published var trickItemFetchState: RequestState = .idle
     @Published var proVideosFetchState: RequestState = .idle
     
-    private let trickItemService: TrickItemService
-    private let trickItemStore: TrickItemStore
+    // MARK: Dependencies
+    private let appEnv: AppEnvironment
     
-    init(
-        trickItemService: TrickItemService = .shared,
-        trickItemStore: TrickItemStore
-    ) {
-        self.trickItemService = trickItemService
-        self.trickItemStore = trickItemStore
+    // MARK: Init
+    init(appEnv: AppEnvironment) {
+        self.appEnv = appEnv
     }
+    
+    // MARK: Public Actions
     
     /// Fetches all trick items associated with a specific trick.
     ///
@@ -43,13 +42,18 @@ final class TrickViewModel: ObservableObject {
     ///   - trickId: The ID of the trick whose items should be retrieved.
     func fetchTrickItems(_ userId: String, for trickId: String) async {
         guard trickItemFetchState == .idle else { return }
+        guard !appEnv.trickItemStore.trickItemsAlreadyCached(for: trickId) else {
+            trickItemFetchState = .success
+            return
+        }
+        
         do {
             trickItemFetchState = .loading
-            let trickItems = try await trickItemService.fetchTrickItemsForTrick(
+            let trickItems = try await appEnv.trickItemService.fetchTrickItemsForTrick(
                 userId: userId,
                 trickId: trickId
             )
-            trickItemStore.setTrickItems(for: trickId, trickItems)
+            appEnv.trickItemStore.setTrickItems(for: trickId, trickItems)
             trickItemFetchState = .success
         } catch {
             trickItemFetchState = .failure(mapToSPError(error: error))
@@ -65,12 +69,17 @@ final class TrickViewModel: ObservableObject {
     ///   - trickId: The ID of the trick whose items should be retrieved.
     func fetchProVideosForTrick(for trickId: String) async {
         guard proVideosFetchState == .idle else { return }
+        guard !appEnv.prosStore.videosAlreadyCached(forTrick: trickId) else {
+            proVideosFetchState = .success
+            return
+        }
+        
         do {
             proVideosFetchState = .loading
             
-            let fetchedVideos = try await ProManager.shared.getProVideosByTrick(trickId: trickId)
-            proVideos.append(contentsOf: fetchedVideos)
-            
+            let videos = try await appEnv.prosService.fetchProVideosByTrick(trickId)
+            appEnv.prosStore.addVideos(forTrick: trickId, videos: videos)
+
             proVideosFetchState = .success
             
         } catch {

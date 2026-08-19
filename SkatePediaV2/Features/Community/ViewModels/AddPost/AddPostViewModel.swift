@@ -25,18 +25,15 @@ final class AddPostViewModel: ObservableObject {
     private let errorStore: ErrorStore
     private let postStore: PostStore
     private let postService: PostService
-    let player: AVPlayer?
     
     init(
         errorStore: ErrorStore,
         postService: PostService = .shared,
-        postStore: PostStore,
-        videoUrl: String
+        postStore: PostStore
     ) {
         self.errorStore = errorStore
         self.postService = postService
         self.postStore = postStore
-        self.player = AVPlayer(url: URL(string: videoUrl)!)
     }
     
     /// Uploads a new post to the database. Sets the newPost variable on success which is appended to the community view models posts array in the view.
@@ -52,19 +49,18 @@ final class AddPostViewModel: ObservableObject {
         defer { isUploading = false }
         
         do {
-            let request = UploadPostRequest(
+            let postId = FirebaseHelpers.generateFirebaseId()
+            let newPost = Post(
+                postId: postId,
                 content: content,
                 showTrickItemRating: showProgress,
                 user: user,
                 trick: trick,
                 trickItem: trickItem
             )
-            let postId = FirebaseHelpers.generateFirebaseId()
-            let newPost = Post(postId: postId, request: request)
             
             try await postService.uploadPost(newPost: newPost)
-            postStore.addPost(newPost)
-//            try await useCases.upload(request)
+            postStore.onPostUpload(newPost)
             return true
             
         } catch {

@@ -20,15 +20,21 @@ import SwiftUI
 ///   - authService: Service responsible for authentication actions.
 @MainActor
 final class RegisterViewModel: ObservableObject {
+    
+    // MARK: Published State
+    @Published var isLoading: Bool = false
+    
+    // MARK: Published Input
     @Published var username: String = ""
     @Published var email: String = ""
     @Published var password: String = ""
     @Published var stance: UserStance? = nil
-    @Published var isLoading: Bool = false
     
+    // MARK: Dependencies
     private let errorStore: ErrorStore
     private let authService: AuthenticationService
     
+    // MARK: Init
     init(
         errorStore: ErrorStore,
         authService: AuthenticationService = .shared
@@ -36,6 +42,8 @@ final class RegisterViewModel: ObservableObject {
         self.errorStore = errorStore
         self.authService = authService
     }
+    
+    // MARK: Public Actions
     
     /// Attempts to create a new user using the provided input fields.
     ///
@@ -64,6 +72,8 @@ final class RegisterViewModel: ObservableObject {
             errorStore.present(error, title: "Error Creating Account")
         }
     }
+    
+    // MARK: Private Helpers
     
     /// Validates registration input fields and normalizes their values.
     ///

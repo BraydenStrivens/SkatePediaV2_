@@ -16,6 +16,7 @@ import SwiftUI
 ///  
 struct SelectTrickView: View {
     @EnvironmentObject private var router: CommunityRouter
+    @EnvironmentObject private var userStore: UserStore
     
     @Environment(\.dismiss) var dismiss
     @Environment(\.colorScheme) private var colorScheme
@@ -25,14 +26,6 @@ struct SelectTrickView: View {
     
     let user: User
     
-    private func trickDisplayName(_ trick: Trick) -> String {
-        if user.settings.trickSettings.useTrickAbbreviations {
-            trick.abbreviation
-        } else {
-            trick.name
-        }
-    }
-    
     var body: some View {
         Group {
             switch viewModel.fetchTrickListState {
@@ -41,11 +34,12 @@ struct SelectTrickView: View {
                 
             case .success:
                 if viewModel.trickList.isEmpty {
-                    ContentUnavailableView(
-                        "No Tricks with Trick Items",
-                        systemImage: "list.bullet.rectangle.portrait",
-                        description: Text("Please upload a trick item for a trick in order to turn it into a post.")
+                    SPContentUnavailableView(
+                        title: "No Tricks with Trick Items",
+                        description: "Please upload a trick item for a trick in order to turn it into a post.",
+                        type: .emptyList
                     )
+
                 } else {
                     VStack {
                         header
@@ -73,11 +67,11 @@ struct SelectTrickView: View {
                     }
                     .frame(maxHeight: .infinity)
                 }
-            case .failure(let firestoreError):
-                ContentUnavailableView(
-                    "Error Fetching Tricks",
-                    systemImage: "exclamationmark.triangle",
-                    description: Text(firestoreError.errorDescription ?? "")
+            case .failure(let sPError):
+                SPContentUnavailableView(
+                    title: "Error Fetching Tricks",
+                    description: sPError.errorDescription,
+                    type: .blockingError
                 )
             }
         }
@@ -100,10 +94,10 @@ struct SelectTrickView: View {
                 .fontWeight(.semibold)
             + Text(" to post.")
             
-            Text("\(viewModel.trickList.count)")
+            Text("^[\(viewModel.trickList.count) trick](inflect: true)")
                 .fontWeight(.semibold)
                 .font(.subheadline)
-            + Text(" tricks have ")
+            + Text(viewModel.trickList.count == 1 ? " has " : " have ")
                 .font(.subheadline)
             + Text("Trick Items")
                 .fontWeight(.semibold)
@@ -124,8 +118,8 @@ struct SelectTrickView: View {
                     router.push(.selectTrickItem(user: user, trick: trick))
                 } label: {
                     HStack {
-                        Text(trickDisplayName(trick))
-                        
+                        Text(userStore.getTrickName(trick))
+
                         Spacer()
                         Image(systemName: "chevron.right")
                     }
@@ -158,8 +152,8 @@ struct SelectTrickView: View {
                                 router.push(.selectTrickItem(user: user, trick: trick))
                             } label: {
                                 HStack {
-                                    Text(trickDisplayName(trick))
-                                    
+                                    Text(userStore.getTrickName(trick))
+
                                     Spacer()
                                     Image(systemName: "chevron.right")
                                 }
@@ -224,8 +218,8 @@ struct SelectTrickView: View {
                         router.push(.selectTrickItem(user: user, trick: trick))
                     } label: {
                         HStack {
-                            Text(trickDisplayName(trick))
-                            
+                            Text(userStore.getTrickName(trick))
+
                             Spacer()
                             Image(systemName: "chevron.right")
                         }

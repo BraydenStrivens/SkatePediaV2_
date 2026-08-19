@@ -13,9 +13,9 @@ import SwiftUI
 /// Intended to be replaced with the actual terms content in the future.
 struct TermsOfServiceView: View {
     var body: some View {
-        ContentUnavailableView(
-            "Currently Unavailable",
-            systemImage: "exclamationmark.triangle"
+        SPContentUnavailableView(
+            title: "Currently Unavailable",
+            type: .blockingError
         )
         .customNavHeader(
             title: "Terms of Service",

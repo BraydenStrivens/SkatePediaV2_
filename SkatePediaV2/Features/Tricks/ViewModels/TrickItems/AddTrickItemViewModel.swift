@@ -24,60 +24,45 @@ import FirebaseStorage
 ///              validation, compression, upload progress, and persistence.
 @MainActor
 final class AddTrickItemViewModel: ObservableObject {
-    @Published var notes: String = ""
-    @Published var progress: Int = 0
     
-    @Published var selectedItem: PhotosPickerItem?
-    @Published var selectedVideoURL: URL?
-    @Published var videoSize: CGSize?
-    @Published var loadingVideoPreview: Bool = false
-    
+    // MARK: Published State
     @Published var uploadProgress: Double = 0
     @Published var isUploading: Bool = false
-    @Published var error: SPError? = nil
-        
-    private let videoUploadService = VideoUploadService()
-    /// AVPlayer used for local video preview playback after selection.
-    var player: AVPlayer? = nil
+    @Published var uploadComplete: Bool = false
+    @Published var loadingVideoPreview: Bool = false
+    @Published var selectedVideoURL: URL?
+    @Published var videoSize: CGSize?
     
-    private let trickItemService: TrickItemService
-    private let trickItemStore: TrickItemStore
-    
-    init(
-        trickItemService: TrickItemService = .shared,
-        trickItemStore: TrickItemStore
-    ) {
-        self.trickItemService = trickItemService
-        self.trickItemStore = trickItemStore
-    }
-    
+    // MARK: Input State
+    @Published var notes: String = ""
+    @Published var progress: Int = 0
+    @Published var selectedItem: PhotosPickerItem?
+
+    // MARK: Derived Properties
     var uploadPossible: Bool {
         !isUploading && !notes.isEmpty && selectedVideoURL != nil
     }
+        
+    // MARK: Dependencies
+    private let videoUploadService = VideoUploadService()
+    private let appEnv: AppEnvironment
+    private let errorStore: ErrorStore
+    
+    // MARK: Init
+    init(
+        appEnv: AppEnvironment,
+        errorStore: ErrorStore
+    ) {
+        self.appEnv = appEnv
+        self.errorStore = errorStore
+    }
+    
+    // MARK: Public Actions
 
     func cancelUpload() {
         videoUploadService.cancel()
         isUploading = false
-    }
-    
-    /// Validates that the current form state is valid for uploading a trick item and the user's trick item count
-    /// is under the limit of 6.
-    ///
-    /// - Parameters:
-    ///   - trickItemCount: The current number of trick items already attached to the trick.
-    ///
-    /// - Throws: `SPError` if validation fails.
-    func validate(trickItemCount: Int) throws {
-        guard !notes.isEmpty else {
-            throw SPError.custom("Please enter notes.")
-        }
-        guard (0...3).contains(progress) else {
-            throw SPError.custom("Invalid progress rating.")
-        }
-        
-        guard trickItemCount < 6 else {
-            throw SPError.custom("Trick items are limitted to 6 per trick. Delete an old trick item if you wish to upload a new one")
-        }
+        uploadComplete = false
     }
     
     /// Compresses and uploads the selected video to remote storage.
@@ -103,13 +88,11 @@ final class AddTrickItemViewModel: ObservableObject {
         
         let trickItemId = FirebaseHelpers.generateFirebaseId()
         let storagePath = VideoUploadDestination(
-            uploadSource: .trickItem,
             userId: userId,
             fileId: trickItemId
         )
         
         uploadProgress = 0
-        defer { uploadProgress = 0 }
         
         videoUploadService.onProgress = { [weak self] progress in
             self?.uploadProgress = progress
@@ -143,22 +126,28 @@ final class AddTrickItemViewModel: ObservableObject {
             try validate(trickItemCount: trickItemCount)
             
             let (videoData, trickItemId) = try await compressAndUploadVideo(userId: userId)
-            
-            let request = UploadTrickItemRequest(
+
+            let newTrickItem = TrickItem(
                 id: trickItemId,
                 notes: notes,
                 progress: progress,
                 trickData: TrickData(trick: trick),
                 videoData: videoData
             )
+                        
+            try await appEnv.trickItemService.uploadTrickItem(trickItem: newTrickItem)
+            appEnv.trickItemStore.addTrickItem(newTrickItem)
+            appEnv.trickListStore.updateTrickProgressCountsLocally(
+                trickId: trick.id,
+                progress: progress,
+                increment: true
+            )
             
-            let newTrickItem = TrickItem(request: request)
-            
-            try await trickItemService.uploadTrickItem(trickItem: newTrickItem)
-            trickItemStore.addTrickItem(newTrickItem)
+            uploadComplete = true
             
         } catch {
-            self.error = mapToSPError(error: error)
+            uploadProgress = 0
+            errorStore.present(error, title: "Error Uploading Trick Item")
         }
     }
 
@@ -174,25 +163,40 @@ final class AddTrickItemViewModel: ObservableObject {
 
             do {
                 (self.selectedVideoURL, self.videoSize) = try await videoUploadService.loadVideo(from: item)
-                
-                guard let url = selectedVideoURL else {
-                    throw SPError.custom("Error, couldnt get video url")
-                }
             
-                self.player = AVPlayer(url: url)
-
             } catch {
                 resetVideoPreview()
-                self.error = mapToSPError(error: error)
+                errorStore.present(error, title: "Error Loading Video Preview")
             }
         }
     }
     
+    // MARK: Private Helpers
+    
+    /// Validates that the current form state is valid for uploading a trick item and the user's trick item count
+    /// is under the limit of 6.
+    ///
+    /// - Parameters:
+    ///   - trickItemCount: The current number of trick items already attached to the trick.
+    ///
+    /// - Throws: `SPError` if validation fails.
+    private func validate(trickItemCount: Int) throws {
+        guard !notes.isEmpty else {
+            throw SPError.custom("Please enter notes.")
+        }
+        guard (0...3).contains(progress) else {
+            throw SPError.custom("Invalid progress rating.")
+        }
+        
+        guard trickItemCount < 6 else {
+            throw SPError.custom("Trick items are limitted to 6 per trick. Delete an old trick item if you wish to upload a new one")
+        }
+    }
+    
     /// Resets all video selection and preview state.
-    func resetVideoPreview() {
+    private func resetVideoPreview() {
         self.selectedItem = nil
         self.selectedVideoURL = nil
         self.videoSize = nil
-        self.player = nil
     }
 }

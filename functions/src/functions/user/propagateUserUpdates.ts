@@ -53,7 +53,6 @@ export const propagateUserUpdates = onDocumentUpdated(
             await Promise.all([
                 propagateToPosts(userId, newUserData),
                 propagateToComments(userId, newUserData),
-                propagateToUserChats(userId, newUserData),
                 propagateToNotifications(userId, newUserData),
             ]);
 
@@ -165,48 +164,6 @@ async function propagateToComments(
                 "user_data.photo_url": newUserData.photo_url,
                 "user_data.stance": newUserData.stance,
                 "user_data.username": newUserData.username,
-            });
-        }
-        await batch.commit();
-
-        lastDocument = snapshot.docs[snapshot.docs.length - 1];
-        if (snapshot.docs.length < 500) {
-            hasMore = false;
-        }
-    }
-}
-
-async function propagateToUserChats(
-    userId: string,
-    newUserData: Record<string, string | null>,
-) {
-    const baseQuery = db
-        .collectionGroup("chats")
-        .where("with_user_data.user_id", "==", userId)
-        .orderBy("__name__");
-
-    let snapshot;
-    let lastDocument: QueryDocumentSnapshot | undefined;
-    let hasMore = true;
-
-    while (hasMore) {
-        const query = lastDocument
-            ? baseQuery.startAfter(lastDocument)
-            : baseQuery;
-
-        snapshot = await query.limit(500).get();
-
-        if (snapshot.empty) {
-            hasMore = false;
-            break;
-        }
-
-        const batch = db.batch();
-        for (const doc of snapshot.docs) {
-            batch.update(doc.ref, {
-                "with_user_data.photo_url": newUserData.photo_url,
-                "with_user_data.stance": newUserData.stance,
-                "with_user_data.username": newUserData.username,
             });
         }
         await batch.commit();

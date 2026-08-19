@@ -7,29 +7,41 @@
 
 import SwiftUI
 
-/// A SwiftUI view displaying a list of pro skater videos in a vertically scrollable layout.
-/// Highlights the initially selected video and supports paging and snapping behavior.
+/// A vertically scrollable SwiftUI view displaying a collection of
+/// professional skater videos.
+///
+/// `ProVideosView` presents a paged, full-screen style browsing experience
+/// using a `ScrollView` and `LazyVStack`. Each item is rendered using
+/// ``ProVideoCell``.
+///
+/// The view automatically scrolls to and highlights the initially selected
+/// video when presented.
 struct ProVideosView: View {
-    let videos: [ProSkaterVideo]
-    let selectedVideo: ProSkaterVideo
     
-    @StateObject private var videoFeedManager = VideoFeedManager()
+    // MARK: Environment
+    @EnvironmentObject private var prosStore: ProsStore
     
+    // MARK: Parameters
+    private let proId: String
+    private let selectedVideo: ProSkaterVideo
+    
+    // MARK: Derived/Private Properties
     @State private var selectedId: ProSkaterVideo.ID?
-    
-    /// Initializes the view with a list of videos and an initially selected video
-    /// - Parameters:
-    ///   - videos: The list of `ProSkaterVideo` to display
-    ///   - selectedVideo: The video to initially focus on
+    private var videos: [ProSkaterVideo] {
+        prosStore.proVideos(forPro: proId)
+    }
+        
+    // MARK: Init
     init(
-        videos: [ProSkaterVideo],
+        proId: String,
         selectedVideo: ProSkaterVideo
     ) {
-        self.videos = videos
+        self.proId = proId
         self.selectedVideo = selectedVideo
         _selectedId = State(initialValue: selectedVideo.id)
     }
     
+    // MARK: Body
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 0) {
@@ -44,7 +56,6 @@ struct ProVideosView: View {
                         spacing: 0
                     )
                     .id(video.id)
-                    .environmentObject(videoFeedManager)
                 }
             }
             .scrollTargetLayout()

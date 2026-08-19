@@ -52,6 +52,25 @@
         { "fieldPath": "base_comment_id", "order": "ASCENDING" },
         { "fieldPath": "date_created", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "relationships",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "user_ids", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "date_created", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "relationships",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "user_ids", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "last_status_changed_by_uid", "order": "ASCENDING" },
+        { "fieldPath": "date_created", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

@@ -8,11 +8,20 @@
 import SwiftUI
 
 struct CommunityRootView: View {
+    @EnvironmentObject private var appEnv: AppEnvironment
     @EnvironmentObject private var postStore: PostStore
+    @EnvironmentObject private var trickItemStore: TrickItemStore
     @EnvironmentObject private var errorStore: ErrorStore
     @EnvironmentObject private var notificationStore: NotificationStore
     
     @StateObject private var router = CommunityRouter()
+    @StateObject private var userPostsVMStore: UserPostsViewModelStore
+    
+    init(errorStore: ErrorStore) {
+        _userPostsVMStore = StateObject(
+            wrappedValue: UserPostsViewModelStore(errorStore: errorStore)
+        )
+    }
     
     var body: some View {
         NavigationStack(path: $router.path) {
@@ -20,23 +29,45 @@ struct CommunityRootView: View {
                 .navigationDestination(for: CommunityRoute.self) { route in
                     switch route {
                     case .accountSearch(let currentUser):
-                        AccountSearchBuilder.build(currentUser: currentUser, errorStore: errorStore)
+                        AccountSearchBuilder.build(
+                            currentUser: currentUser,
+                            errorStore: errorStore
+                        )
                         
                     case .userAccount(let currentUser, let otherUser):
-                        UserAccountBuilder.build(currentUser: currentUser, otherUser: otherUser, errorStore: errorStore)
+                        UserAccountBuilder.build(
+                            currentUser: currentUser,
+                            otherUser: otherUser,
+                            appEnv: appEnv,
+                            errorStore: errorStore
+                        )
+                        
+                    case .userTrickList(let user, let stance):
+                        TrickListPreviewView(
+                            user: user,
+                            stance: stance
+                        )
+                        
+                    case .userPosts(let user):
+                        UserPostsView(
+                            viewModel: userPostsVMStore.viewModel(for: user)
+                        )
                         
                     case .notifications(let currentUser):
-                        NotificationBuilder.build(user: currentUser, errorStore: errorStore, notificationStore: notificationStore)
-                        
-                    case .userChats:
-                        VStack { }
-                    case .userChat:
-                        VStack { }
+                        NotificationBuilder.build(
+                            user: currentUser,
+                            errorStore: errorStore,
+                            appEnv: appEnv
+                        )
+
                     case .selectTrick(let user):
                         SelectTrickView(user: user)
                         
                     case .selectTrickItem(let user, let trick):
-                        SelectTrickItemView(user: user, trick: trick)
+                        SelectTrickItemView(
+                            user: user,
+                            trick: trick
+                        )
                         
                     case .addPost(let user, let trick, let trickItem):
                         AddPostBuilder.build(
@@ -46,6 +77,11 @@ struct CommunityRootView: View {
                             postStore: postStore,
                             errorStore: errorStore,
                             onSuccess: {
+                                trickItemStore.updateTrickItemPosted(
+                                    posted: true,
+                                    trickId: trick.id,
+                                    trickItemId: trickItem.id
+                                )
                                 router.reset()
                             }
                         )
@@ -53,5 +89,6 @@ struct CommunityRootView: View {
                 }
         }
         .environmentObject(router)
+        .environmentObject(userPostsVMStore)
     }
 }

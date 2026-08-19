@@ -19,10 +19,6 @@ struct UserPostsView:  View {
     
     @ObservedObject var viewModel: UserPostPreviewViewModel
 
-    var posts: [Post] {
-        viewModel.userPosts
-    }
-    
     var body: some View {
         ScrollView(showsIndicators: false) {
             LazyVStack(alignment: .center, spacing: 0) {

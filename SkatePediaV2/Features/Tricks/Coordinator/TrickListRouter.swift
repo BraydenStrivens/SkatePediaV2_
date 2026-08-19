@@ -12,14 +12,24 @@ import SwiftUI
 ///
 /// Provides functions to push, pop, and reset routes within the trick list navigation stack.
 final class TrickListRouter: ObservableObject {
+    
+    // MARK: Published State
     @Published var path = NavigationPath()
+    
+    // MARK: Public Actions
     
     /// Adds a route to the trick list navigation path.
     ///
     /// - Parameters:
     ///   - route: An `TrickListRoute` representing the destination view.
-    func push(_ route: TrickListRoute) {
-        path.append(route)
+    @MainActor
+    func push(_ route: TrickListRoute, hasAnimation: Bool = false) {
+        Task {
+            if hasAnimation {
+                try? await Task.sleep(for: .milliseconds(80))
+            }
+            path.append(route)
+        }
     }
     
     /// Removes the last route from the trick list navigation path.

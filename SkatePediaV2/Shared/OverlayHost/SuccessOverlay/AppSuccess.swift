@@ -9,6 +9,6 @@ import Foundation
 
 struct AppSuccess: Identifiable {
     let id = UUID()
-    let title: String
+    let title: String? = nil
     let message: String
 }

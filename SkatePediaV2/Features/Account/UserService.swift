@@ -8,25 +8,70 @@
 import Foundation
 import FirebaseAuth
 import FirebaseFirestore
+import FirebaseFunctions
 
+/// Service responsible for all user-related Firestore operations.
+///
+/// `UserService` coordinates:
+/// - Fetching user documents
+/// - Real-time user snapshot listeners
+/// - Updating user profile/settings data
+/// - Managing favorite tricks and notification state
+/// - Managing user friendships and friend requests
+/// - Performing user-related Firestore batch operations
+///
+/// This service acts as the single source of truth for all
+/// backend communication involving `User` and `Friend` models.
+///
+/// Architecture:
+/// `UserService` is implemented as a shared singleton because:
+/// - Firestore listeners must be centrally managed
+/// - User data access is globally required throughout the app
+/// - Shared listener lifecycle simplifies synchronization
+///
+/// UI-facing state updates should instead occur within stores
+/// or view models that consume this service.
 final class UserService {
+    
+    // MARK: Shared Instance
     static let shared = UserService()
     private init() {}
     
+    // MARK: Private Properties
     private var userListener: ListenerRegistration?
+    private let functions = Functions.functions()
     
-    private let usersCollection = Firestore.firestore().collection("users")
-    private func userRef(_ userId: String) -> DocumentReference {
+    // MARK: Firestore References
+    
+    private let usersCollection = Firestore.firestore()
+        .collection("users")
+    
+    /// Returns the Firestore document reference for a user.
+    ///
+    /// - Parameter userId:
+    /// The user identifier.
+    ///
+    /// - Returns:
+    /// A Firestore document reference.
+    private func userRef(
+        _ userId: String
+    ) -> DocumentReference {
         usersCollection.document(userId)
     }
     
-    private func userFriendsListCollection(for userId: String) -> CollectionReference {
-        userRef(userId).collection("friends_list")
-    }
-    private func friendDocument(userId: String, friendId: String) -> DocumentReference {
-        userFriendsListCollection(for: userId).document(friendId)
-    }
-    
+    // MARK: Real-Time Listeners
+
+    /// Starts listening for real-time updates to a user document.
+    ///
+    /// This method:
+    /// - Attaches a Firestore snapshot listener
+    /// - Decodes incoming snapshots into `User`
+    /// - Emits decoded updates through the provided callback
+    /// - Emits failures for missing users or decoding errors
+    ///
+    /// - Parameters:
+    ///   - userId: The user identifier to observe.
+    ///   - onChange: Callback invoked whenever the user changes.
     func listenToUser(
         userId: String,
         onChange: @escaping (Result<User, Error>) -> Void
@@ -51,11 +96,50 @@ final class UserService {
         })
     }
     
+    /// Removes the active authenticated user listener.
     func removeListener() {
         userListener?.remove()
         userListener = nil
     }
     
+    // MARK: User Fetching
+
+    /// Fetches a user document by identifier.
+    ///
+    /// - Parameter userId:
+    /// The user identifier.
+    ///
+    /// - Returns:
+    /// The decoded user model.
+    ///
+    /// - Throws:
+    /// Any Firestore or decoding error encountered.
+    func fetchUser(
+        userId: String
+    ) async throws -> User {
+        return try await userRef(userId)
+            .getDocument(as: User.self)
+    }
+    
+    /// Searches users by username prefix.
+    ///
+    /// This method performs a case-insensitive Firestore prefix query
+    /// using a normalized lowercase username field.
+    ///
+    /// Supports cursor-based pagination.
+    ///
+    /// - Parameters:
+    ///   - searchString: The username search query.
+    ///   - count: Maximum number of users to return.
+    ///   - lastDocument: Pagination cursor document.
+    ///
+    /// - Returns:
+    /// A tuple containing:
+    /// - Matching users
+    /// - The final Firestore snapshot for pagination
+    ///
+    /// - Throws:
+    /// Any Firestore or decoding error encountered.
     func fetchUserByUsername(
         searchString: String,
         count: Int,
@@ -73,122 +157,87 @@ final class UserService {
             .getDocumentsWithSnapshot(as: User.self)
     }
     
-    func updateUser(updatedUser: User) throws {
+    // MARK: User Updates
+
+    /// Fully replaces a user's Firestore document.
+    ///
+    /// - Parameter updatedUser:
+    /// The updated user model.
+    ///
+    /// - Throws:
+    /// Any Firestore encoding or write error encountered.
+    func updateUser(
+        updatedUser: User
+    ) throws {
         try userRef(updatedUser.userId)
             .setData(from: updatedUser, merge: false)
     }
     
+    /// Updates a user's favorite tricks array.
+    ///
+    /// - Parameters:
+    ///   - updatedArray: The updated favorite trick identifiers.
+    ///   - userId: The user identifier.
+    ///
+    /// - Throws:
+    /// Any Firestore update error encountered.
+    func updateUserFavoriteTricks(
+        updatedArray: [String],
+        for userId: String
+    ) async throws {
+        try await userRef(userId)
+            .updateData(
+                [ User.CodingKeys.favoriteTricks.rawValue : updatedArray ]
+            )
+    }
+    
+    /// Updates a user's settings object.
+    ///
+    /// - Parameters:
+    ///   - newSettings: The updated user settings.
+    ///   - userId: The user identifier.
+    ///
+    /// - Throws:
+    /// Any Firestore update error encountered.
     func updateUserSettings(
         _ newSettings: UserSettings,
         for userId: String
     ) async throws {
-        
         try await userRef(userId)
             .updateData(
                 [ User.CodingKeys.settings.rawValue: newSettings.asDictionary() ]
             )
     }
     
-    func updateUserUnseenNotificationCount(for userId: String) async throws {
+    /// Resets a user's unseen notification count.
+    ///
+    /// - Parameter userId:
+    /// The user identifier.
+    ///
+    /// - Throws:
+    /// Any Firestore update error encountered.
+    func updateUserUnseenNotificationCount(
+        for userId: String
+    ) async throws {
         try await userRef(userId)
             .updateData(
                 [ User.CodingKeys.unseenNotificationCount.rawValue: 0 ]
             )
     }
     
-    func fetchUserFriendsList(
-        for userId: String,
-        count: Int,
-        lastDocument: DocumentSnapshot?
-    ) async throws -> (item: [Friend], lastDocument: DocumentSnapshot?) {
-        
-        return try await userFriendsListCollection(for: userId)
-            .whereField(Friend.CodingKeys.isPending.rawValue, isEqualTo: false)
-            .limit(to: count)
-            .startOptionally(afterDocument: lastDocument)
-            .getDocumentsWithSnapshot(as: Friend.self)
-    }
-    
-    func fetchPendingFriends(
-        for userId: String,
-        count: Int,
-        lastDocument: DocumentSnapshot?
-    ) async throws -> (item: [Friend], lastDocument: DocumentSnapshot?) {
-                
-        return try await userFriendsListCollection(for: userId)
-            .whereField(Friend.CodingKeys.isPending.rawValue, isEqualTo: true)
-            .limit(to: count)
-            .startOptionally(afterDocument: lastDocument)
-            .getDocumentsWithSnapshot(as: Friend.self)
-    }
-    
-    func sendFriendRequest(
-        _ currentUser: User,
-        to otherUser: User
+    /// Marks a user account as pending deletion.
+    ///
+    /// - Parameter userId:
+    /// The user identifier.
+    ///
+    /// - Throws:
+    /// Any Firestore update error encountered.
+    ///
+    /// - Important:
+    /// A firebase cloud function handles the actual deletion of all user documents.
+    func markUserAsPendingDeletion(
+        for userId: String
     ) async throws {
-        
-        let senderRef = friendDocument(
-            userId: currentUser.userId,
-            friendId: otherUser.userId
-        )
-        let receiverRef = friendDocument(
-            userId: otherUser.userId,
-            friendId: currentUser.userId
-        )
-        
-        let senderDoc = Friend(
-            request: AddFriendRequest(
-                senderUid: currentUser.userId,
-                userId: currentUser.userId,
-                withUserData: UserData(user: otherUser)
-            )
-        )
-        let receiverDoc = Friend(
-            request: AddFriendRequest(
-                senderUid: currentUser.userId,
-                userId: otherUser.userId,
-                withUserData: UserData(user: currentUser)
-            )
-        )
-        
-        let batch = Firestore.firestore().batch()
-
-        try batch.setData(from: senderDoc, forDocument: senderRef)
-        try batch.setData(from: receiverDoc, forDocument: receiverRef)
-        
-        try await batch.commit()
-    }
-    
-    func removeFriend(_ toRemoveUid: String, for userId: String) {
-        let batch = Firestore.firestore().batch()
-        
-        batch.deleteDocument(
-            friendDocument(userId: userId, friendId: toRemoveUid)
-        )
-        batch.deleteDocument(
-            friendDocument(userId: toRemoveUid, friendId: userId)
-        )
-        batch.commit()
-    }
-    
-    func acceptFriendRequest(_ senderUid: String, for userId: String) async throws {
-        let batch = Firestore.firestore().batch()
-
-        let receiverRef = friendDocument(userId: userId, friendId: senderUid)
-        let senderRef = friendDocument(userId: senderUid, friendId: userId)
-        
-        batch.updateData(
-            [ Friend.CodingKeys.isPending.rawValue : false ],
-            forDocument: receiverRef
-        )
-        batch.updateData(
-            [ Friend.CodingKeys.isPending.rawValue : false ],
-            forDocument: senderRef
-        )
-        try await batch.commit()
-    }
-    
-    func markUserAsPendingDeletion(for userId: String) async throws {
         try await userRef(userId)
             .updateData(
                 [ User.CodingKeys.pendingDeletion.rawValue: true ]

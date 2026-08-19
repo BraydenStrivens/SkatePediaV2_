@@ -10,8 +10,10 @@ import Foundation
 struct Trick: Identifiable, Codable, Equatable, Hashable {
     let id: String
     let name: String
+    var customName: String?
     let stance: TrickStance
     let abbreviation: String
+    var customAbbreviation: String?
     let learnFirst: String
     let learnFirstAbbreviation: String
     let difficulty: TrickDifficulty
@@ -22,16 +24,20 @@ struct Trick: Identifiable, Codable, Equatable, Hashable {
     init(
         id: String,
         name: String,
+        customName: String? = nil,
         stance: TrickStance,
         abbreviation: String,
+        customAbbreviation: String? = nil,
         learnFirst: String,
         learnFirstAbbreviation: String,
         difficulty: TrickDifficulty
     ) {
         self.id = id
         self.name = name
+        self.customName = customName
         self.stance = stance
         self.abbreviation = abbreviation
+        self.customAbbreviation = customAbbreviation
         self.learnFirst = learnFirst
         self.learnFirstAbbreviation = learnFirstAbbreviation
         self.difficulty = difficulty
@@ -40,24 +46,13 @@ struct Trick: Identifiable, Codable, Equatable, Hashable {
         self.hidden = false
     }
     
-    init(id: String, request: UploadTrickRequest) {
-        self.id = id
-        self.name = request.name
-        self.stance = request.stance
-        self.abbreviation = request.abbreviation
-        self.learnFirst = request.learnFirst
-        self.learnFirstAbbreviation = request.learnFirstAbbreviation
-        self.difficulty = request.difficulty
-        self.progressCounts = TrickItemProgressCounts()
-        self.hasTrickItems = false
-        self.hidden = false
-    }
-    
     enum CodingKeys: String, CodingKey {
         case id = "id"
         case name = "name"
+        case customName = "custom_name"
         case stance = "stance"
         case abbreviation = "abbreviation"
+        case customAbbreviation = "custom_abbreviation"
         case learnFirst = "learn_first"
         case learnFirstAbbreviation = "learn_first_abbreviation"
         case difficulty = "difficulty"
@@ -86,8 +81,10 @@ struct Trick: Identifiable, Codable, Equatable, Hashable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.id = try container.decode(String.self, forKey: .id)
         self.name = try container.decode(String.self, forKey: .name)
+        self.customName = try container.decodeIfPresent(String.self, forKey: .customName)
         self.stance = try container.decode(TrickStance.self, forKey: .stance)
         self.abbreviation = try container.decode(String.self, forKey: .abbreviation)
+        self.customAbbreviation = try container.decodeIfPresent(String.self, forKey: .customAbbreviation)
         self.learnFirst = try container.decode(String.self, forKey: .learnFirst)
         self.learnFirstAbbreviation = try container.decode(String.self, forKey: .learnFirstAbbreviation)
         self.difficulty = try container.decode(TrickDifficulty.self, forKey: .difficulty)
@@ -100,8 +97,10 @@ struct Trick: Identifiable, Codable, Equatable, Hashable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(self.id, forKey: .id)
         try container.encode(self.name, forKey: .name)
+        try container.encodeIfPresent(self.customName, forKey: .customName)
         try container.encode(self.stance, forKey: .stance)
         try container.encode(self.abbreviation, forKey: .abbreviation)
+        try container.encodeIfPresent(self.customAbbreviation, forKey: .customAbbreviation)
         try container.encode(self.learnFirst, forKey: .learnFirst)
         try container.encode(self.learnFirstAbbreviation, forKey: .learnFirstAbbreviation)
         try container.encode(self.difficulty, forKey: .difficulty)

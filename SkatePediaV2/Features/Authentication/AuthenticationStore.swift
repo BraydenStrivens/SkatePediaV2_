@@ -16,19 +16,24 @@ import SwiftUI
 @MainActor
 final class AuthenticationStore: ObservableObject {
 
+    // MARK: Published State
     @Published var userSession: FirebaseAuth.User?
     @Published var isLoading = true
 
+    // MARK: Dependencies
     private let authService: AuthenticationService
     private var authHandle: AuthStateDidChangeListenerHandle?
 
+    // MARK: Init
+    
     /// Initializes the store and begins listening for authentication state changes.
     ///
     /// - Parameters:
     ///   - authService: Service used to observe authentication state. Defaults to shared instance.
-    init(authService: AuthenticationService = .shared) {
+    init(
+        authService: AuthenticationService = .shared
+    ) {
         self.authService = authService
-
         self.authHandle = authService.addAuthStateListener { [weak self] user in
             guard let self else { return }
             
@@ -40,6 +45,8 @@ final class AuthenticationStore: ObservableObject {
             self.isLoading = false
         }
     }
+    
+    // MARK: Deinit
 
     /// Cleans up the authentication state listener when the store is deallocated.
     deinit {

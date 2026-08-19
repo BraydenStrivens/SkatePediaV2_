@@ -19,10 +19,13 @@ import Foundation
 /// - Important:
 ///   Each preset is uniquely identified by a generated UUID string at creation time.
 struct SpinnerPreset: Codable, Identifiable, Equatable, Hashable {
+    
+    // MARK: Parameters
     let id: String
     var name: String
     var trickIds: [String]
     
+    // MARK: Init
     init(
         name: String,
         trickIds: [String] = []

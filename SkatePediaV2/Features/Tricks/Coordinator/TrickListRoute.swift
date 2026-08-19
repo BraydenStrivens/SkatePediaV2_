@@ -15,6 +15,7 @@ import Foundation
 /// - Important: Used by `TrickListRouter` to drive type-safe navigation
 ///              inside the TrickList feature.
 enum TrickListRoute: Hashable, Equatable {
+    
     /// Opens the trick spinner screen.
     case trickSpinner
     
@@ -33,7 +34,10 @@ enum TrickListRoute: Hashable, Equatable {
     /// - Parameters:
     ///   - userId: ID of the user owning the trick.
     ///   - trick: The trick to display.
-    case trick(userId: String, trick: Trick)
+    case trick(
+        userId: String,
+        trick: Trick
+    )
     
     /// Opens a specific trick item screen for viewing, editing, deleting, or comparing trick items..
     ///
@@ -41,14 +45,21 @@ enum TrickListRoute: Hashable, Equatable {
     ///   - userId: ID of the user owning the trick.
     ///   - trick: The trick the trick item belongs to.
     ///   - trickItem: The specific trick item to display.
-    case trickItem(userId: String, trick: Trick, trickItem: TrickItem)
+    case trickItem(
+        userId: String,
+        trick: Trick,
+        trickItem: TrickItem
+    )
     
     /// Opens the screen for adding a new trick item.
     ///
     /// - Parameters:
     ///   - userId: ID of the current user.
     ///   - trick: The trick the new item will be added to.
-    case addTrickItem(userId: String, trick: Trick)
+    case addTrickItem(
+        userId: String,
+        trick: Trick
+    )
     
     /// Opens a comparison screen between a trick item and a pro video or another trick item that is
     /// selected by the user.
@@ -56,5 +67,20 @@ enum TrickListRoute: Hashable, Equatable {
     /// - Parameters:
     ///   - trickData: Data about the trick the trick item belongs to.
     ///   - trickItem: The trick item being compared.
-    case compare(trickData: TrickData, trickItem: TrickItem)
+    case compare(
+        trickData: TrickData,
+        trickItem: TrickItem
+    )
+    
+    /// Opens the screen for posting a trick item to the community feed.
+    ///
+    /// - Parameters:
+    ///   - user: The user creating the post.
+    ///   - trick: The associated trick.
+    ///   - trickItem: The trick item being posted.
+    case postTrickItem(
+        user: User,
+        trick: Trick,
+        trickItem: TrickItem
+    )
 }

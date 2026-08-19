@@ -18,17 +18,23 @@ struct TrickListBuilder {
     ///
     /// - Parameters:
     ///   - user: The current authenticated user.
+    ///   - appEnv: Class containing global stores and services.
     ///   - errorStore: Store used for presenting errors.
-    ///   - trickListStore: Store responsible for managing trick list data.
     ///
     /// - Returns: A fully configured `TrickListView`.
     static func build(
         user: User,
-        errorStore: ErrorStore,
-        trickListStore: TrickListStore
+        appEnv: AppEnvironment,
+        errorStore: ErrorStore
     ) -> TrickListView {
         
-        let viewModel = TrickListViewModel(trickListStore: trickListStore, errorStore: errorStore)
-        return TrickListView(user: user, viewModel: viewModel)
+        let viewModel = TrickListViewModel(
+            appEnv: appEnv,
+            errorStore: errorStore
+        )
+        return TrickListView(
+            user: user,
+            viewModel: viewModel
+        )
     }
 }

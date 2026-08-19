@@ -40,8 +40,8 @@ struct AccountDetails: View {
         return editProfilePhoto || editUsername || editStance || editBio
     }
     
-    @FocusState private var usernameTextFieldFocused: Bool
-    @FocusState private var bioTextFieldFocused: Bool
+    @FocusState private var usernameFocused: Bool
+    @FocusState private var bioFocused: Bool
     
     let user: User
     
@@ -49,7 +49,8 @@ struct AccountDetails: View {
         user.username == settingsVM.newUsername &&
         user.stance == settingsVM.newStance &&
         user.bio == settingsVM.newBio &&
-        settingsVM.profileImage == nil
+        settingsVM.profileImage == nil &&
+        settingsVM.deleteProfilePhoto == false
     }
     
     var body: some View {
@@ -80,6 +81,12 @@ struct AccountDetails: View {
                 
                 Text(user.dateCreated.formatted(date: .long, time: .omitted))
             }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            usernameFocused = false
+            bioFocused = false
+            cancelEdit()
         }
         .photosPicker(
             isPresented: $showPhotoPicker,
@@ -117,49 +124,66 @@ struct AccountDetails: View {
     
     /// Displays the user's profile photo with options to change or delete.
     var profilePhoto: some View {
-        HStack {
+        VStack {
             Group {
                 if let image = settingsVM.profileImage {
                     image
                         .resizable()
                         .scaledToFill()
-                        .frame(width: 65, height: 65)
+                        .frame(
+                            width: ProfileImageSize.xxLarge.dimension,
+                            height: ProfileImageSize.xxLarge.dimension
+                        )
                         .clipShape(Circle())
                     
                 } else {
                     if settingsVM.deleteProfilePhoto {
                         CircularProfileImageView(
                             photoUrl: nil,
-                            size: .xLarge
+                            size: .xxLarge
                         )
                     } else {
                         CircularProfileImageView(
                             photoUrl: user.profilePhoto?.photoUrl,
-                            size: .xLarge
+                            size: .xxLarge
                         )
                     }
                 }
             }
             
-            Spacer()
-            
-            VStack(spacing: 8) {
-                Button("Change") {
+            HStack(spacing: 14) {
+                Button {
                     showPhotoPicker.toggle()
-                    editProfilePhoto.toggle()
+                    editProfilePhoto = true
+                } label: {
+                    Image(systemName: "camera")
+                        .padding(10)
+                        .foregroundColor(Color.button)
+                        .background {
+                            Circle()
+                                .stroke(Color.button)
+                                .fill(.ultraThinMaterial)
+                        }
                 }
-                .tint(Color.button)
                 
                 if user.profilePhoto != nil {
-                    Button("Delete", role: .destructive) {
+                    Button {
                         withAnimation(.smooth) {
                             settingsVM.deleteProfilePhoto = true
-                            editProfilePhoto.toggle()
+                            editProfilePhoto = true
                         }
+                    } label: {
+                        Image(systemName: "trash")
+                            .padding(10)
+                            .foregroundColor(.red)
+                            .background {
+                                Circle()
+                                    .stroke(.red)
+                                    .fill(.ultraThinMaterial)
+                            }
                     }
                 }
             }
-            .font(.caption)
         }
     }
     
@@ -187,9 +211,9 @@ struct AccountDetails: View {
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
                         .border(Color(.systemGray5))
-                        .focused($usernameTextFieldFocused)
+                        .focused($usernameFocused)
                         .autocorrectionDisabled()
-                        .onAppear { usernameTextFieldFocused = true }
+                        .onAppear { usernameFocused = true }
                 }
             }
             .frame(maxWidth: 150, alignment: .trailing)
@@ -255,9 +279,9 @@ struct AccountDetails: View {
                 } else {
                     TextField("", text: $settingsVM.newBio, axis: .vertical)
                         .lineLimit(1...8)
-                        .focused($bioTextFieldFocused)
+                        .focused($bioFocused)
                         .autocorrectionDisabled()
-                        .onAppear { bioTextFieldFocused = true }
+                        .onAppear { bioFocused = true }
                         .padding(.vertical, 4)
                         .padding(.horizontal, 8)
                         .border(Color(.systemGray5))

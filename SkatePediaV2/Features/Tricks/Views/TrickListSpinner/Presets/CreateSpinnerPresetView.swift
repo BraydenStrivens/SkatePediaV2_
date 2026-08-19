@@ -25,20 +25,44 @@ import SwiftUI
 ///   - presetCount: Used to generate a default preset name for new presets.
 ///   - trickSpinnerPresetsVM: View model responsible for persisting presets.
 struct CreateSpinnerPresetView: View {
-    @EnvironmentObject var trickListStore: TrickListStore
-    @EnvironmentObject var userStore: UserStore
     
+    // MARK: Environment
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
-    
+    @EnvironmentObject private var trickListStore: TrickListStore
+    @EnvironmentObject private var userStore: UserStore
+
+    // MARK: State
+    @FocusState private var textFieldFocused: Bool
     @State private var selectedStance: TrickStance = .regular
-    @State var transitionDirection: (insertion: Edge, removal: Edge) = (.trailing, .leading)
-    
-    @ObservedObject private var trickSpinnerPresetsVM: TrickSpinnerPresetsViewModel
-    @State private var currentPreset: SpinnerPreset
+    @State private var transitionDirection: (insertion: Edge, removal: Edge) = (.trailing, .leading)
     @State private var selectedTricks: [Trick] = []
+    
+    // MARK: Parameters
+    @ObservedObject private var trickSpinnerPresetsVM: TrickSpinnerPresetsViewModel
     private let initialPreset: SpinnerPreset?
     
+    // MARK: Derived Properties
+    @State private var currentPreset: SpinnerPreset
+    
+    private var currentTricks: [Trick] {
+        trickListStore.trickList.filter { $0.stance == selectedStance }
+    }
+    
+    /// Determines whether saving is disabled.
+    ///
+    /// Disabled when:
+    /// - No meaningful changes were made to an existing preset
+    /// - Or fewer than 3 tricks are selected
+    private var saveDisabled: Bool {
+        (
+            initialPreset?.name == currentPreset.name &&
+            initialPreset?.trickIds == selectedTricks.map(\.id)
+        )
+        || selectedTricks.count < 3
+    }
+    
+    // MARK: Init
     init(
         initialPreset: SpinnerPreset? = nil,
         presetCount: Int,
@@ -51,32 +75,18 @@ struct CreateSpinnerPresetView: View {
         )
         _trickSpinnerPresetsVM = ObservedObject(wrappedValue: trickSpinnerPresetsVM)
     }
-
-    var currentTricks: [Trick] {
-        trickListStore.trickList.filter { $0.stance == selectedStance }
-    }
     
-    /// Determines whether saving is disabled.
-    ///
-    /// Disabled when:
-    /// - No meaningful changes were made to an existing preset
-    /// - Or fewer than 3 tricks are selected
-    var saveDisabled: Bool {
-        (
-            initialPreset?.name == currentPreset.name &&
-            initialPreset?.trickIds == selectedTricks.map(\.id)
-        ) || selectedTricks.count < 3
-    }
-    
+    // MARK: Body
     var body: some View {
         VStack(spacing: 10) {
-            /// Preset name input field.
+            // Preset name input
             HStack {
                 Text("Name: ")
                 TextField(text: $currentPreset.name, prompt: Text("Preset Name")) { }
                     .autocorrectionDisabled()
                     .padding(.horizontal)
                     .padding(.vertical, 6)
+                    .focused($textFieldFocused)
                     .background(
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(Color(.systemGray4))
@@ -87,7 +97,7 @@ struct CreateSpinnerPresetView: View {
             
             tabSelector
             
-            /// List of available tricks for the selected stance.
+            // List of available tricks for the selected stance.
             ScrollView {
                 VStack(spacing: 0) {
                     ForEach(currentTricks) { trick in
@@ -113,41 +123,70 @@ struct CreateSpinnerPresetView: View {
         }
         .customNavHeader(title: "Create Preset")
         .padding(.horizontal)
-        /// Initializes selected tricks when editing an existing preset.
+        .contentShape(Rectangle())
+        .onTapGesture { textFieldFocused = false }
         .onAppear {
             selectedTricks = currentPreset.trickIds.compactMap { id in
                 trickListStore.trickList.first { $0.id == id }
             }
         }
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("Clear") {
-                    selectedTricks = []
-                }
-                .disabled(selectedTricks.isEmpty)
+            toolbar
+        }
+    }
+    
+    // MARK: Functions
+    
+    /// Handles switching stance tabs with directional animation.
+    ///
+    /// - Parameter newStance: The newly selected stance.
+    private func selectStanceTab(newStance: TrickStance) {
+        guard newStance != selectedStance else { return }
+        
+        if newStance.index > selectedStance.index {
+            transitionDirection = (.trailing, .leading)
+        } else {
+            transitionDirection = (.leading, .trailing)
+        }
+        withAnimation(.snappy(duration: 0.25, extraBounce: 0)) {
+            self.selectedStance = newStance
+        }
+    }
+    
+    // MARK: Subviews
+    
+    @ToolbarContentBuilder
+    private var toolbar: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            Button("Clear") {
+                selectedTricks = []
             }
-            
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
+            .disabled(selectedTricks.isEmpty)
+        }
+        
+        ToolbarItem(placement: .topBarTrailing) {
+            Button {
+                Task {
                     currentPreset.trickIds = selectedTricks.map(\.id)
                     
                     if initialPreset == nil {
-                        trickSpinnerPresetsVM.addPreset(currentPreset)
+                        await trickSpinnerPresetsVM.addPreset(currentPreset)
+                        
                     } else {
-                        trickSpinnerPresetsVM.updatePreset(currentPreset)
+                        await trickSpinnerPresetsVM.updatePreset(currentPreset)
                     }
                     dismiss()
-                } label: {
-                    Text("Save")
                 }
-                .tint(Color.button)
-                .disabled(saveDisabled)
+            } label: {
+                Text("Save")
             }
+            .tint(Color.button)
+            .disabled(saveDisabled)
         }
     }
     
     /// Displays currently selected tricks included in the preset.
-    var selectedTrickList: some View {
+    private var selectedTrickList: some View {
         VStack(alignment: .leading) {
             HStack {
                 Text("Selected Tricks:")
@@ -159,16 +198,10 @@ struct CreateSpinnerPresetView: View {
             
             Group {
                 if selectedTricks.isEmpty {
-                    ContentUnavailableView {
-                        VStack {
-                            Text("No Tricks")
-                                .font(.title)
-                                .fontWeight(.bold)
-                            Text("Select to create a preset.")
-                                .font(.callout)
-                                .foregroundStyle(.gray)
-                        }
-                    }
+                    SPContentUnavailableView(
+                        title: "No Tricks",
+                        description: "Select to create a preset."
+                    )
                     
                 } else {
                     ScrollViewReader { proxy in
@@ -203,12 +236,10 @@ struct CreateSpinnerPresetView: View {
     /// Single trick row used for selection/deselection.
     ///
     /// - Parameter trick: The trick being displayed.
-    func trickCell(_ trick: Trick) -> some View {
+    private func trickCell(_ trick: Trick) -> some View {
         HStack {
-            Text(trick.displayName(
-                useAbbreviation: userStore.trickSettings?.useTrickAbbreviations == true)
-            )
-            .fontWeight(selectedTricks.contains(trick) ? .semibold : .regular)
+            Text(userStore.getTrickName(trick))
+                .fontWeight(selectedTricks.contains(trick) ? .semibold : .regular)
             
             Spacer()
             
@@ -236,7 +267,7 @@ struct CreateSpinnerPresetView: View {
     }
     
     /// Stance selection tab bar.
-    var tabSelector: some View {
+    private var tabSelector: some View {
         HStack(spacing: 0) {
             ForEach(TrickStance.allCases) { stance in
                 let isCurrentTab = selectedStance == stance
@@ -266,22 +297,6 @@ struct CreateSpinnerPresetView: View {
                         selectStanceTab(newStance: stance)
                     }
             }
-        }
-    }
-    
-    /// Handles switching stance tabs with directional animation.
-    ///
-    /// - Parameter newStance: The newly selected stance.
-    func selectStanceTab(newStance: TrickStance) {
-        guard newStance != selectedStance else { return }
-        
-        if newStance.index > selectedStance.index {
-            transitionDirection = (.trailing, .leading)
-        } else {
-            transitionDirection = (.leading, .trailing)
-        }
-        withAnimation(.snappy(duration: 0.25, extraBounce: 0)) {
-            self.selectedStance = newStance
         }
     }
 }

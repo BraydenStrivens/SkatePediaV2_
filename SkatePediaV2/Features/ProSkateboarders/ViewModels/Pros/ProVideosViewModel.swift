@@ -7,49 +7,76 @@
 
 import Foundation
 
-/// View model for the list of professional skater videos for a specific pro.
+/// View model responsible for managing professional skater videos
+/// for a specific pro.
 ///
-/// Manages fetching videos from cache or the backend, tracks the request state,
-/// and provides filtering by trick stance.
+/// `ProVideosListViewModel` coordinates:
+/// - Fetching videos for a professional skater
+/// - Cache-aware loading through `ProsStore`
+/// - Network fallback through `ProsService`
+/// - Request state management for SwiftUI presentation
+///
+/// The actual video data is stored within `ProsStore`, while this view model
+/// is responsible only for request orchestration and UI loading state.
+@MainActor
 final class ProVideosListViewModel: ObservableObject {
-    @Published var videos: [ProSkaterVideo] = []
+    
+    // MARK: Published State
     @Published var requestState: RequestState = .idle
     
-    /// Fetches videos for a given professional skater.
+    // MARK: Dependencies
+    private let appEnv: AppEnvironment
+    
+    // MARK: Init
+    init(
+        appEnv: AppEnvironment
+    ) {
+        self.appEnv = appEnv
+    }
+    
+    // MARK: Public Actions
+    
+    /// Fetches professional skater videos for the provided professional skater.
     ///
-    /// - Parameter proId: The ID of the pro whose videos to fetch.
+    /// This method:
+    /// - Prevents duplicate requests using `requestState`
+    /// - Checks cached videos before performing a network request
+    /// - Fetches videos from `ProsService` when needed
+    /// - Stores fetched videos in `ProsStore`
     ///
-    /// If videos are available in cache, they are used directly. Otherwise,
-    /// a network request is made to retrieve the videos.
-    @MainActor
-    func fetchProVideos(proId: String) async {
-        guard requestState == .idle else { return }
+    /// - Parameter proId: The unique identifier of the professional skater.
+    ///
+    /// - Note:
+    /// This view model intentionally does not locally store video data.
+    /// Video collections are owned and managed by `ProsStore`.
+    func fetchProVideosIfNeeded(
+        proId: String
+    ) async {
         
-        // Get videos from cache if already fetched
-        let proVideos = ProManager.shared.getProVideosFromCache(proId: proId)
-        if !proVideos.isEmpty {
-            self.videos = proVideos
+        guard requestState == .idle else { return }
+
+        guard !appEnv.prosStore.videosAlreadyCached(forPro: proId) else {
             requestState = .success
             return
         }
         
         do {
             requestState = .loading
+
+            let proVideos = try await appEnv.prosService
+                .fetchProVideosByPro(proId)
             
-            let proVideos = try await ProManager.shared.fetchProVideos(proId: proId)
-            self.videos = proVideos
-                        
+            appEnv.prosStore.addVideos(
+                forPro: proId,
+                videos: proVideos
+            )
+            
             requestState = .success
+
         } catch {
-            requestState = .failure(mapToSPError(error: error))
+            requestState = .failure(
+                mapToSPError(error: error)
+            )
         }
-    }
-    
-    /// Returns the list of videos filtered by a specific trick stance.
-    ///
-    /// - Parameter stance: The stance to filter videos by.
-    /// - Returns: An array of `ProSkaterVideo` objects matching the stance.
-    func proVideos(for stance: TrickStance) -> [ProSkaterVideo] {
-        self.videos.filter { $0.trickData.stance == stance }
     }
 }

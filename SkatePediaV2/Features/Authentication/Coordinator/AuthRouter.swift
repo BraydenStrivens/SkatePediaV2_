@@ -12,7 +12,11 @@ import SwiftUI
 ///
 /// Provides functions to push, pop, and reset routes within the auth navigation stack.
 final class AuthRouter: ObservableObject {
+    
+    // MARK: Published State
     @Published var path = NavigationPath()
+    
+    // MARK: Published Actions
     
     /// Adds a route to the authentication navigation path.
     ///

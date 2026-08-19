@@ -16,12 +16,14 @@ import SwiftUI
 ///   - userId: The ID of the user whose tricks are being fetched.
 ///   - stance: The stance used to filter the trick list.
 struct TrickListPreviewView: View {
+    @EnvironmentObject private var userStore: UserStore
+    
     @Environment(\.colorScheme) private var colorScheme
     @StateObject var viewModel = TrickListPreviewViewModel()
     
     private let highestRatings: [Int?] = [3, 2, 1, 0, nil]
     
-    let userId: String
+    let user: User
     let stance: TrickStance
     
     var body: some View {
@@ -50,15 +52,19 @@ struct TrickListPreviewView: View {
                 .scrollIndicators(.hidden)
 
             case .failure(let sPError):
-                ContentUnavailableView(
-                    "Error Fetching Tricks",
-                    systemImage: "exclamationmark.triangle",
-                    description: Text(sPError.errorDescription ?? "Something went wrong...")
+                SPContentUnavailableView(
+                    title: "Error Fetching Tricks",
+                    description: sPError.errorDescription,
+                    type: .blockingError
                 )
             }
         }
+        .customNavHeader(
+            title: "\(user.username)'s \(stance.camalCase) Tricks",
+            showDivider: true
+        )
         .task {
-            await viewModel.fetchTrickList(userId: userId, stance: stance)
+            await viewModel.fetchTrickList(userId: user.userId, stance: stance)
         }
     }
     
@@ -84,7 +90,7 @@ struct TrickListPreviewView: View {
             VStack(spacing: 10) {
                 if !sortedList.isEmpty {
                     ForEach(sortedList) { trick in
-                        Text(trick.name)
+                        Text(userStore.getTrickName(trick))
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                         if trick != sortedList.last! {

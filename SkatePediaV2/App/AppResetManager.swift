@@ -19,9 +19,9 @@ import Security
 /// Useful for logging out a user or restoring the app to a clean state.
 struct AppResetManager {
     
-    /// Performs a full reset of the app’s local data.
-    static func reset() {
-        clearUserDefaults()
+    /// Performs a full reset of the app’s local data. Called on logout and account deletion. Only clears UserDefaults on account deletion. 
+    static func reset(accountDeleted: Bool = false) {
+        if accountDeleted { clearUserDefaults() }
         clearKeychain()
         clearURLCache()
         clearDocumentsDirectory()

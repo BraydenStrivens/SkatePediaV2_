@@ -196,8 +196,8 @@ struct FilterPostsCard: View {
             VStack(spacing: 0) {
                 ForEach(trickList) { trick in
                     HStack {
-                        Text(trick.displayName(useAbbreviation: userStore.trickSettings?.useTrickAbbreviations == true))
-                        
+                        Text(userStore.getTrickName(trick))
+
                         Spacer()
                         
                         if let selectedTrick = currentFilter.trick {

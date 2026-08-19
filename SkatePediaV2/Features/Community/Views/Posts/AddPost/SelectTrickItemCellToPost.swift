@@ -34,7 +34,7 @@ struct SelectTrickItemCellToPost: View {
     
     var body: some View {
         GeometryReader { proxy in
-            let size = CustomVideoPlayer.getNewAspectRatio(
+            let videoSize = CustomVideoPlayer.getNewAspectRatio(
                 baseWidth: trickItem.videoData.width,
                 baseHeight: trickItem.videoData.height,
                 maxWidth: proxy.size.width,
@@ -43,18 +43,25 @@ struct SelectTrickItemCellToPost: View {
             
             ZStack(alignment: .top) {
                 SPVideoPlayer(
-                    userPlayer: viewModel.player,
+                    url: URL(string: trickItem.videoData.videoUrl)!,
                     frameSize: proxy.size,
-                    videoSize: size,
-                    showButtons: true
+                    videoSize: videoSize
                 )
-                .onDisappear {
-                    viewModel.player.pause()
-                }
                     
                 trickItemCellHeader
+                    .highPriorityGesture(
+                        TapGesture().onEnded {
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                if trickItem != selectItemVM.selectedTrickItem {
+                                    selectItemVM.selectedTrickItem = trickItem
+                                } else {
+                                    selectItemVM.selectedTrickItem = nil
+                                }
+                            }
+                        }
+                    )
             }
-            .frame(width: size.width, height: size.height)
+            .frame(width: videoSize.width, height: videoSize.height)
             .position(
                 x: proxy.size.width / 2,
                 y: proxy.size.height / 2
@@ -89,6 +96,7 @@ struct SelectTrickItemCellToPost: View {
             customStarRating(rating: trickItem.progress)
         }
         .padding(16)
+        .contentShape(Rectangle())
     }
     
     func customStarRating(rating: Int) -> some View {

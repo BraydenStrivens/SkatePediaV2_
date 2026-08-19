@@ -26,71 +26,41 @@ import SwiftUI
 ///   - stance: The stance used to filter the trick list.
 ///   - resetHidden: Async action used to reset hidden tricks for the stance.
 struct TrickListViewByStance: View {
+    
+    // MARK: Environment
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var router: TrickListRouter
-    @EnvironmentObject var userStore: UserStore
-    @EnvironmentObject var trickListStore: TrickListStore
-    @EnvironmentObject var errorStore: ErrorStore
+    @EnvironmentObject private var appEnv: AppEnvironment
+    @EnvironmentObject private var trickListStore: TrickListStore
+    @EnvironmentObject private var errorStore: ErrorStore
     
-    @Environment(\.colorScheme) var colorScheme
-    
+    // MARK: State
     @State private var showAddTrickView = false
     
+    // MARK: Parameters
     let userId: String
     let stance: TrickStance
-    /// Action used to restore hidden tricks for this stance.
-    let resetHidden: () async -> Void
+    let resetHidden: () async -> Void /// Action used to restore hidden tricks for this stance.
     
-    var groupedTricks: [TrickDifficulty : [Trick]] {
+    // MARK: Derived Properties
+    private var groupedTricks: [TrickDifficulty : [Trick]] {
         trickListStore.groupedTricks(stance: stance)
     }
     
+    // MARK: Body
     var body: some View {
         Group {
             if groupedTricks.isEmpty {
-                ContentUnavailableView(
-                    "No Tricks Found",
-                    systemImage: "exclamationmark.triangle",
-                    description: Text("Failed to fetch \(stance.camalCase) tricks...")
+                SPContentUnavailableView(
+                    title: "No Tricks Found",
+                    description: "Failed to fetch \(stance.camalCase) tricks.",
+                    type: .emptyList
                 )
                 
             } else {
                 ScrollView {
                     VStack(spacing: 20) {
-                        VStack(spacing: 12) {
-                            /// Progress summary for the selected stance.
-                            TrickListInfoView(stance: stance)
-                            
-                            HStack(alignment: .center) {
-                                /// Options menu for list management actions.
-                                Menu {
-                                    Button("Reset Hidden Tricks") {
-                                        Task {
-                                            await resetHidden()
-                                        }
-                                    }
-                                } label: {
-                                    Image(systemName: "ellipsis")
-                                        .tint(.primary)
-                                        .padding(.horizontal)
-                                }
-                                
-                                Spacer()
-                                
-                                /// Button to present the add trick sheet.
-                                Button {
-                                    withAnimation(.smooth) {
-                                        showAddTrickView.toggle()
-                                    }
-                                } label: {
-                                    Text("Add Trick")
-                                        .foregroundColor(.primary)
-                                    Image(systemName: "plus.square")
-                                        .tint(Color("buttonColor"))
-                                }
-                                .padding(.horizontal)
-                            }
-                        }
-                        .padding(.top, 10)
+                        stanceHeader
                         
                         /// Displays tricks grouped by difficulty level.
                         ForEach(TrickDifficulty.allCases) { difficulty in
@@ -115,9 +85,51 @@ struct TrickListViewByStance: View {
                 userId: userId,
                 stance: stance,
                 trickList: groupedTricks.flatMap(\.value),
-                errorStore: errorStore,
-                trickListStore: trickListStore
+                appEnv: appEnv,
+                errorStore: errorStore
             )
         }
+    }
+    
+    // MARK: Subviews
+    
+    /// Displays the user's progress for tricks of a specific stance, a button to reset hidden tricks
+    /// for the stance, and a button to add a new trick for the stance.
+    private var stanceHeader: some View {
+        VStack(spacing: 12) {
+            /// Progress summary for the selected stance.
+            TrickListInfoView(stance: stance)
+            
+            HStack(alignment: .center) {
+                /// Options menu for list management actions.
+                Menu {
+                    Button("Reset Hidden Tricks") {
+                        Task {
+                            await resetHidden()
+                        }
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .tint(.primary)
+                        .padding(.horizontal)
+                }
+                
+                Spacer()
+                
+                /// Button to present the add trick sheet.
+                Button {
+                    withAnimation(.smooth) {
+                        showAddTrickView.toggle()
+                    }
+                } label: {
+                    Text("Add Trick")
+                        .foregroundColor(.primary)
+                    Image(systemName: "plus.square")
+                        .tint(Color("buttonColor"))
+                }
+                .padding(.horizontal)
+            }
+        }
+        .padding(.top, 10)
     }
 }

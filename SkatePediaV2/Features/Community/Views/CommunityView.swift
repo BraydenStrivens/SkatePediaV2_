@@ -8,7 +8,7 @@
 import SwiftUI
 import Firebase
 
-/// A view containing posts uploaded by users, a filter for the posts, and navigation links to 'Account Search', 'Notifications', 'Direct Messages', and
+/// A view containing posts uploaded by users, a filter for the posts, and navigation links to 'Account Search', 'Notifications', and
 /// 'Upload Posts' views. Ensures the current user's data has been fetched before displaying the view. Refetches more posts when the user
 /// scrolls to the last fetched post.
 struct CommunityView: View {
@@ -31,9 +31,10 @@ struct CommunityView: View {
                 content(user)
 
             } else {
-                ContentUnavailableView {
-                    Text("Failed to fetch current user...")
-                }
+                SPContentUnavailableView(
+                    title: "Failed to Fetch Current User",
+                    type: .blockingError
+                )
             }
         }
         .customNavHeader(title: "")
@@ -71,10 +72,10 @@ struct CommunityView: View {
             }
             
         case .failure(let sPError):
-            ContentUnavailableView(
-                "Error Fetching Posts",
-                systemImage: "exclamationmark.triangle",
-                description: Text(sPError.errorDescription ?? "Something went wrong...")
+            SPContentUnavailableView(
+                title: "Error Fetching Posts",
+                description: sPError.errorDescription,
+                type: .blockingError
             )
         }
     }
@@ -109,23 +110,6 @@ struct CommunityView: View {
                     }
                     .foregroundColor(.primary)
             }
-            
-            // Direct messages view nav link
-//            NavigationLink(
-//                destination: UserChatsViewContainer(
-//                    user: user,
-//                    errorStore: errorStore
-//                )
-//                .customNavHeader(
-//                    title: "User Chats",
-//                    showDivider: true
-//                )
-//            ) {
-//                Image(systemName: "bubble")
-//                    .resizable()
-//                    .frame(width: 22, height: 22)
-//                    .foregroundColor(.primary)
-//            }
             
             Spacer()
             
@@ -172,10 +156,10 @@ struct CommunityView: View {
     @ViewBuilder
     func postsSection(_ user: User) -> some View {
         if viewModel.posts.isEmpty {
-            ContentUnavailableView(
-                "No Posts",
-                systemImage: "list.bullet.rectangle.portrait",
-                description: Text("Upload a trick item and post it to get feedback from other users.")
+            SPContentUnavailableView(
+                title: "No Posts",
+                description: "Upload a trick item and post it to get feedback from other users.",
+                type: .emptyList
             )
             
         } else {

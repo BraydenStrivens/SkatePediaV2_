@@ -18,12 +18,16 @@ import SwiftUI
 /// - Important:
 ///   Requires `UserStore` to provide `trickListData`.
 struct TrickListInfoView: View {
-    @EnvironmentObject var userStore: UserStore
     
-    /// Optional stance used to filter progress data.
-    /// If `nil`, overall progress is displayed.
+    // MARK: Environment
+    @EnvironmentObject private var userStore: UserStore
+    
+    // MARK: Parameters
+    
+    /// Optional stance used to filter progress data. If `nil`, overall progress is displayed.
     let stance: TrickStance?
     
+    // MARK: Body
     var body: some View {
         if let trickListData = userStore.trickListData {
             switch(stance) {

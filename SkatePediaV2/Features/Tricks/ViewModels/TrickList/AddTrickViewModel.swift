@@ -14,39 +14,39 @@ import FirebaseFirestore
 /// request format, and coordinates uploading to the backend and local store.
 ///
 /// - Parameters:
+///   - appEnv: Class containing global stores and services.
 ///   - errorStore: Used to present errors to the user.
-///   - trickListStore: Store responsible for managing local trick list state.
-///   - trickListService: Service responsible for uploading trick data.
 @MainActor
 final class AddTrickViewModel: ObservableObject {
+    
+    // MARK: Published State
+    @Published var isUploading: Bool = false
+    
+    // MARK: Input State
     @Published var trickName: String = ""
     @Published var abbreviatedName: String = ""
     @Published var difficulty: TrickDifficulty = .beginner
     @Published var learnFirstTricks: [Trick] = []
     
-    @Published var isUploading: Bool = false
-    
+    // MARK: Dependencies
+    private let appEnv: AppEnvironment
     private let errorStore: ErrorStore
-    private let trickListStore: TrickListStore
-    private let trickListService: TrickListService
     
-    init(
-        errorStore: ErrorStore,
-        trickListStore: TrickListStore,
-        trickListService: TrickListService = .shared
-    ) {
-        self.errorStore = errorStore
-        self.trickListStore = trickListStore
-        self.trickListService = trickListService
-    }
-    
+    // MARK: Derived Properties
     var addButtonIsDisabled: Bool {
         trickName.isEmpty || learnFirstTricks.isEmpty
     }
     
-    var addButtonEnabled: Bool {
-        !trickName.isEmpty && !learnFirstTricks.isEmpty
+    // MARK: Init
+    init(
+        appEnv: AppEnvironment,
+        errorStore: ErrorStore
+    ) {
+        self.appEnv = appEnv
+        self.errorStore = errorStore
     }
+    
+    // MARK: Private Helpers
     
     /// Validates user input before uploading a trick.
     ///
@@ -66,6 +66,8 @@ final class AddTrickViewModel: ObservableObject {
         }
     }
     
+    // MARK: Public Actions
+    
     /// Uploads a new trick to the backend and updates the local store.
     ///
     /// - Parameters:
@@ -73,27 +75,29 @@ final class AddTrickViewModel: ObservableObject {
     ///   - trickList: The current list of tricks (used for context if needed).
     ///
     /// - Returns: `true` if upload succeeds, otherwise `false`.
-    func uploadTrick(stance: TrickStance, trickList: [Trick]) async -> Bool {
+    func uploadTrick(
+        stance: TrickStance,
+        trickList: [Trick]
+    ) async -> Bool {
         isUploading = true
         defer { isUploading = false }
         
         do {
             try validate()
             
-            let request = UploadTrickRequest(
+            let trickId = FirebaseHelpers.generateFirebaseId()
+            let newTrick = Trick(
+                id: trickId,
                 name: trickName,
-                abbreviation: abbreviatedName,
                 stance: stance,
+                abbreviation: abbreviatedName,
                 learnFirst: convertArrayToString(array: learnFirstTricks, useAbbreviations: false),
                 learnFirstAbbreviation: convertArrayToString(array: learnFirstTricks, useAbbreviations: true),
                 difficulty: difficulty
             )
-            let id = FirebaseHelpers.generateFirebaseId()
-            
-            let newTrick = Trick(id: id, request: request)
-            
-            try await trickListService.uploadTrick(newTrick)
-            trickListStore.uploadTrickLocally(newTrick: newTrick)
+                        
+            try await appEnv.trickListService.uploadTrick(newTrick)
+            appEnv.trickListStore.uploadTrickLocally(newTrick: newTrick)
             
             return true
             

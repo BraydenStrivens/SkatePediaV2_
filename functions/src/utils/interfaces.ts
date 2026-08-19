@@ -41,6 +41,76 @@ export interface ProfilePhotoData {
     last_updated: number;
 }
 
+export type RelationshipStatus = "accepted" | "pending" | "declined";
+
+export interface Relationship {
+    relationship_id: string;
+    user_ids: Array<string>;
+    initiated_by_uid: string;
+    last_status_changed_by_uid?: string;
+    status: RelationshipStatus;
+    date_created: number;
+    date_updated: number;
+    user_data_snapshots: {
+        [uid: string]: UserData;
+    };
+}
+
+export type ReportType = "post" | "comment" | "profile";
+
+export type ReportReason =
+    | "spam"
+    | "harassment"
+    | "threats"
+    | "explicit_sexual_content"
+    | "nudity"
+    | "graphic_violence"
+    | "illegal_content"
+    | "other";
+
+export type ReportStatus =
+    | "pending"
+    | "reviewed"
+    | "actioned"
+    | "dismissed";
+
+export type ModerationAction =
+    | "ignored"
+    | "warning_issued"
+    | "item_deleted"
+    | "user_banned";
+
+export interface ReportedUserData {
+    user_id: string;
+    username: string;
+    bio: string;
+    photo_url?: string;
+}
+
+export interface ReportedPostData {
+    post_id: string;
+    content: string;
+    video_url: string;
+}
+
+export interface Report {
+    report_id: string;
+    reporter_uid: string;
+    reportee_uid: string;
+    report_type: ReportType;
+    report_reason: ReportReason;
+    report_status: ReportStatus;
+    date_created: number;
+
+    additional_context?: string;
+    reported_user_data?: ReportedUserData;
+    reported_post_data?: ReportedPostData;
+    reported_comment_data?: CommentData;
+
+    date_reviewed?: number;
+    moderation_action?: ModerationAction;
+}
+
 /* 2. VIDEO DATE ======================================================= */
 
 export interface VideoData {

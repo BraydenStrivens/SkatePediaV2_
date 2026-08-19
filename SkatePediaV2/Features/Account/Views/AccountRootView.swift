@@ -16,6 +16,8 @@ import SwiftUI
 ///   - user: The current user whose account is being displayed.
 ///   - errorStore: Used to present errors across account-related views.
 struct AccountRootView: View {
+    @EnvironmentObject private var appEnv: AppEnvironment
+    
     @StateObject private var router: AccountRouter = AccountRouter()
     @StateObject private var userPostsVM: UserPostPreviewViewModel
     
@@ -42,9 +44,23 @@ struct AccountRootView: View {
             CurrentUserAccountView(postsVM: userPostsVM, user: user)
                 .navigationDestination(for: AccountRoute.self) { route in
                     switch route {
-                    case .friendsList:
-                        FriendsListBuilder.build(
-                            userId: user.userId,
+                    case .userAccount(let currentUser, let otherUser):
+                        UserAccountBuilder.build(
+                            currentUser: currentUser,
+                            otherUser: otherUser,
+                            appEnv: appEnv,
+                            errorStore: errorStore
+                        )
+                    case .relationships:
+                        RelationshipsBuilder.build(
+                            user: user,
+                            appEnv: appEnv,
+                            errorStore: errorStore
+                        )
+                    case .blockedUsers(let currentUser):
+                        BlockedUsersBuilder.build(
+                            user: currentUser,
+                            appEnv: appEnv,
                             errorStore: errorStore
                         )
                         
@@ -52,11 +68,7 @@ struct AccountRootView: View {
                         UserPostsView(viewModel: userPostsVM)
                         
                     case .userTricks(let stance):
-                        TrickListPreviewView(userId: user.userId, stance: stance)
-                            .customNavHeader(
-                                title: "\(user.username)'s \(stance.camalCase) Tricks",
-                                showDivider: true
-                            )
+                        TrickListPreviewView(user: user, stance: stance)
                         
                     case .accountOptions:
                         AccountOptionsBuilder.build(

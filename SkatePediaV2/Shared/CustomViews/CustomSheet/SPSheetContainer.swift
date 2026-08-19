@@ -9,6 +9,7 @@ import SwiftUI
 
 struct SPSheetContainer<Content: View>: View {
     @Environment(\.colorScheme) private var colorScheme
+    @StateObject private var keyboardObserver = KeyboardObserver()
     
     let id: UUID
     let detent: SheetDetent
@@ -37,7 +38,7 @@ struct SPSheetContainer<Content: View>: View {
                 .gesture(dragGesture)
                 .transition(.move(edge: .bottom))
         }
-//        .ignoresSafeArea(edges: .bottom)
+        .ignoresSafeArea(.container, edges: .bottom)
         .onAppear {
             registerDismiss {
                 dismiss()
@@ -60,10 +61,9 @@ struct SPSheetContainer<Content: View>: View {
                 .frame(maxHeight: .infinity)
                 .environment(\.spSheetDismiss, dismiss)
         }
-//        .frame(height: sheetHeight)
         .frame(maxHeight: sheetHeight)
-        .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 24).protruded)
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 0).protruded)
+        .clipShape(TopRoundedShape(radius: 24))
         .shadow(radius: 20)
     }
     

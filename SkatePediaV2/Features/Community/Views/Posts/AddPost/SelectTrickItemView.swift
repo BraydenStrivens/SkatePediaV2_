@@ -17,6 +17,7 @@ import AVKit
 ///
 struct SelectTrickItemView: View {
     @EnvironmentObject private var router: CommunityRouter
+    @EnvironmentObject private var userStore: UserStore
     
     @Environment(\.dismiss) var dismiss
     @StateObject var viewModel = SelectTrickItemViewModel()
@@ -32,10 +33,10 @@ struct SelectTrickItemView: View {
                 
             case .success:
                 if viewModel.trickItems.isEmpty {
-                    ContentUnavailableView(
-                        "No Trick Items",
-                        systemImage: "exclamationmark.triangle",
-                        description: Text("No trick items have been uploaded for \(trick.name)")
+                    SPContentUnavailableView(
+                        title: "No Trick Items",
+                        description: "No trick items have been uploaded for \(userStore.getTrickName(trick))",
+                        type: .emptyList
                     )
                     
                 } else {
@@ -46,11 +47,11 @@ struct SelectTrickItemView: View {
                         }
                 }
                 
-            case .failure(let firestoreError):
-                ContentUnavailableView(
-                    "Error Fetching Trick Items",
-                    systemImage: "exclamationmark.triangle",
-                    description: Text(firestoreError.errorDescription ?? "")
+            case .failure(let sPError):
+                SPContentUnavailableView(
+                    title: "Error Fetching Trick Items",
+                    description: sPError.errorDescription,
+                    type: .blockingError
                 )
             }
         }
@@ -64,14 +65,8 @@ struct SelectTrickItemView: View {
                     Text("Select a Trick Item")
                         .fontWeight(.semibold)
                     
-                    Group {
-                        if user.settings.trickSettings.useTrickAbbreviations {
-                            Text(trick.abbreviation)
-                        } else {
-                            Text(trick.name)
-                        }
-                    }
-                    .font(.caption)
+                    Text(userStore.getTrickName(trick))
+                        .font(.caption)
                 }
             }
         }
@@ -96,15 +91,6 @@ struct SelectTrickItemView: View {
                             span: 1,
                             spacing: 0
                         )
-                        .onTapGesture {
-                            withAnimation(.easeInOut(duration: 0.25)) {
-                                if trickItem != viewModel.selectedTrickItem {
-                                    viewModel.selectedTrickItem = trickItem
-                                } else {
-                                    viewModel.selectedTrickItem = nil
-                                }
-                            }
-                        }
                 }
             }
         }

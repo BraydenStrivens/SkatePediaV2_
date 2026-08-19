@@ -8,11 +8,13 @@
 import Foundation
 
 enum CommunityRoute: Hashable {
+    // User account flow
     case accountSearch(currentUser: User)
     case userAccount(currentUser: User, otherUser: User)
+    case userTrickList(user: User, stance: TrickStance)
+    case userPosts(user: User)
+    
     case notifications(currentUser: User)
-    case userChats
-    case userChat
     
     // Upload post flow
     case selectTrick(user: User)

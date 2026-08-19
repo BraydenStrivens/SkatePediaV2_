@@ -25,46 +25,57 @@ import AVKit
 ///   - trick: The associated trick.
 ///   - viewModel: View model responsible for managing state and actions.
 struct TrickItemView: View {
-    @EnvironmentObject private var router: TrickListRouter
-    @EnvironmentObject var userStore: UserStore
-    @EnvironmentObject var postStore: PostStore
-    @EnvironmentObject private var trickItemStore: TrickItemStore
-
-    @Environment(\.colorScheme) var colorScheme
+    
+    // MARK: Environment
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
+    
+    @EnvironmentObject private var router: TrickListRouter
+    @EnvironmentObject private var userStore: UserStore
+    @EnvironmentObject private var trickItemStore: TrickItemStore
+    @EnvironmentObject private var postStore: PostStore
+    @EnvironmentObject private var errorStore: ErrorStore
 
+    // MARK: State
     @FocusState private var textFieldFocused: Bool
     @State private var edit: Bool = false
     @State private var showComments: Bool = false
 
+    // MARK: Parameters
     @StateObject var viewModel: TrickItemViewModel
     let userId: String
     let trickItem: TrickItem
     let trick: Trick
+    
+    // MARK: Derived/Private Properties
+    
+    /// Stores the live trick item from the `TrickItemStore` so that updates are propageted to the view.
+    private var liveTrickItem: TrickItem {
+        trickItemStore.trickItem(
+            trickId: trick.id,
+            trickItemId: trickItem.id
+        )
+        ?? trickItem
+    }
         
+    // MARK: Init
     init(
         userId: String,
         trickItem: TrickItem,
         trick: Trick,
         viewModel: TrickItemViewModel
     ) {
-        print("TRICK ITEM VIEW")
-        print(trickItem)
         self.userId = userId
         self.trickItem = trickItem
         self.trick = trick
         _viewModel = StateObject(wrappedValue: viewModel)
     }
-        
-    /// Maximum frame size for rendering the video player.
-    private let videoFrameSize = CGSize(
-        width: UIScreen.screenWidth * 0.85, height: UIScreen.screenHeight * 0.7
-    )
     
+    // MARK: Body
     var body: some View {
-        Group {
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 12) {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 12) {
+                Group {
                     // Header switches between view and edit modes
                     Group {
                         if edit {
@@ -81,39 +92,100 @@ struct TrickItemView: View {
                     
                     notesSection
                     
-                    Spacer()
-                    
-                    videoPlayerSection
-                    
+                    progressSection
                 }
-                .padding(.vertical, 10)
-                .onTapGesture {
-                    // Dismiss keyboard when tapping outside
-                    textFieldFocused = false
-                }
+                .padding(.horizontal, 8)
+                
+                videoPlayerSection
+            }
+            .padding(.vertical, 8)
+        }
+        .contentShape(Rectangle())
+        .scrollDismissesKeyboard(.immediately)
+        .onTapGesture { textFieldFocused = false }
+        .customNavHeader(title: "\(userStore.getTrickName(trick)) Trick Item")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                postOrCommentsButton
             }
         }
-        .customNavHeader(
-            title: "\(trick.displayName(useAbbreviation: userStore.trickSettings?.useTrickAbbreviations == true)) Trick Item",
-            showDivider: true
-        )
-        .onChange(of: trickItem) { _, newValue in
-            viewModel.syncUpdates(newTrickItem: newValue)
-            print("NEW TRICK ITEM: ", newValue)
-        }
-        /// Fetches associated post for trick item if posted
         .task {
-            await viewModel.fetchTrickItemPost(trickItem: trickItem)
-        }
-        .onDisappear {
-            viewModel.videoPlayer.pause()
+            await viewModel.fetchTrickItemPost(trickItem: liveTrickItem)
         }
         .spSheet(isPresented: $showComments) {
             if
                 let post = postStore.post(postId: trickItem.id),
                 let user = userStore.user
             {
-                CommentsViewContainer(user: user, post: post)
+                CommentsBuilder.build(
+                    user: user,
+                    post: post,
+                    postStore: postStore,
+                    errorStore: errorStore
+                )
+            }
+        }
+    }
+    
+    // MARK: Functions
+    
+    /// Toggles edit mode with animation.
+    ///
+    /// When entering edit mode, initializes editable state in the view model.
+    ///
+    /// - Important:
+    ///   Ensures view model state is prepared before editing begins.
+    private func toggleEdit() {
+        if !edit {
+            viewModel.editToggled(currentTrickItem: liveTrickItem)
+        }
+        withAnimation(.easeInOut(duration: 0.2)) {
+            self.edit.toggle()
+        }
+    }
+    
+    // MARK: Subviews
+    
+    /// Displays a button to open a trick item's post's comments if the item has been posted, otherwise displays
+    /// a link to upload the trick item.
+    private var postOrCommentsButton: some View {
+        Group {
+            // Comments button (only shown if a post exists)
+            if liveTrickItem.postedAt != nil {
+                if let post = postStore.post(postId: trickItem.id) {
+                    Button {
+                        showComments.toggle()
+                    } label: {
+                        HStack {
+                            Text("\(post.commentCount)")
+                            
+                            Image(systemName: "message")
+                                .resizable()
+                                .scaledToFit()
+                        }
+                        .padding(5)
+                    }
+                }
+                
+            } else {
+                // Post button if not already posted
+                Button {
+                    guard let user = userStore.user else { return }
+                    
+                    router.push(
+                        .postTrickItem(
+                            user: user,
+                            trick: trick,
+                            trickItem: liveTrickItem
+                        )
+                    )
+                } label: {
+                    HStack(spacing: 2) {
+                        Text("Post")
+                        Image(systemName: "arrowtriangle.right.fill")
+                            .font(.caption)
+                    }
+                }
             }
         }
     }
@@ -122,43 +194,26 @@ struct TrickItemView: View {
     ///
     /// Provides actions for:
     /// - Comparing with a pro
-    /// - Viewing comments (if available)
     /// - Entering edit mode
-    var header: some View {
-        HStack(spacing: 20) {            
+    private var header: some View {
+        HStack(spacing: 20) {
             Button {
-                router.push(.compare(trickData: trickItem.trickData, trickItem: trickItem))
+                router.push(
+                    .compare(
+                        trickData: liveTrickItem.trickData,
+                        trickItem: liveTrickItem
+                    )
+                )
             } label: {
                 Text("Compare with Pro")
                     .font(.headline)
                     .foregroundStyle(.white)
                     .padding(.horizontal)
-                    .frame(height: 35)
+                    .frame(height: 30)
                     .background(SPBackgrounds(
                         colorScheme: colorScheme,
                         cornerRadius: 15
                     ).coloredProtruded(color: Color.button))
-            }
-            
-            // Comments button (only shown if a post exists)
-            if
-                trickItem.postedAt != nil,
-                let post = postStore.post(postId: trickItem.id)
-            {
-                Button {
-                    showComments.toggle()
-                } label: {
-                    HStack {
-                        Text("\(post.commentCount)")
-                        
-                        Image(systemName: "message")
-                            .resizable()
-                            .scaledToFit()
-                    }
-                    .padding(5)
-                }
-                .frame(width: 70, height: 35)
-                .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 15).protruded)
             }
             
             Spacer()
@@ -167,10 +222,9 @@ struct TrickItemView: View {
             Button("Edit") {
                 toggleEdit()
             }
-            .frame(width: 70, height: 35)
+            .frame(width: 70, height: 30)
             .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 15).protruded)
         }
-        .padding(.horizontal, 8)
     }
     
     /// Header displayed in edit mode.
@@ -179,15 +233,14 @@ struct TrickItemView: View {
     /// - Deleting the trick item
     /// - Saving updates
     /// - Cancelling edits
-    ///
-    /// - Important:
-    ///   Delete and save operations are asynchronous and reflect loading states.
-    var editHeader: some View {
+    private var editHeader: some View {
         HStack {
             // Delete trick item button
             Button {
                 Task {
-                    let success = await viewModel.deleteTrickItem(toDelete: trickItem)
+                    let success = await viewModel.deleteTrickItem(
+                        toDelete: liveTrickItem
+                    )
                     if success { dismiss() }
                 }
             } label: {
@@ -200,14 +253,17 @@ struct TrickItemView: View {
             }
             .font(.headline)
             .foregroundStyle(.white)
-            .frame(width: 35, height: 35)
+            .frame(width: 35, height: 30)
             .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 15)
                 .coloredProtruded(color: Color.red))
             
             Spacer()
             
             Button {
-                viewModel.updateTrickItem(userId: userId, currentTrickItem: trickItem)
+                viewModel.updateTrickItem(
+                    userId: userId,
+                    currentTrickItem: liveTrickItem
+                )
                 toggleEdit()
                 
             } label: {
@@ -219,17 +275,16 @@ struct TrickItemView: View {
             }
             .font(.headline)
             .foregroundStyle(.white)
-            .frame(width: 100, height: 35)
+            .frame(width: 85, height: 30)
             .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 15)
                 .coloredProtruded(color: Color.button))
             
             Button("Cancel") {
                 toggleEdit()
             }
-            .frame(width: 100, height: 35)
+            .frame(width: 85, height: 30)
             .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 15).protruded)
         }
-        .padding(.horizontal, 8)
     }
     
     /// Section displaying and editing notes for the trick item.
@@ -240,7 +295,7 @@ struct TrickItemView: View {
     ///
     /// In view mode:
     /// - Displays notes with dynamic line limits
-    var notesSection: some View {
+    private var notesSection: some View {
         VStack(alignment: .leading) {
             Text("Notes:")
                 .font(.caption)
@@ -248,7 +303,7 @@ struct TrickItemView: View {
             
             HStack(alignment: .top) {
                 if !edit {
-                    Text(viewModel.trickItem.notes)
+                    Text(liveTrickItem.notes)
                         .lineLimit(2...8)
                     
                     Spacer()
@@ -256,7 +311,7 @@ struct TrickItemView: View {
                 } else {
                     ZStack(alignment: .topLeading) {
                         if viewModel.newNotes.isEmpty {
-                            Text(trickItem.notes)
+                            Text(liveTrickItem.notes)
                                 .lineLimit(2...8)
                                 .opacity(0.5)
                         }
@@ -272,7 +327,28 @@ struct TrickItemView: View {
             .padding()
             .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 20).protruded)
         }
-        .padding(.horizontal, 8)
+    }
+    
+    private var progressSection: some View {
+        VStack(alignment: .leading) {
+            Text("Progress:")
+                .font(.caption)
+                .foregroundStyle(.gray)
+            
+            HStack(alignment: .top) {
+                if !edit {
+                    TrickProgressSelector(
+                        rating: .constant(liveTrickItem.progress),
+                        isInteractive: false
+                    )
+                    
+                } else {
+                    TrickProgressSelector(rating: $viewModel.newRating)
+                }
+            }
+            .padding()
+            .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 20).protruded)
+        }
     }
     
     /// Section displaying the video player and rating.
@@ -285,64 +361,39 @@ struct TrickItemView: View {
     ///
     /// - Important:
     ///   Video aspect ratio is dynamically calculated to fit within bounds.
-    var videoPlayerSection: some View {
+    private var videoPlayerSection: some View {
         VStack(alignment: .leading) {
             Text("Video:")
                 .font(.caption)
                 .foregroundStyle(.gray)
             
             VStack {
-                VStack(spacing: 8) {
-                    if edit {
-                        TrickItemRatingSelector(
-                            rating: $viewModel.newRating
+                GeometryReader { proxy in
+                    
+                    VStack(spacing: 8) {
+                        let videoSize =  CustomVideoPlayer.getNewAspectRatio(
+                            baseWidth: trickItem.videoData.width,
+                            baseHeight: trickItem.videoData.height,
+                            maxWidth: proxy.size.width,
+                            maxHeight: proxy.size.height
                         )
-                    } else {
-                        TrickStarRatingView(
-                            color: .yellow.opacity(edit ? 0.5 : 1),
-                            rating: viewModel.trickItem.progress,
-                            size: 25
+                        
+                        SPVideoPlayer(
+                            url: URL(string: trickItem.videoData.videoUrl)!,
+                            frameSize: proxy.size,
+                            videoSize: videoSize
                         )
+                        .clipShape(RoundedRectangle(cornerRadius: 15))
                     }
-                    
-                    Divider()
-
-                    let videoSize =  CustomVideoPlayer.getNewAspectRatio(
-                        baseWidth: trickItem.videoData.width,
-                        baseHeight: trickItem.videoData.height,
-                        maxWidth: videoFrameSize.width,
-                        maxHeight: videoFrameSize.height
-                    )
-                    
-                    SPVideoPlayer(
-                        userPlayer: viewModel.videoPlayer,
-                        frameSize: videoFrameSize,
-                        videoSize: videoSize,
-                        showButtons: true
-                    )
+                    .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 15).protruded)
+                    .frame(maxWidth: .infinity, alignment: .center)
                 }
-                .padding(12)
-                .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 15).protruded)
-
+                .frame(height: UIScreen.screenHeight * 0.75)
             }
-            .padding(10)
+            .padding(8)
+            .frame(maxWidth: .infinity)
             .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 20).inset)
         }
-        .padding(.horizontal, 8)
-    }
-
-    /// Toggles edit mode with animation.
-    ///
-    /// When entering edit mode, initializes editable state in the view model.
-    ///
-    /// - Important:
-    ///   Ensures view model state is prepared before editing begins.
-    private func toggleEdit() {
-        if !edit {
-            viewModel.editToggled(currentTrickItem: trickItem)
-        }
-        withAnimation(.easeInOut(duration: 0.3)) {
-            self.edit.toggle()
-        }
+        .padding(.horizontal, 4)
     }
 }

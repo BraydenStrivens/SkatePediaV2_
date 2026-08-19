@@ -31,15 +31,6 @@ struct TrickItem: Codable, Identifiable, Equatable, Hashable {
         self.dateCreated = Date()
     }
     
-    init(request: UploadTrickItemRequest) {
-        self.id = request.id
-        self.notes = request.notes
-        self.progress = request.progress
-        self.trickData = request.trickData
-        self.videoData = request.videoData
-        self.dateCreated = Date()
-    }
-    
     func asPayload() -> [String : Any] {
         return [
             CodingKeys.id.rawValue: id,

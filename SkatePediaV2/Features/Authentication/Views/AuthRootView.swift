@@ -16,12 +16,15 @@ import SwiftUI
 /// - Injecting shared dependencies (e.g. `ErrorStore`, `AuthRouter`) into child views
 ///
 /// This view acts as the composition root for all authentication-related screens.
-///
 struct AuthRootView: View {
+    
+    // MARK: Environment
     @EnvironmentObject var errorStore: ErrorStore
     
+    // MARK: State
     @StateObject private var router = AuthRouter()
     
+    // MARK: Body
     var body: some View {
         NavigationStack(path: $router.path) {
             

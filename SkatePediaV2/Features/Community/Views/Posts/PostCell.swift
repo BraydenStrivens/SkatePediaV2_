@@ -15,13 +15,19 @@ import AVKit
 /// height). The video player is initialized in the view model to prevent the video from updating and flickering on every @State change. An @EnvironmentObject of
 /// the community view model is present for deleting posts.
 struct PostCell: View {
-    @EnvironmentObject var userStore: UserStore
+    @EnvironmentObject private var router: CommunityRouter
+    @EnvironmentObject private var appEnv: AppEnvironment
+    @EnvironmentObject private var userStore: UserStore
+    @EnvironmentObject private var postStore: PostStore
+    @EnvironmentObject private var errorStore: ErrorStore
     
     @State private var showComments: Bool = false
+    @State private var toggleReportSheet: Bool = false
 
     @StateObject private var viewModel: PostCellViewModel
     let user: User
     let post: Post
+    let profileNavigationAllowed: Bool
     
     init(
         user: User,
@@ -30,6 +36,7 @@ struct PostCell: View {
     ) {
         self.user = user
         self.post = post
+        self.profileNavigationAllowed = Auth.auth().currentUser?.uid != post.userData.userId
         _viewModel = StateObject(wrappedValue: viewModel)
     }
     
@@ -38,31 +45,60 @@ struct PostCell: View {
     var body: some View {
         VStack(spacing: 0) {
             postCellHeader
-    
-            let videoSize = CustomVideoPlayer.getNewAspectRatio(
-                baseWidth: post.videoData.width,
-                baseHeight: post.videoData.height,
-                maxWidth: videoPlayerFrame.width,
-                maxHeight: videoPlayerFrame.height)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    if profileNavigationAllowed {
+                        Task {
+                            guard let postOwner = await viewModel.fetchUser(post.userData.userId) else { return }
+                            
+                            router.push(.userAccount(currentUser: user, otherUser: postOwner))
+                        }
+                    }
+                }
             
-            SPVideoPlayer(
-                userPlayer: viewModel.player,
-                frameSize: videoPlayerFrame,
-                videoSize: videoSize,
-                showButtons: true
-            )
-            .padding(12)
-            .background(.gray.opacity(0.1))
-            .onDisappear {
-                viewModel.player.pause()
+            HStack {
+                Spacer()
+                
+                let videoSize = CustomVideoPlayer.getNewAspectRatio(
+                    baseWidth: post.videoData.width,
+                    baseHeight: post.videoData.height,
+                    maxWidth: videoPlayerFrame.width,
+                    maxHeight: videoPlayerFrame.height)
+                
+                SPVideoPlayer(
+                    url: URL(string: post.videoData.videoUrl)!,
+                    frameSize: videoPlayerFrame,
+                    videoSize: videoSize
+                )
+                .padding(.vertical, 4)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                
+                Spacer()
             }
+            .frame(maxWidth: .infinity)
+            .background(.gray.opacity(0.1))
             
             // Post content and comment section toggle
             postCellFooter
         }
         .padding(.vertical, 10)
         .spSheet(isPresented: $showComments, content: {
-            CommentsViewContainer(user: user, post: post)
+            CommentsBuilder.build(
+                user: user,
+                post: post,
+                postStore: postStore,
+                errorStore: errorStore
+            )
+            .environmentObject(router)
+        })
+        .spSheet(isPresented: $toggleReportSheet, detent: .full, content: {
+            ReportItemSheetBuilder.build(
+                currentUid: user.userId,
+                otherUid: post.userData.userId,
+                reportType: .post(post),
+                appEnv: appEnv,
+                errorStore: errorStore
+            )
         })
         .transition(.move(edge: .top))
     }
@@ -82,25 +118,7 @@ struct PostCell: View {
                     
                     Spacer()
                     
-                    // Post options if the current user is the owner of the post
-                    if
-                        let currentUid = Auth.auth().currentUser?.uid,
-                        currentUid == post.userData.userId
-                    {
-                        Menu {
-                            Button("Delete Post", role: .destructive) {
-                                Task {
-                                    await viewModel.deletePost(post)
-                                }
-                            }
-                        } label: {
-                            Image(systemName: "ellipsis")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 20, height: 20)
-                                .tint(.primary)
-                        }
-                    }
+                    postOptions
                 }
                 
                 HStack(alignment: .bottom) {
@@ -109,7 +127,7 @@ struct PostCell: View {
                     
                     Spacer()
 
-                    Text(post.trickData.displayName(userStore.trickSettings?.useTrickAbbreviations))
+                    Text(userStore.getTrickName(post.trickData))
                         .font(.body)
                         .lineLimit(1)
                     
@@ -126,6 +144,37 @@ struct PostCell: View {
             Rectangle()
                 .fill(.gray)
                 .frame(height: 1)
+        }
+    }
+    
+    var postOptions: some View {
+        Menu {
+            if
+                let currentUid = Auth.auth().currentUser?.uid,
+                currentUid == post.userData.userId
+            {
+                // Delete post option if the current user is the owner of the post
+                Button("Delete Post", role: .destructive) {
+                    Task {
+                        await viewModel.deletePost(post)
+                    }
+                }
+            } else {
+                Button("Report Post") {
+                    toggleReportSheet = true
+                }
+            }
+        } label: {
+            if viewModel.isDeleting {
+                CustomProgressView(placement: .center)
+                
+            } else {
+                Image(systemName: "ellipsis")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 20, height: 20)
+                    .tint(.primary)
+            }
         }
     }
     

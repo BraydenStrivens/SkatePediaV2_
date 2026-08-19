@@ -12,7 +12,7 @@ import Foundation
 /// Used to switch between different content sections.
 ///
 /// - Note: Conforms to `Identifiable` and `CaseIterable` for use in UI iteration.
-enum AccountViewTab: String, Identifiable, CaseIterable {
+enum AccountViewTab: String, Identifiable, CaseIterable, Equatable {
     case Tricks
     case Posts
     var id: String { self.rawValue }

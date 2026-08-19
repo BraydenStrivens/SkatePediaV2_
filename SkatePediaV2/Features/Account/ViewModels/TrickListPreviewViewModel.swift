@@ -28,11 +28,15 @@ final class TrickListPreviewViewModel: ObservableObject {
     func fetchTrickList(userId: String, stance: TrickStance) async {
         do {
             requestState = .loading
-            self.trickList = try await TrickListManager.shared.fetchTricksByStance(userId: userId, stance: stance)
+            
+            self.trickList = try await TrickListService.shared.fetchTricksByStance(
+                userId: userId,
+                stance: stance
+            )
+            
             requestState = .success
             
         } catch {
-            print("DEBUG: Failed to fetch user trick list by stance: \(error)")
             requestState = .failure(mapToSPError(error: error))
         }
     }

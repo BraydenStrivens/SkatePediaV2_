@@ -18,6 +18,7 @@ import Firebase
 ///   - post: The post to display.
 ///   - postOwner: The user who created the post.
 struct UserPostPreviewCell: View {
+    @EnvironmentObject private var userStore: UserStore
     @Environment(\.colorScheme) private var colorScheme
     
     var post: Post
@@ -40,14 +41,8 @@ struct UserPostPreviewCell: View {
                     ///
                     /// Respects the user's settings to determine whether
                     /// to show the full name or abbreviated version.
-                    Group {
-                        if postOwner.settings.trickSettings.useTrickAbbreviations {
-                            Text(post.trickData.abbreviatedName)
-                        } else {
-                            Text(post.trickData.name)
-                        }
-                    }
-                    .font(.subheadline)
+                    Text(userStore.getTrickName(post.trickData))
+                        .font(.subheadline)
                 }
                 
                 HStack(alignment: .bottom) {

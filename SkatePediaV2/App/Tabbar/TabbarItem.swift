@@ -7,20 +7,35 @@
 
 import SwiftUI
 
+/// A reusable tab bar item used within the app's custom tab bar.
+///
+/// `TabBarItem` displays:
+/// - A tab icon
+/// - A tab label
+/// - A visual selected-state indicator
+///
+/// The item updates the currently selected tab when tapped and
+/// visually reflects whether it is the active tab.
 struct TabBarItem: View {
+    
+    // MARK: Parameters
+    
     let defaultIcon: String
     let selectedIcon: String
-    let index: Int
+    let tab: Tab
     let label: String
-    @Binding var currentTab: Int
+    @Binding var currentTab: Tab
     
-    var isSelected: Bool {
-        index == currentTab
+    // MARK: Derived/Private Properties
+    
+    private var isSelected: Bool {
+        tab == currentTab
     }
     
+    // MARK: Body
     var body: some View {
         Button {
-            currentTab = index
+            currentTab = tab
 
         } label: {
             VStack {

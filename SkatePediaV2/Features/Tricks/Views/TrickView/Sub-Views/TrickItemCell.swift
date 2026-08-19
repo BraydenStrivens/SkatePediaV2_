@@ -10,7 +10,7 @@ import SwiftUI
 /// A compact card-style view that displays a single `TrickItem` entry and navigates to its detail view.
 ///
 /// Shows a quick summary of the trick item including:
-/// - Progress rating (star-based)
+/// - Progress rating
 /// - Creation date
 /// - User notes (truncated to one line)
 ///
@@ -21,27 +21,27 @@ import SwiftUI
 ///   - trickItem: The specific trick item being displayed.
 ///   - trick: The parent trick associated with this item.
 struct TrickItemCell: View {
-    @EnvironmentObject var userStore: UserStore
+    
+    // MARK: Environment
+    @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject private var userStore: UserStore
     @EnvironmentObject private var router: TrickListRouter
     
-    @Environment(\.colorScheme) var colorScheme
-    
+    // MARK: Parameters
     let userId: String
     let trickItem: TrickItem
     let trick: Trick
     
-    var trickDisplayName: String {
-        trick.displayName(useAbbreviation: userStore.trickSettings?.useTrickAbbreviations == true)
-    }
-    
+    // MARK: Body
     var body: some View {
         Button {
             router.push(.trickItem(userId: userId, trick: trick, trickItem: trickItem))
-            
         } label: {
             trickItemCell
         }
     }
+    
+    // MARK: Subviews
     
     /// Visual representation of a trick item summary.
     ///
@@ -49,7 +49,7 @@ struct TrickItemCell: View {
     /// - Star rating indicator
     /// - Creation timestamp
     /// - Notes preview
-    var trickItemCell: some View {
+    private var trickItemCell: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top) {
                 TrickStarRatingView(
@@ -79,7 +79,7 @@ struct TrickItemCell: View {
     ///
     /// Uses a rounded rectangle with subtle stroke and shadow
     /// that adapts to light/dark mode.
-    var cellBackground: some View {
+    private var cellBackground: some View {
         RoundedRectangle(cornerRadius: 15)
             .fill(colorScheme == .dark ? Color(.systemGray6) : Color(.systemBackground))
             .stroke(

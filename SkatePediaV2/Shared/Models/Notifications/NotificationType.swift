@@ -14,8 +14,7 @@ import Foundation
 /// 4. If a friend request is sent, a friendRequest notification is sent.
 ///
 enum NotificationType: String, Codable {
-    case comment
-    case reply
-    case message
-    case friendRequest
+    case comment = "comment"
+    case reply = "reply"
+    case friendRequest = "friend_request"
 }

@@ -15,13 +15,9 @@ import SwiftUI
 ///
 /// Additionally, stops listening to user data and clears relevant stores when the user logs out.
 struct RootView: View {
-    @EnvironmentObject var authStore: AuthenticationStore
-    @EnvironmentObject var userStore: UserStore
-    @EnvironmentObject var trickListStore: TrickListStore
-    @EnvironmentObject var postStore: PostStore
-    
-    @EnvironmentObject var sessionContainer: SessionContainer
-    
+    @EnvironmentObject private var authStore: AuthenticationStore
+    @EnvironmentObject private var appEnv: AppEnvironment
+        
     var body: some View {
         Group {
             if authStore.isLoading {
@@ -31,7 +27,7 @@ struct RootView: View {
                 TabbarView()
                     .ignoresSafeArea(.keyboard)
                     .task(id: session.uid) {
-                        userStore.startListening(uid: session.uid)
+                        appEnv.userStore.startListening(uid: session.uid)
                     }
                 
             } else {
@@ -40,9 +36,7 @@ struct RootView: View {
         }
         .onChange(of: authStore.userSession) { _, newSession in
             if newSession == nil {
-                userStore.stopListening()
-                trickListStore.clear()
-                postStore.clear()
+                appEnv.resetUserSpecificGlobalState()
             }
         }
     }

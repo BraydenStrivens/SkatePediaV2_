@@ -24,12 +24,12 @@ import SwiftUI
 ///   - viewModel: View model responsible for providing filtered trick data and spinner state.
 ///   - trickSpinnerPresetsVM: View model managing saved spinner presets.
 struct TrickListSpinnerView: View {
-    @EnvironmentObject var userStore: UserStore
+    
+    // MARK: Environment
     @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject private var userStore: UserStore
     
-    @ObservedObject var viewModel: TrickListSpinnerViewModel
-    let trickSpinnerPresetsVM: TrickSpinnerPresetsViewModel
-    
+    // MARK: State
     @GestureState private var dragOffset: CGFloat = 0
     /// Internal shuffled order of tricks used for spinning.
     @State private var ordered: [Trick] = []
@@ -37,9 +37,38 @@ struct TrickListSpinnerView: View {
     @State private var position: CGFloat = 0
     @State private var isSpinning: Bool = false
     
+    // MARK: Parameters
+    @ObservedObject var viewModel: TrickListSpinnerViewModel
+    let trickSpinnerPresetsVM: TrickSpinnerPresetsViewModel
+    
+    // MARK: Derived/Private Properties
     private let rowHeight: CGFloat = 48
     private let visibleCount = 7
     
+    /// The filtered list of tricks used as the spinner source.
+    private var tricks: [Trick] {
+        viewModel.trickList
+    }
+    
+    /// Number of rows shown above and below center.
+    private func visibleRange() -> Int {
+        visibleCount / 2
+    }
+    
+    /// Computes the current centered index in the spinner.
+    private func currentIndex() -> Int {
+        guard !ordered.isEmpty else { return 0 }
+        let index = Int(round(position))
+        return mod(index, ordered.count)
+    }
+    
+    /// Calculates vertical offset for spinner motion.
+    private func scrollOffset() -> CGFloat {
+        let fractional = position - round(position)
+        return -fractional * rowHeight + dragOffset
+    }
+    
+    // MARK: Init
     init(
         viewModel: TrickListSpinnerViewModel,
         trickSpinnerPresetsVM: TrickSpinnerPresetsViewModel
@@ -48,18 +77,15 @@ struct TrickListSpinnerView: View {
         self.trickSpinnerPresetsVM = trickSpinnerPresetsVM
     }
     
-    /// The filtered list of tricks used as the spinner source.
-    var tricks: [Trick] {
-        viewModel.trickList
-    }
-    
+    // MARK: Body
     var body: some View {
         VStack {
             ZStack(alignment: .topTrailing) {
                 spinner
+                    .padding(.horizontal, 6)
 
                 /// Displays total number of available tricks in current filter.
-                Text("\(ordered.count) Tricks")
+                Text("^[\(ordered.count) Trick](inflect: true)")
                     .font(.caption)
                     .foregroundStyle(.gray)
                     .padding()
@@ -71,7 +97,6 @@ struct TrickListSpinnerView: View {
                 viewModel: trickSpinnerPresetsVM
             )
         }
-        .padding(.horizontal, 12)
         .customNavHeader(title: "Spinner")
         .onAppear {
             resetOrder()
@@ -97,115 +122,16 @@ struct TrickListSpinnerView: View {
         }
     }
     
-    /// Main spinner wheel UI.
-    ///
-    /// Displays a vertically centered selection window with surrounding
-    /// trick rows that scale and fade based on distance from center.
-    var spinner: some View {
-        ZStack {
-            if ordered.isEmpty {
-                ContentUnavailableView {
-                    Text("No Tricks")
-                        .font(.title)
-                        .fontWeight(.bold)
-                    
-                    Text("There are no tricks available that match the current filter.")
-                        .font(.callout)
-                        .foregroundStyle(.gray)
-                }
-                
-            } else {
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(Color.button, lineWidth: 2)
-                    .frame(height: rowHeight)
-                    .padding(.horizontal)
-                
-                VStack(spacing: 0) {
-                    ForEach(-visibleRange()...visibleRange(), id: \.self) { index in
-                        row(offsetIndex: index)
-                            .frame(height: rowHeight)
-                    }
-                }
-                .offset(y: scrollOffset())
-            }
-        }
-        .frame(height: rowHeight * CGFloat(visibleCount))
-        .clipped()
-        .gesture(spinGesture)
-        .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 20).inset)
-    }
+    // MARK: Functions
     
     private func resetOrder() {
         ordered = tricks.shuffled()
         position = 0
     }
     
-    /// Number of rows shown above and below center.
-    private func visibleRange() -> Int {
-        visibleCount / 2
-    }
-    
-    /// Computes the current centered index in the spinner.
-    private func currentIndex() -> Int {
-        guard !ordered.isEmpty else { return 0 }
-        let index = Int(round(position))
-        return mod(index, ordered.count)
-    }
-    
     /// Safe modulo for circular indexing.
     private func mod(_ a: Int, _ n: Int) -> Int {
         (a % n + n) % n
-    }
-    
-    /// Calculates vertical offset for spinner motion.
-    private func scrollOffset() -> CGFloat {
-        let fractional = position - round(position)
-        return -fractional * rowHeight + dragOffset
-    }
-    
-    /// Builds a single spinner row with scaling and opacity effects.
-    ///
-    /// - Parameter offsetIndex: Distance from the center row.
-    private func row(offsetIndex: Int) -> some View {
-        guard !ordered.isEmpty else { return AnyView(EmptyView()) }
-        
-        let center = currentIndex()
-        let index = mod(center + offsetIndex, ordered.count)
-        
-        let distance = abs(offsetIndex)
-        
-        let scale = max(0.6, 1 - CGFloat(distance) * 0.15)
-        let opacity = max(0.25, 1 - Double(distance) * 0.2)
-        
-        return AnyView(
-            Text(ordered[index]
-                .displayName(useAbbreviation: userStore.trickSettings?.useTrickAbbreviations == true)
-            )
-            .font(distance == 0 ? .title2.weight(.bold) : .body)
-            .scaleEffect(scale)
-            .opacity(opacity)
-            .frame(maxWidth: .infinity)
-            .contentShape(Rectangle())
-        )
-    }
-    
-    /// Drag gesture used to control spinner motion.
-    private var spinGesture: some Gesture {
-        DragGesture()
-            .updating($dragOffset) { value, state, _ in
-                state = value.translation.height
-            }
-            .onEnded { value in
-                guard !ordered.isEmpty else { return }
-                guard !isSpinning else { return }
-                
-                let velocity = value.velocity.height
-                let drag = value.translation.height
-                
-                let impulse = -(drag + velocity * 0.2) / rowHeight
-                
-                startSpin(initialVelocity: impulse)
-            }
     }
     
     /// Starts physics-based spinning animation.
@@ -250,5 +176,87 @@ struct TrickListSpinnerView: View {
         withAnimation(.easeOut(duration: 0.25)) {
             position = CGFloat(Int.random(in: 0..<ordered.count))
         }
+    }
+    
+    // MARK: Subviews
+    
+    /// Main spinner wheel UI.
+    ///
+    /// Displays a vertically centered selection window with surrounding
+    /// trick rows that scale and fade based on distance from center.
+    private var spinner: some View {
+        ZStack {
+            if ordered.isEmpty {
+                SPContentUnavailableView(
+                    title: "No Tricks",
+                    description: "There are no tricks available that match the current filter."
+                )
+                
+            } else {
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color.button, lineWidth: 2)
+                    .frame(height: rowHeight)
+                    .padding(.horizontal)
+                
+                VStack(spacing: 0) {
+                    ForEach(-visibleRange()...visibleRange(), id: \.self) { index in
+                        row(offsetIndex: index)
+                            .frame(height: rowHeight)
+                    }
+                }
+                .offset(y: scrollOffset())
+            }
+        }
+        .frame(height: rowHeight * CGFloat(visibleCount))
+        .clipped()
+        .gesture(spinGesture)
+        .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 20).inset)
+    }
+    
+    /// Builds a single spinner row with scaling and opacity effects.
+    ///
+    /// - Parameter offsetIndex: Distance from the center row.
+    private func row(offsetIndex: Int) -> some View {
+        guard !ordered.isEmpty else { return AnyView(EmptyView()) }
+        
+        let center = currentIndex()
+        let index = mod(center + offsetIndex, ordered.count)
+        
+        let distance = abs(offsetIndex)
+        
+        let scale = max(0.6, 1 - CGFloat(distance) * 0.15)
+        let opacity = max(0.25, 1 - Double(distance) * 0.2)
+        
+        return AnyView(
+            Text(ordered[index]
+                .displayName(useAbbreviation: userStore.trickSettings?.useTrickAbbreviations == true)
+            )
+            .font(distance == 0 ? .title2.weight(.bold) : .body)
+            .scaleEffect(scale)
+            .opacity(opacity)
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+        )
+    }
+    
+    // MARK: Gestures
+    
+    /// Drag gesture used to control spinner motion.
+    private var spinGesture: some Gesture {
+        DragGesture()
+            .updating($dragOffset) { value, state, _ in
+                state = value.translation.height
+            }
+            .onEnded { value in
+                guard !ordered.isEmpty else { return }
+                guard !isSpinning else { return }
+                
+                let velocity = value.velocity.height
+                let drag = value.translation.height
+                
+                let impulse = -(drag + velocity * 0.2) / rowHeight
+                
+                startSpin(initialVelocity: impulse)
+            }
     }
 }

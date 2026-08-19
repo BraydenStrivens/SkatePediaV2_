@@ -8,7 +8,7 @@ import type { Comment } from "../../utils/interfaces";
 export const sendCommentNotification = onDocumentCreated(
     {
         document: "posts/{postId}/comments/{commentId}",
-        retry: true,
+        retry: false,
     },
     async (event) => {
         const snapshot = event.data;

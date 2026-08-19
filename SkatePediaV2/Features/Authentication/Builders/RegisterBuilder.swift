@@ -12,14 +12,23 @@ import Foundation
 /// Encapsulates view model creation so that views receive properly initialized dependencies.
 @MainActor
 struct RegisterBuilder {
+    
     /// Creates a `RegisterViewModel` with injected dependencies and returns a `RegisterView`.
     ///
     /// - Parameters:
     ///   - errorStore: Used to present errors to the user.
     ///
     /// - Returns: A `RegisterView` initialized with a dependency-injected `RegisterViewModel`.
-    static func build(errorStore: ErrorStore) -> RegisterView {
-        let viewModel = RegisterViewModel(errorStore: errorStore)
-        return RegisterView(viewModel: viewModel)
+    static func build(
+        errorStore: ErrorStore
+    ) -> RegisterView {
+        
+        let viewModel = RegisterViewModel(
+            errorStore: errorStore
+        )
+        
+        return RegisterView(
+            viewModel: viewModel
+        )
     }
 }

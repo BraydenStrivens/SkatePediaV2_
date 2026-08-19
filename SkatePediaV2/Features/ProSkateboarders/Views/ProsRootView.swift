@@ -12,17 +12,25 @@ import SwiftUI
 /// Manages navigation between the main pros list, individual pro videos,
 /// and the compare view using a `NavigationStack` and a `ProsRouter`.
 struct ProsRootView: View {
-    @EnvironmentObject private var errorStore: ErrorStore
     
+    // MARK: Envrionment
+    @EnvironmentObject private var errorStore: ErrorStore
+    @EnvironmentObject private var appEnv: AppEnvironment
+    
+    // MARK: State
     @StateObject private var router: ProsRouter = ProsRouter()
     
+    // MARK: Body
     var body: some View {
         NavigationStack(path: $router.path) {
-            ProsView()
+            ProBuilder.build(appEnv: appEnv)
                 .navigationDestination(for: ProsRoute.self) { route in
                     switch route {
-                    case .proVideos(let allVideos, let selectedVideo):
-                        ProVideosView(videos: allVideos, selectedVideo: selectedVideo)
+                    case .proVideos(let proId, let selectedVideo):
+                        ProVideosView(
+                            proId: proId,
+                            selectedVideo: selectedVideo
+                        )
                         
                     case .compare(let trickData, let proVideo):
                         CompareBuilder.build(

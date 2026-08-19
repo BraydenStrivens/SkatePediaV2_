@@ -9,301 +9,409 @@ import SwiftUI
 import AVKit
 import Kingfisher
 
-/// A SwiftUI view that allows users to compare two videos side-by-side.
-/// Can display a user-uploaded trick item and/or a pro skater video.
-/// Users can select videos, edit trick item notes, and control playback.
+/// A SwiftUI view for comparing two skate trick videos side-by-side.
 ///
-/// The view works with `CompareViewModel` which manages the videos, players,
-/// and playback synchronization.
+/// `CompareView` allows users to analyze differences between their own trick
+/// footage and a professional skater's video through synchronized playback,
+/// frame stepping, and overlay comparison tools.
+///
+/// The interface supports:
+/// - Selecting videos for left and right comparison slots
+/// - Synchronized dual-video playback
+/// - Start point alignment
+/// - Overlay ("Ghost") comparison mode
+/// - Instructional guidance for comparison workflows
+///
+/// - Parameters:
+///   - trickData: Metadata describing the trick being compared.
+///   - trickItem: An optional user-uploaded trick item.
+///   - proVideo: An optional professional reference video.
+///   - coordinator: The playback coordinator responsible for synchronizing
+///     both video players and managing comparison state.
 struct CompareView: View {
-    @EnvironmentObject private var router: ProsRouter
+    
+    // MARK: Environment
     @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject private var router: ProsRouter
+    @EnvironmentObject private var appEnv: AppEnvironment
+    @EnvironmentObject private var userStore: UserStore
     
-    @State var toggleEditNotes: Bool = false
+    // MARK: State
+    @State var toggleGhostMode: Bool = false
+    @State var showInstructions: Bool = false
+    @State var activeSlot: CompareVideoSlot?
     
-    @ObservedObject var viewModel: CompareViewModel
-    
+    // MARK: Parameters
+    @StateObject var coordinator: ComparePlaybackCoordinator
     let trickData: TrickData
     let trickItem: TrickItem?
     let proVideo: ProSkaterVideo?
     
+    // MARK: Derived/Private Properties
+    
+    /// Indicates whether both comparison video slots currently contain valid videos.
+    private var bothVideosSelected: Bool {
+        return coordinator.leftVM != nil && coordinator.rightVM != nil
+    }
+    
+    // MARK: Init
     init(
         trickData: TrickData,
         trickItem: TrickItem? = nil,
         proVideo: ProSkaterVideo? = nil,
-        viewModel: CompareViewModel
+        coordinator: ComparePlaybackCoordinator
     ) {
         self.trickData = trickData
         self.trickItem = trickItem
         self.proVideo = proVideo
         
-        _viewModel = ObservedObject(wrappedValue: viewModel)
+        _coordinator = StateObject(wrappedValue: coordinator)
     }
     
+    // MARK: Body
     var body: some View {
-        ScrollView {
-            VStack(spacing: 15) {
+        ZStack {
+            VStack(spacing: 10) {
                 selectVideoView
                 
-                // Show notes editing if left video is a trick item
-                if let leftVideo = viewModel.leftVideo {
-                    if case .trickItem = leftVideo {
-                        editTrickItemView
-                    }
-                }
+                optionButtons
                 
+                Spacer()
+                            
                 VStack {
-                    Spacer()
-                    
                     // Side-by-side video players
-                    HStack(alignment: .bottom, spacing: 10) {
-                        videoPlayer1View
-                        videoPlayer2View
-                    }
-                    
-                    Spacer()
-                    
-                    // Duel playback controls if both videos are set
-                    if let _ = viewModel.leftVideo, let _ = viewModel.rightVideo {
-                        DuelPlaybackControls(
-                            controller: viewModel.controller,
-                            frameSize: CGSize(width: UIScreen.screenWidth, height: 50)
+                    HStack(alignment: .bottom, spacing: 0) {
+                        Spacer()
+                        
+                        videoPlayerView(
+                            video: coordinator.leftVideo,
+                            videoVM: coordinator.leftVM
                         )
+                        
+                        Spacer()
+                        
+                        videoPlayerView(
+                            video: coordinator.rightVideo,
+                            videoVM: coordinator.rightVM
+                        )
+                        
+                        Spacer()
                     }
+                    
+                    // Duel playback controls (disabled if both videos aren't selected)
+                    CompareControls(coordinator: coordinator)
+                        .padding(.vertical, 10)
+                        .background(colorScheme == .dark ? Color(.systemGray6) : Color(.systemGray5))
+                        .cornerRadius(12)
+                        .padding(4)
+                        .opacity(bothVideosSelected ? 1 : 0.3)
+                        .disabled(!bothVideosSelected)
                 }
-                .frame(maxHeight: .infinity)
+            }
+            
+            if showInstructions {
+                ZStack {
+                    Color.black
+                        .opacity(0.5)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            toggleInstructions()
+                        }
+                    
+                    compareInstructions
+                        .onTapGesture {}
+                        .transition(.opacity)
+                        .zIndex(1)
+                }
             }
         }
-        .customNavHeader(title: "Compare", showDivider: true)
-        .padding(8)
-        .frame(width: UIScreen.screenWidth)
-        .onChange(of: viewModel.leftVideo) { (oldValue: CompareVideo?, newValue: CompareVideo?) in
-            if let newValue {
-                viewModel.setVideo(newValue, for: .left)
-            }
+        .customNavHeader(title: "Compare", showDivider: false)
+        .toolbar {
+            toolbar
         }
-        .onChange(of: viewModel.rightVideo) { (oldValue: CompareVideo?, newValue: CompareVideo?) in
-            if let newValue {
-                viewModel.setVideo(newValue, for: .right)
-            }
-        }
-        .fullScreenCover(item: $viewModel.activeSlot, content: { slot in
-            SelectCompareVideoSheet(
+        .fullScreenCover(isPresented: $toggleGhostMode, onDismiss: {
+            toggleGhostMode = false
+        }, content: {
+            GhostOverlayView(coordinator: coordinator)
+        })
+        .fullScreenCover(item: $activeSlot, content: { slot in
+            SelectCompareVideoBuilder.build(
                 trickId: trickData.trickId,
-                initialSelection: viewModel.activeSlot == .left ? viewModel.leftVideo : viewModel.rightVideo,
-                defaultTabIndex: viewModel.activeSlot == .left ? 0 : 1,
+                initialSelection: currentVideo(for: slot),
+                defaultTab: activeSlot == .left ? .trickItem : .proVideo,
                 onContinue: { selectedVideo in
-                    switch slot {
-                    case .left:
-                        viewModel.leftVideo = selectedVideo
-                    case .right:
-                        viewModel.rightVideo = selectedVideo
-                    }
-                    viewModel.activeSlot = nil
+                    coordinator.setVideo(selectedVideo, for: slot)
+                    activeSlot = nil
                 },
                 onCancel: {
-                    viewModel.activeSlot = nil
-                }
+                    activeSlot = nil
+                },
+                appEnv: appEnv
             )
         })
     }
     
-    /// View showing selection buttons for the left and right video slots.
-    var selectVideoView: some View {
+    // MARK: Functions
+    
+    /// Toggles the instructional overlay using a smooth animated transition.
+    private func toggleInstructions() {
+        withAnimation(.smooth) {
+            showInstructions.toggle()
+        }
+    }
+    
+    /// Returns the currently selected comparison video for a given slot.
+    ///
+    /// - Parameters:
+    ///   - slot: The comparison slot whose video should be returned.
+    ///
+    /// - Returns:
+    /// The selected `CompareVideo` associated with the provided slot,
+    /// or `nil` if no video has been selected.
+    private func currentVideo(
+        for slot: CompareVideoSlot
+    ) -> CompareVideo? {
+        switch slot {
+        case .left:
+            return coordinator.leftVideo
+        case .right:
+            return coordinator.rightVideo
+        }
+    }
+    
+    // MARK: Subviews
+    
+    /// Toolbar content displayed at the top of the comparison screen.
+    ///
+    /// Includes:
+    /// - A help button for showing comparison instructions
+    /// - The comparison title and current trick name
+    @ToolbarContentBuilder
+    private var toolbar: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            Button {
+                toggleInstructions()
+            } label: {
+                Image(systemName: showInstructions ? "questionmark.circle.fill" : "questionmark.circle")
+            }
+        }
+        ToolbarItem(placement: .principal) {
+            VStack {
+                Text("Compare")
+                    .font(.body)
+                Text(userStore.getTrickName(trickData))
+                    .font(.caption)
+            }
+        }
+    }
+    
+    /// Displays controls for selecting videos for the left and right comparison slots.
+    private var selectVideoView: some View {
         HStack {
-            HStack {
-                Text("Video 1:")
-                    .foregroundStyle(.gray)
-                
-                Spacer()
-                
-                Button {
-                    viewModel.activeSlot = .left
-                } label: {
-                    if viewModel.leftVideo == nil {
-                        Image(systemName: "plus")
-                    } else {
-                        Text("Change")
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 12)
-                    .coloredProtruded(color: Color.button)
-                )
-            }
-            .frame(maxWidth: .infinity)
-                        
-            HStack {
-                Text("Video 2:")
-                    .foregroundStyle(.gray)
-                
-                Spacer()
-                
-                Button {
-                    viewModel.activeSlot = .right
-                } label: {
-                    if viewModel.rightVideo == nil {
-                        Image(systemName: "plus")
-                    } else {
-                        Text("Change")
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 12)
-                    .coloredProtruded(color: Color.button)
-                )
-            }
-            .frame(maxWidth: .infinity)
+            Spacer(minLength: 15)
+            selectButton(title: "Left", slot: .left)
+            Spacer(minLength: 15)
+            selectButton(title: "Right", slot: .right)
+            Spacer(minLength: 15)
         }
-        .padding(8)
-        .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 12).protruded)
+        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
     }
     
-    /// View for editing notes on a user trick item.
-    var editTrickItemView: some View {
-        VStack(alignment: .leading) {
+    /// Creates a button used to select or replace a comparison video.
+    ///
+    /// - Parameters:
+    ///   - title: The label describing the slot position.
+    ///   - slot: The comparison slot associated with the button.
+    private func selectButton(
+        title: String,
+        slot: CompareVideoSlot
+    ) -> some View {
+        Button {
+            activeSlot = slot
+        } label: {
             HStack {
-                Text("Update Notes:")
+                Text("\(title):")
                     .foregroundStyle(.gray)
+                    .padding(.leading, 6)
                 
                 Spacer()
                 
-                if toggleEditNotes {
-                    Button {
-                        // TODO: FINISH
-                        Task {
-                            await viewModel.updateTrickItemNotes(trickItemId: viewModel.leftVideo?.id ?? "")
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                toggleEditNotes = false
-                            }
-                        }
-
-                    } label: {
-                        Text("Save")
-                            .foregroundStyle(viewModel.trickItem?.notes == viewModel.updatedTrickItemNotes
-                                             ? Color.gray
-                                             : .primary
-                            )
-                    }
-                    .disabled(viewModel.trickItem?.notes == viewModel.updatedTrickItemNotes)
-                    
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            toggleEditNotes = false
-                        }
-                        viewModel.updatedTrickItemNotes = viewModel.trickItem?.notes ?? ""
-                    } label: {
-                        Text("Cancel")
-                            .foregroundStyle(.gray)
-                    }
-                    
-                } else {
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            toggleEditNotes = true
-                        }
-                    } label: {
-                        Text("Edit")
-                            .foregroundStyle(.gray)
-                    }
-                }
+                Text(currentVideo(for: slot) == nil ? "Select" : "Change")
+                    .foregroundStyle(.white)
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 12)
+                    .background(Color.button)
+                    .cornerRadius(20)
             }
-            .font(.callout)
+            .padding(6)
+            .frame(maxWidth: .infinity)
+        }
+        .clipShape(Capsule())
+        .background(RoundedRectangle(cornerRadius: 25).fill(.ultraThinMaterial))
+    }
+    
+    /// Displays additional comparison-related actions and configuration options.
+    ///
+    /// Includes:
+    /// - Overlay Mode presentation
+    /// - Start point alignment controls
+    private var optionButtons: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Options:")
+                .font(.caption)
+                .foregroundStyle(.gray)
             
-            Group {
-                if toggleEditNotes {
-                    TextField("Update notes", text: $viewModel.updatedTrickItemNotes, axis: .vertical)
-                        .lineLimit(1...4)
-                        .offset(x: 10)
-                    
-                } else {
-                    CollapsibleTextView(text: viewModel.leftVideo?.trickItem?.notes ?? "", lineLimit: 3, font: .body)
-                        .offset(x: 10)
+            HStack(alignment: .top) {
+                Button {
+                    toggleGhostMode = true
+                } label: {
+                    Text("Overlay Mode")
+                        .foregroundStyle(.white)
+                }
+                .padding(8)
+                .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 12).coloredProtruded(color: Color.button))
+                
+                Spacer()
+                
+                VStack {
+                    Button {
+                        coordinator.toggleStartOffsets()
+                    } label: {
+                        Text(coordinator.startOffsetsSet ? "Remove Start Points" : "Set Start Points")
+                    }
+                    .padding(8)
+                    .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 12).protruded)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(8)
-            .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 12).protruded)
         }
+        .padding(.horizontal, 12)
     }
     
-    /// Left video player view with proper aspect ratio.
-    var videoPlayer1View: some View {
+    /// Creates an individual video player area for a comparison slot.
+    ///
+    /// Displays either:
+    /// - A configured `SPVideoPlayer` when a valid video exists
+    /// - A placeholder view when no video is selected
+    ///
+    /// - Parameters:
+    ///   - video: The comparison video associated with the player.
+    ///   - videoVM: The player view model used to control playback.
+    private func videoPlayerView(
+        video: CompareVideo?,
+        videoVM: SPVideoPlayerViewModel?
+    ) -> some View {
+        
         GeometryReader { proxy in
-            if
-                let leftVideo = viewModel.leftVideo,
-                let leftPlayer = viewModel.leftPlayer,
-                let leftPlayerVM = viewModel.leftPlayerVM
-            {
-                let size = CustomVideoPlayer.getNewAspectRatio(
-                    baseWidth: leftVideo.size.width,
-                    baseHeight: leftVideo.size.height,
-                    maxWidth: proxy.size.width,
-                    maxHeight: proxy.size.height
-                )
-                
-                SPVideoPlayer2(
-                    userPlayer: leftPlayer,
-                    viewModel: leftPlayerVM,
-                    controller: viewModel.controller,
-                    frameSize: proxy.size,
-                    videoSize: size,
-                    buttonType: .simple
-                )
-            } else {
-                noVideoSelectedView
+            Group {
+                if let video, let videoVM {
+                    let videoSize = CustomVideoPlayer.getNewAspectRatio(
+                        baseWidth: video.size.width,
+                        baseHeight: video.size.height,
+                        maxWidth: proxy.size.width,
+                        maxHeight: proxy.size.height
+                    )
+                    
+                    SPVideoPlayer(
+                        viewModel: videoVM,
+                        frameSize: proxy.size,
+                        videoSize: videoSize,
+                        overlayButtons: false,
+                        buttonType: .simple
+                    )
+                    .id(video.id)
+                    
+                } else {
+                    noVideoSelectedView
+                }
             }
+            .frame(
+                width: proxy.size.width,
+                height: proxy.size.height,
+                alignment: .bottom
+            )
         }
-        .frame(width: UIScreen.screenWidth * 0.45, height: UIScreen.screenHeight * 0.45)
+        .frame(width: UIScreen.screenWidth * 0.46, height: UIScreen.screenHeight * 0.40)
+        .padding(.bottom, 22)
     }
     
-    /// Right video player view with proper aspect ratio.
-    var videoPlayer2View: some View {
-        GeometryReader { proxy in
-            if
-                let rightVideo = viewModel.rightVideo,
-                let rightPlayer = viewModel.rightPlayer,
-                let rightPlayerVM = viewModel.rightPlayerVM
-            {
-                let size = CustomVideoPlayer.getNewAspectRatio(
-                    baseWidth: rightVideo.size.width,
-                    baseHeight: rightVideo.size.height,
-                    maxWidth: proxy.size.width,
-                    maxHeight: proxy.size.height
-                )
-                
-                SPVideoPlayer2(
-                    userPlayer: rightPlayer,
-                    viewModel: rightPlayerVM,
-                    controller: viewModel.controller,
-                    frameSize: proxy.size,
-                    videoSize: size,
-                    buttonType: .simple
-                )
-            } else {
-                noVideoSelectedView
-            }
-        }
-        .frame(width: UIScreen.screenWidth * 0.45, height: UIScreen.screenHeight * 0.45)
-    }
-    
-    /// Placeholder view shown when no video is selected.
-    var noVideoSelectedView: some View {
+    /// Placeholder content displayed when no comparison video has been selected.
+    private var noVideoSelectedView: some View {
         VStack {
             Spacer()
             HStack {
                 Spacer()
-                Text("Please select trick item or pro video")
+                Text("Select a trick item or pro video")
                     .multilineTextAlignment(.center)
                 Spacer()
             }
             Spacer()
         }
-        .background {
-            Rectangle()
-                .fill(.gray.opacity(0.15))
+        .padding(8)
+        .background(colorScheme == .dark ? Color(.systemGray5) : Color(.systemGray3))
+    }
+    
+    /// Instructional content explaining how to use the comparison interface.
+    ///
+    /// Displays:
+    /// - Video alignment guidance
+    /// - Playback comparison tips
+    /// - Overlay mode recommendations
+    private var compareInstructions: some View {
+        VStack(alignment: .center, spacing: 0) {
+            Text("Compare Instructions")
+                .font(.title3)
+                .padding(.bottom, 6)
+            
+            Divider()
+            
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    instructionsSection(title: "How to use:") {
+                        Text("1. Use the playback controls for each video to align them right before the pop.")
+                        Text("2. Set the start point so both videos are aligned when restarting.")
+                        Text("3. Use the dual playback controls to play or step frame-by-frame through both videos simultaneously.")
+                        Text("4. Look for differences is foot positioning, posture, arm movement, and timing between the pop and flick.")
+                    }
+                    
+                    instructionsSection(title: "Tips:") {
+                        Text("* Find a pro video you would like to compare with and film yourself from a similar angle.")
+                        Text("* Try using 'Overlay Mode' to compare more closely the differences between yourself and a pro.")
+                    }
+                }
+            }
+            .scrollIndicators(.hidden)
         }
+        .padding(14)
+        .frame(width: 300, height: 450)
+        .background(.thinMaterial)
+        .cornerRadius(16)
+        .shadow(radius: 20)
+    }
+    
+    /// Creates a reusable formatted instruction section.
+    ///
+    /// This helper view displays a section title and associated instructional content
+    /// using consistent spacing and typography.
+    ///
+    /// - Parameters:
+    ///   - title: The title displayed above the instructional content.
+    ///   - content: A view builder providing the body content for the section.
+    private func instructionsSection<Content: View>(
+        title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(colorScheme == .dark ? Color(.gray) : Color(.darkGray))
+
+            VStack(alignment: .leading, spacing: 8) {
+                content()
+            }
+            .padding(4)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 4)
     }
 }

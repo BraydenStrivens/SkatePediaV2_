@@ -9,7 +9,7 @@ import Foundation
 
 /// Builds and configures the `CompareView` along with its dependencies.
 ///
-/// This struct is responsible for creating the `CompareViewModel`
+/// This struct is responsible for creating the `ComparePlaybackCoordinator`
 /// and injecting it into the `CompareView`. It supports optional inputs
 /// such as a `TrickItem` or `ProSkaterVideo` to customize the comparison context.
 struct CompareBuilder {
@@ -29,11 +29,14 @@ struct CompareBuilder {
         proVideo: ProSkaterVideo? = nil
     ) -> CompareView {
         
-        let viewModel = CompareViewModel(
-            errorStore: errorStore,
-            trickItem: trickItem,
-            proVideo: proVideo
-        )
-        return CompareView(trickData: trickData, viewModel: viewModel)
+        let coordinator = ComparePlaybackCoordinator()
+        if let trickItem {
+            coordinator.setVideo(.trickItem(trickItem), for: .left)
+        }
+        if let proVideo {
+            coordinator.setVideo(.proVideo(proVideo), for: .right)
+        }
+        
+        return CompareView(trickData: trickData, coordinator: coordinator)
     }
 }

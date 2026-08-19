@@ -8,31 +8,42 @@
 import SwiftUI
 
 struct UserAccountView: View {
-    @EnvironmentObject var overlayManager: OverlayManager
-    @EnvironmentObject var errorStore: ErrorStore
-    @EnvironmentObject var session: SessionContainer
-    
     @Environment(\.colorScheme) private var colorScheme
-    @State private var currentTab: AccountViewTab = .Tricks
+
+    @EnvironmentObject private var router: CommunityRouter
+    @EnvironmentObject private var overlayManager: OverlayManager
+    @EnvironmentObject private var postVMStore: UserPostsViewModelStore
+    @EnvironmentObject private var appEnv: AppEnvironment
+    @EnvironmentObject private var userStore: UserStore
+    @EnvironmentObject private var trickListStore: TrickListStore
+    @EnvironmentObject private var errorStore: ErrorStore
     
-    @ObservedObject var viewModel: UserAccountViewModel
+    @State private var currentTab: AccountViewTab = .Tricks
+    @State private var showReportPopup: Bool = false
+    
+    @StateObject var viewModel: UserAccountViewModel
+    @StateObject var userPostsVM: UserPostPreviewViewModel
     let currentUser: User
     let otherUser: User
     
     init(
         currentUser: User,
         otherUser: User,
-        viewModel: UserAccountViewModel
+        viewModel: UserAccountViewModel,
+        userPostsVM: UserPostPreviewViewModel
     ) {
         self.currentUser = currentUser
         self.otherUser = otherUser
-        _viewModel = ObservedObject(wrappedValue: viewModel)
+        _viewModel = StateObject(wrappedValue: viewModel)
+        _userPostsVM = StateObject(wrappedValue: userPostsVM)
     }
     
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 14) {
                 profileDetailsView
+                
+                favoriteTricks
                 
                 tabSelector
                 
@@ -45,18 +56,22 @@ struct UserAccountView: View {
                                 systemImage: "exclamationmark.lock"
                             )
                         } else {
-                            UserTrickListProgressView(user: otherUser)
+                            UserTrickListProgressView(
+                                user: otherUser,
+                                onNavigate: { stance in
+                                    router.push(.userTrickList(user: otherUser, stance: stance))
+                                }
+                            )
                         }
                         
                     case .Posts:
-                        VStack {
-                            Text("NOTHING")
-                        }
-//                        UserPostPreviewViewContainer(
-//                            user: otherUser,
-//                            errorStore: errorStore,
-//                            session: session
-//                        )
+                        UserPostPreviewsView(
+                            user: otherUser,
+                            onNavigate: {
+                                router.push(.userPosts(user: otherUser))
+                            },
+                            viewModel: postVMStore.viewModel(for: otherUser)
+                        )
                     }
                 }
                 .padding(14)
@@ -64,93 +79,146 @@ struct UserAccountView: View {
             }
             .padding(14)
         }
+        .spSheet(
+            isPresented: $showReportPopup,
+            detent: .full,
+            content: {
+                ReportItemSheetBuilder.build(
+                    currentUid: currentUser.userId,
+                    otherUid: otherUser.userId,
+                    reportType: .profile,
+                    appEnv: appEnv,
+                    errorStore: errorStore
+                )
+            }
+        )
         .customNavHeader(
             title: "@\(otherUser.username)",
-            showDivider: true
+            showDivider: false
         )
         .toolbar {
             if otherUser.userId != currentUser.userId {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        Task {
-                            let success = await viewModel.sendFriendRequest(currentUser, to: otherUser)
-                            
-                            if success {
-                                _ = overlayManager.present(level: .popup) { id in
-                                    ErrorPopup(
-                                        error: AppError(
-                                            title: "Operation Successful",
-                                            message: "Friend request has been sent."
-                                        ),
-                                        style: .autoDismiss(seconds: 2),
-                                        onDismiss: { overlayManager.dismiss(id: id) }
-                                    )
-                                }
+                toolbar
+            }
+        }
+    }
+    
+    private func toggleReportPopup() {
+        withAnimation(.smooth) {
+            showReportPopup.toggle()
+        }
+    }
+    
+    @ToolbarContentBuilder
+    var toolbar: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            Button {
+                Task {
+                    let appSuccess = await viewModel.sendFriendRequest(currentUser, to: otherUser)
+                    
+                    if let appSuccess {
+                        _ = overlayManager.present(level: .popup) { id in
+                            SuccessPopup(
+                                appSuccess: appSuccess,
+                                onDismiss: { overlayManager.dismiss(id: id) }
+                            )
+                        }
+                    }
+                }
+            } label: {
+                Image(systemName: "person.badge.plus")
+                    .resizable()
+                    .frame(width: 20, height: 20)
+            }
+        }
+        
+        ToolbarItem(placement: .topBarTrailing) {
+            Menu {
+                Button("Report User") {
+                    toggleReportPopup()
+                }
+                
+                Button("Block User") {
+                    Task {
+                        let appSuccess = await viewModel.blockUser(
+                            currentUid: currentUser.userId,
+                            otherUid: otherUser.userId
+                        )
+                        
+                        if let appSuccess {
+                            _ = overlayManager.present(level: .popup) { id in
+                                SuccessPopup(
+                                    appSuccess: appSuccess,
+                                    onDismiss: { overlayManager.dismiss(id: id) }
+                                )
                             }
                         }
-                    } label: {
-                        Image(systemName: "person.badge.plus")
-                            .resizable()
-                            .frame(width: 20, height: 20)
                     }
                 }
-//                ToolbarItem(placement: .topBarLeading) {
-//                    NavigationLink(
-//                        destination: ChatMessagesViewContainer(
-//                            currentUser: currentUser,
-//                            withUserData: UserData(user: otherUser),
-//                            errorStore: errorStore
-//                        )
-//                    ) {
-//                        Image(systemName: "bubble")
-//                            .resizable()
-//                            .frame(width: 20, height: 20)
-//                    }
-//                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        Task {
-                            await viewModel.reportUser(currentUser, report: otherUser)
-                        }
-                    } label: {
-                        Image(systemName: "exclamationmark.square")
-                            .resizable()
-                            .frame(width: 20, height: 20)
-                    }
-                }
+            } label: {
+                Image(systemName: "exclamationmark.square")
+                    .resizable()
+                    .frame(width: 20, height: 20)
             }
         }
     }
     
     var profileDetailsView: some View {
-        HStack(alignment: .top, spacing: 12) {
-            CircularProfileImageView(
-                photoUrl: otherUser.profilePhoto?.photoUrl,
-                size: .xLarge
-            )
-            
-            VStack(alignment: .leading, spacing: 5) {
-                HStack(spacing: 12) {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                CircularProfileImageView(
+                    photoUrl: otherUser.profilePhoto?.photoUrl,
+                    size: .xLarge
+                )
+                
+                VStack(alignment: .leading, spacing: 5) {
                     Text(otherUser.username)
-                        .font(.title3)
+                        .font(.title2)
                         .fontWeight(.bold)
                     
                     Text(otherUser.stance.camalCase)
+                        .foregroundStyle(.gray)
                         .fontWeight(.semibold)
-                        .font(.footnote)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            
+            if !otherUser.bio.isEmpty {
+                CollapsibleTextView(text: otherUser.bio, lineLimit: 4, font: .body)
+            } else {
+                Text("")
+            }
+        }
+    }
+    
+    var favoriteTricks: some View {
+        Group {
+            if let favoriteTrickIds = otherUser.favoriteTricks {
+        
+                FlowLayout(alignment: .center, spacing: 8) {
+                    
+                    ForEach(favoriteTrickIds, id: \.self) { trickId in
+                        if let trick = trickListStore.trick(trickId) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "star.fill")
+                                    .font(.caption2)
+                                
+                                Text(userStore.getTrickName(trick))
+                                    .font(.caption)
+                                    .lineLimit(1)
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(Color.gray.opacity(0.2))
+                            .clipShape(Capsule())
+                        }
+                    }
                 }
                 
-                if !otherUser.bio.isEmpty {
-                    CollapsibleTextView(text: otherUser.bio, lineLimit: 4, font: .body)
-                } else {
-                    Text("")
-                }
+            } else {
+                EmptyView()
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(12)
-        .frame(minHeight: 100, alignment: .top)
-        .background(SPBackgrounds(colorScheme: colorScheme, cornerRadius: 15).inset)
     }
     
     var tabSelector: some View {
@@ -160,35 +228,24 @@ struct UserAccountView: View {
             ForEach(AccountViewTab.allCases) { tab in
                 let isCurrentTab = currentTab == tab
                 
-                VStack {
+                HStack(spacing: 4) {
+                    Image(systemName: tab == .Tricks
+                          ? isCurrentTab ? "skateboard.fill" : "skateboard"
+                          : isCurrentTab ? "list.bullet.rectangle.portrait.fill" : "list.bullet.rectangle.portrait"
+                    )
+                    
                     Text(tab.rawValue)
                         .font(.subheadline)
                         .fontWeight(isCurrentTab ? .semibold : .regular)
-                        .frame(height: 40)
-                        .frame(maxWidth: 150)
-                        .background {
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(colorScheme == .dark
-                                      ? Color(.systemGray6).opacity(isCurrentTab ? 1 : 0.0)
-                                      : Color(.systemBackground)
-                                )
-                                .stroke(
-                                    LinearGradient(colors: [
-                                        isCurrentTab ? .primary.opacity(0.2) : .clear,
-                                        isCurrentTab ? .black : .clear,
-                                    ],
-                                                   startPoint: .top,
-                                                   endPoint: .bottom
-                                                  )
-                                )
-                                .shadow(color: isCurrentTab
-                                        ? colorScheme == .dark ? .clear : .black.opacity(0.25)
-                                        : .clear,
-                                        radius: 3,
-                                        y: 2
-                                )
-                        }
                 }
+                .frame(maxWidth: 150)
+                .padding(.vertical)
+                .overlay(alignment: .bottom) {
+                    Rectangle()
+                        .fill(isCurrentTab ? .primary : Color.clear)
+                        .frame(height: 2)
+                }
+                .contentShape(Rectangle())
                 .onTapGesture {
                     withAnimation(.easeInOut(duration: 0.3)) {
                         self.currentTab = tab

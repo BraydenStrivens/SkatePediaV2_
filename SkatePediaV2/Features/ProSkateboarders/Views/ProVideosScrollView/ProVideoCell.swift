@@ -10,39 +10,52 @@ import AVKit
 
 import FirebaseFirestore
 
-/// A SwiftUI view representing a single pro skater video cell.
-/// Shows the pro's profile, trick name, stance, and a video player.
-/// Includes a "Compare" button for navigating to the compare view.
+/// A SwiftUI view that displays a professional skater's trick video.
+///
+/// `ProVideoCell` presents:
+/// - The skater's profile image
+/// - The trick name
+/// - The skater's stance
+/// - A playable video preview
+/// - A "Compare" button for navigating to a comparison workflow
+///
+/// - Note:
+/// Video playback is conditionally rendered using `isVisible` to avoid
+/// loading video content when the cell is off-screen.
 struct ProVideoCell: View {
-    @EnvironmentObject private var router: ProsRouter
-    @EnvironmentObject private var videoFeedManager: VideoFeedManager
     
+    // MARK: Environment
     @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject private var router: ProsRouter
+    @EnvironmentObject private var userStore: UserStore
     
+    // MARK: State
     @State private var isVisible: Bool = false
-    @StateObject private var viewModel: ProVideoCellViewModel
- 
+    
+    // MARK: Parameters
     let video: ProSkaterVideo
     
-    init(video: ProSkaterVideo) {
-        self.video = video
-        _viewModel = StateObject(wrappedValue: ProVideoCellViewModel(
-            videoUrl: video.videoData.videoUrl)
-        )
-    }
-    
+    // MARK: Body
     var body: some View {
-        VStack(spacing: 0) {
+        VStack {
             header
-                        
-            videoPlayer
             
             Spacer()
+                        
+            videoPlayer
         }
     }
     
-    /// Header view displaying the pro's profile, trick name, stance, and "Compare" button
-    var header: some View {
+    // MARK: Subviews
+    
+    /// Header section for the pro video cell.
+    ///
+    /// Displays:
+    /// - Circular profile image of the pro
+    /// - Trick name (formatted via `UserStore`)
+    /// - Stance label
+    /// - "Compare" navigation button
+    private var header: some View {
         HStack {
             CircularProfileImageView(
                 photoUrl: video.proData.photoUrl,
@@ -50,12 +63,13 @@ struct ProVideoCell: View {
             )
             
             VStack(alignment: .leading) {
-                Text(video.trickData.name)
+                Text(userStore.getTrickName(video.trickData))
                     .font(.headline)
                     .fontWeight(.semibold)
                     .onTapGesture {
                         print("VIDEO ID: \(video.id)")
                     }
+                
                 Text(video.proData.stance.camalCase)
                     .foregroundStyle(.gray)
                     .font(.caption)
@@ -64,7 +78,12 @@ struct ProVideoCell: View {
             Spacer()
             
             Button {
-                router.push(.compare(video.trickData, video))
+                router.push(
+                    .compare(
+                        trickData: video.trickData,
+                        proVideo: video
+                    )
+                )
             } label: {
                 HStack {
                     Text("Compare")
@@ -85,10 +104,15 @@ struct ProVideoCell: View {
         .padding(.horizontal, 10)
     }
     
-    /// Video player view that adapts to the video's aspect ratio
-    var videoPlayer: some View {
+    /// Video playback container for the pro skater clip.
+    ///
+    /// This view:
+    /// - Calculates proper aspect ratio using `CustomVideoPlayer.getNewAspectRatio`
+    /// - Lazily initializes video playback when visible
+    /// - Displays a placeholder when not active
+    private var videoPlayer: some View {
         GeometryReader { proxy in
-            let size = CustomVideoPlayer.getNewAspectRatio(
+            let videoSize = CustomVideoPlayer.getNewAspectRatio(
                 baseWidth: video.videoData.width,
                 baseHeight: video.videoData.height,
                 maxWidth: proxy.size.width,
@@ -97,10 +121,9 @@ struct ProVideoCell: View {
             Group {
                 if isVisible {
                     SPVideoPlayer(
-                        userPlayer: viewModel.player,
+                        url: URL(string: video.videoData.videoUrl)!,
                         frameSize: proxy.size,
-                        videoSize: size,
-                        showButtons: true
+                        videoSize: videoSize
                     )
                     
                 } else {
@@ -112,7 +135,6 @@ struct ProVideoCell: View {
             }
             .onDisappear {
                 isVisible = false
-                viewModel.stopOnDisappear()
             }
         }
     }

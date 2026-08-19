@@ -7,15 +7,30 @@
 
 import Foundation
 
+@MainActor
 struct UserAccountBuilder {
     
     static func build(
         currentUser: User,
         otherUser: User,
+        appEnv: AppEnvironment,
         errorStore: ErrorStore
     ) -> UserAccountView {
         
-        let viewModel = UserAccountViewModel(errorStore: errorStore)
-        return UserAccountView(currentUser: currentUser, otherUser: otherUser, viewModel: viewModel)
+        let viewModel = UserAccountViewModel(
+            errorStore: errorStore,
+            appEnv: appEnv
+        )
+        let userPostsVM = UserPostPreviewViewModel(
+            user: otherUser,
+            errorStore: errorStore
+        )
+        
+        return UserAccountView(
+            currentUser: currentUser,
+            otherUser: otherUser,
+            viewModel: viewModel,
+            userPostsVM: userPostsVM
+        )
     }
 }

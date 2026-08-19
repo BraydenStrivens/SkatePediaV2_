@@ -26,14 +26,17 @@ import SwiftUI
 ///   - selectedFilter: The currently active spinner filter.
 ///   - viewModel: View model responsible for loading and managing custom presets.
 struct TrickSpinnerPresetsView: View {
-    @EnvironmentObject private var router: TrickListRouter
-    @EnvironmentObject private var trickListStore: TrickListStore
-    @Environment(\.colorScheme) private var colorScheme
     
+    // MARK: Environment
+    @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject private var router: TrickListRouter
+    
+    // MARK: Parameters
     @ObservedObject private var viewModel: TrickSpinnerPresetsViewModel
     /// Currently selected spinner filter (two-way bound to parent view).
     @Binding var selectedFilter: SpinnerFilter
     
+    // MARK: Init
     init(
         selectedFilter: Binding<SpinnerFilter>,
         viewModel: TrickSpinnerPresetsViewModel
@@ -42,24 +45,32 @@ struct TrickSpinnerPresetsView: View {
         _viewModel = ObservedObject(wrappedValue: viewModel)
     }
     
+    // MARK: Body
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
-                optionCell("All", filter: .all)
-                
-                stanceFilters
-                
-                difficultyFilters
-                
-                trickItemRatingFilter
+                Group {
+                    optionCell("All", filter: .all)
+                    
+                    stanceFilters
+                    
+                    difficultyFilters
+                    
+                    trickItemRatingFilter
+                }
+                .padding(.horizontal, 12)
                 
                 customPresets
             }
+            .padding(.top, 4)
         }
         .scrollIndicators(.hidden)
     }
     
-    var stanceFilters: some View {
+    // MARK: Subviews
+    
+    /// Filter buttons for the `TrickStance`: Regular, Fakie, Switch, Nollie.
+    private var stanceFilters: some View {
         VStack(alignment: .leading) {
             Text("Stance:")
                 .font(.caption)
@@ -73,7 +84,8 @@ struct TrickSpinnerPresetsView: View {
         }
     }
     
-    var difficultyFilters: some View {
+    /// Filter buttons for the `TrickDifficutly`: Beginner, Intermediate, Advanced.
+    private var difficultyFilters: some View {
         VStack(alignment: .leading) {
             Text("Difficulty:")
                 .font(.caption)
@@ -87,7 +99,8 @@ struct TrickSpinnerPresetsView: View {
         }
     }
     
-    var trickItemRatingFilter: some View {
+    /// Filter buttons for the highest `TrickItem` rating: 0, 1, 2, 3.
+    private var trickItemRatingFilter: some View {
         VStack(alignment: .leading) {
             Text("Highest Trick Item Rating:")
                 .font(.caption)
@@ -108,7 +121,7 @@ struct TrickSpinnerPresetsView: View {
     /// - Edit existing presets
     /// - Delete presets
     /// - Select a preset as the active spinner filter
-    var customPresets: some View {
+    private var customPresets: some View {
         VStack(alignment: .leading) {
             HStack {
                 Text("Custom Presets:")
@@ -134,21 +147,17 @@ struct TrickSpinnerPresetsView: View {
                 }
                 .tint(Color.button)
             }
+            .padding(.horizontal, 12)
             
             ZStack {
                 SPBackgrounds(colorScheme: colorScheme, cornerRadius: 20).inset
                 
                 Group {
                     if viewModel.presets.isEmpty {
-                        ContentUnavailableView {
-                            VStack {
-                                Text("No Presets")
-                                    .font(.title)
-                                Text("Select tricks to create and save a custom spinner preset.")
-                                    .font(.callout)
-                                    .foregroundColor(.gray)
-                            }
-                        }
+                        SPContentUnavailableView(
+                            title: "No Presets",
+                            description: "Select tricks to create and save a custom spinner preset."
+                        )
                         
                     } else {
                         VStack(spacing: 0) {
@@ -163,6 +172,7 @@ struct TrickSpinnerPresetsView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.horizontal, 6)
             .clipShape(RoundedRectangle(cornerRadius: 20))
         }
         .padding(.bottom, 6)
@@ -174,11 +184,12 @@ struct TrickSpinnerPresetsView: View {
     /// - Parameters:
     ///   - text: Display text for the filter option.
     ///   - filter: The filter value applied when selected.
-    func optionCell(_ text: String, filter: SpinnerFilter) -> some View {
+    private func optionCell(_ text: String, filter: SpinnerFilter) -> some View {
         Button {
             selectedFilter = filter
         } label: {
             Text(text)
+                .foregroundStyle(selectedFilter == filter ? .white : .primary)
                 .font(.caption)
                 .fontWeight(selectedFilter == filter ? .semibold : .regular)
                 .padding(.horizontal)
@@ -193,26 +204,31 @@ struct TrickSpinnerPresetsView: View {
     /// A row representing a saved custom spinner preset.
     ///
     /// - Parameter preset: The preset being displayed.
-    func presetCell(preset: SpinnerPreset) -> some View {
+    private func presetCell(preset: SpinnerPreset) -> some View {
         HStack(spacing: 16) {
-            Text(preset.name)
-            
-            Spacer()
-            
-            Button {
-                router.push(
-                    .createTrickSpinnerPreset(
-                        initialPreset: preset,
-                        presetCount: viewModel.presets.count
+            Group {
+                Text(preset.name)
+                
+                Spacer()
+                
+                Button {
+                    router.push(
+                        .createTrickSpinnerPreset(
+                            initialPreset: preset,
+                            presetCount: viewModel.presets.count
+                        )
                     )
-                )
-            } label: {
-                Image(systemName: "pencil")
-                    .font(.body)
+                } label: {
+                    Image(systemName: "highlighter")
+                        .font(.body)
+                }
             }
+            .foregroundColor(selectedFilter == .custom(preset.trickIds) ? .white : .primary)
             
             Button(role: .destructive) {
-                viewModel.deletePreset(preset)
+                Task {
+                    await viewModel.deletePreset(preset)
+                }
             } label: {
                 Image(systemName: "trash")
             }
@@ -232,7 +248,7 @@ struct TrickSpinnerPresetsView: View {
     ///
     /// - Parameter filter: The filter being evaluated.
     @ViewBuilder
-    func cellBackground(for filter: SpinnerFilter) -> some View {
+    private func cellBackground(for filter: SpinnerFilter) -> some View {
         if selectedFilter == filter {
             SPBackgrounds(colorScheme: colorScheme, cornerRadius: 15).coloredProtruded(color: Color.button)
 

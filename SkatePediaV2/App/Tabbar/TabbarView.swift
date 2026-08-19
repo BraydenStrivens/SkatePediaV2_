@@ -10,24 +10,29 @@ import SwiftUI
 /// Displays the main tab bar interface of the app.
 ///
 /// - Handles four tabs:
-///   1. Tricks (`TrickListViewContainer`)
-///   2. Pro Skaters (`ProsView`)
-///   3. Community (`CommunityViewContainer`)
-///   4. User Profile (`CurrentUserAccountView`)
+///   1. Tricks (`TrickListRootView`)
+///   2. Pro Skaters (`ProsRootView`)
+///   3. Community (`CommunityRootView`)
+///   4. User Profile (`AccountRootView`)
 ///
 /// - Shows a loading view while the user data is loading.
 /// - Shows a blocking error view with logout option if user data fails to load.
 /// - Uses `tabbarAware()` to apply bottom padding for the custom tab bar height.
+/// - Each tab's navigation is controlled with custom `Route` enums with `NavigationDestination`.
 struct TabbarView: View {
-    @EnvironmentObject var userStore: UserStore
-    @EnvironmentObject var errorStore: ErrorStore
-    @EnvironmentObject var trickListStore: TrickListStore
     
+    // MARK: Environment
     @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject private var userStore: UserStore
+    @EnvironmentObject private var appEnv: AppEnvironment
+    @EnvironmentObject private var errorStore: ErrorStore
+    @EnvironmentObject private var trickListStore: TrickListStore
+    @EnvironmentObject private var tabRouter: TabRouter
 
+    // MARK: State
     @State private var tabbarHeight: CGFloat = 0
-    @State private var currentTab: Int = 0
     
+    // MARK: Body
     var body: some View {
         if userStore.isLoading {
             ProgressView("Loading User...")
@@ -37,6 +42,7 @@ struct TabbarView: View {
             
         } else if let error = userStore.blockingError {
             ContentUnavailableView {
+                // User listener timed out
                 VStack {
                     Text("Failed to Load User")
                         .font(.title)
@@ -63,24 +69,35 @@ struct TabbarView: View {
         }
     }
     
+    // MARK: Subviews
+    
     /// Returns a TabView with all main app tabs and applies bottom padding for the custom tab bar.
     ///
-    /// - Parameter userId: The authenticated user's ID.
+    /// - Parameters:
+    ///  - user: The authenticated user's model
+    ///  - errorStore: Global store used for storing and presenting errors.
+    ///
     /// - Returns: A SwiftUI view containing the tab bar interface.
-    func tabbar(_ user: User, _ errorStore: ErrorStore) -> some View {
-        TabView(selection: $currentTab) {
-            TrickListRootView(user: user, trickListStore: trickListStore)
+    private func tabbar(
+        _ user: User,
+        _ errorStore: ErrorStore
+    ) -> some View {
+        
+        TabView(selection: $tabRouter.selectedTab) {
+            TrickListRootView(user: user, appEnv: appEnv)
                 .tabbarAware()
                 .ignoresSafeArea(.keyboard)
-                .tag(0)
+                .tag(Tab.tricks)
             
             ProsRootView()
                 .tabbarAware()
-                .tag(1)
+                .ignoresSafeArea(.keyboard)
+                .tag(Tab.pros)
             
-            CommunityRootView()
+            CommunityRootView(errorStore: errorStore)
                 .tabbarAware()
-                .tag(2)
+                .ignoresSafeArea(.keyboard)
+                .tag(Tab.community)
             
             AccountRootView(
                 user: user,
@@ -88,7 +105,7 @@ struct TabbarView: View {
             )
             .tabbarAware()
             .ignoresSafeArea(.keyboard)
-            .tag(3)
+            .tag(Tab.profile)
         }
         .environment(\.tabbarHeight, tabbarHeight)
         .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -107,38 +124,38 @@ struct TabbarView: View {
     }
     
     /// The custom tab bar items displayed at the bottom of the screen.
-    var customTabbarItems: some View {
+    private var customTabbarItems: some View {
         HStack(spacing: 0) {
             TabBarItem(
                 defaultIcon: "skateboard",
                 selectedIcon: "skateboard.fill",
-                index: 0,
+                tab: .tricks,
                 label: "Tricks",
-                currentTab: $currentTab
+                currentTab: $tabRouter.selectedTab
             )
             
             TabBarItem(
                 defaultIcon: "figure.skateboarding",
                 selectedIcon: "figure.skateboarding",
-                index: 1,
+                tab: .pros,
                 label: "Pros",
-                currentTab: $currentTab
+                currentTab: $tabRouter.selectedTab
             )
             
             TabBarItem(
                 defaultIcon: "person.3",
                 selectedIcon: "person.3.fill",
-                index: 2,
+                tab: .community,
                 label: "Community",
-                currentTab: $currentTab
+                currentTab: $tabRouter.selectedTab
             )
             
             TabBarItem(
                 defaultIcon: "person.circle",
                 selectedIcon: "person.circle.fill",
-                index: 3,
+                tab: .profile,
                 label: "Profile",
-                currentTab: $currentTab
+                currentTab: $tabRouter.selectedTab
             )
         }
     }

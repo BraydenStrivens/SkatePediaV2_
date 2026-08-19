@@ -19,19 +19,19 @@ struct TrickListCellBuilder {
     /// - Parameters:
     ///   - userId: The ID of the current user.
     ///   - trick: The trick represented by this cell.
+    ///   - appEnv: Class containing global stores and services.
     ///   - errorStore: Store used for presenting errors.
-    ///   - trickListStore: Store responsible for managing trick list data.
     ///
     /// - Returns: A fully configured `TrickListCell`.
     static func build(
         userId: String,
         trick: Trick,
-        errorStore: ErrorStore,
-        trickListStore: TrickListStore
+        appEnv: AppEnvironment,
+        errorStore: ErrorStore
     ) -> TrickListCell {
         
         let viewModel = TrickListCellViewModel(
-            trickListStore: trickListStore,
+            appEnv: appEnv,
             errorStore: errorStore
         )
         return TrickListCell(

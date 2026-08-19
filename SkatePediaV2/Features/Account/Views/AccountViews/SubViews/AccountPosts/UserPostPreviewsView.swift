@@ -16,16 +16,17 @@ import SwiftUI
 ///   - user: The user whose posts are being displayed.
 ///   - viewModel: The view model providing posts data and handling pagination.
 struct UserPostPreviewsView: View {
-    @EnvironmentObject private var router: AccountRouter
-
     @ObservedObject private var viewModel: UserPostPreviewViewModel
     let user: User
+    let onNavigate: () -> Void
     
     init(
         user: User,
+        onNavigate: @escaping () -> Void,
         viewModel: UserPostPreviewViewModel
     ) {
         self.user = user
+        self.onNavigate = onNavigate
         _viewModel = ObservedObject(wrappedValue: viewModel)
     }
     
@@ -37,9 +38,9 @@ struct UserPostPreviewsView: View {
                 
             case .success:
                 if viewModel.userPosts.isEmpty {
-                    ContentUnavailableView(
-                        "No Posts",
-                        systemImage: "list.bullet.rectangle.portrait"
+                    SPContentUnavailableView(
+                        title: "No Posts",
+                        type: .emptyList
                     )
                     
                 } else {
@@ -52,7 +53,7 @@ struct UserPostPreviewsView: View {
                                     }
                                 }
                                 .onTapGesture {
-                                    router.push(.userPosts)
+                                    onNavigate()
                                 }
 
                             if viewModel.isFetchingMore {
@@ -62,10 +63,10 @@ struct UserPostPreviewsView: View {
                     }
                 }
             case .failure(let sPError):
-                ContentUnavailableView(
-                    "Error Fetching Posts",
-                    systemImage: "exclamationmark.triangle",
-                    description: Text(sPError.errorDescription ?? "Something went wrong...")
+                SPContentUnavailableView(
+                    title: "Error Fetching Posts",
+                    description: sPError.errorDescription,
+                    type: .blockingError
                 )
             }
         }

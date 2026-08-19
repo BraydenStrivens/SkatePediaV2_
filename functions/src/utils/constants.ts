@@ -1,4 +1,11 @@
-import type { UserStance, TrickStance, Difficulty } from "./interfaces";
+import type {
+    UserStance,
+    TrickStance,
+    Difficulty,
+    RelationshipStatus,
+    ReportReason,
+    ReportType,
+} from "./interfaces";
 import jsonTrickList from "../data/trickList.json";
 
 /*
@@ -50,3 +57,19 @@ export const DIFFICULTIES: Difficulty[] = [
     "intermediate",
     "advanced",
 ] as const;
+export const RELATIONSHIP_STATUS: RelationshipStatus[] = [
+    "accepted",
+    "pending",
+    "declined",
+];
+export const REPORT_REASON: ReportReason[] = [
+    "spam",
+    "harassment",
+    "threats",
+    "explicit_sexual_content",
+    "nudity",
+    "graphic_violence",
+    "illegal_content",
+    "other",
+];
+export const REPORT_TYPE: ReportType[] = ["profile", "post", "comment"];

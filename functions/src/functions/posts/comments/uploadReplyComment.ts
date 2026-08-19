@@ -5,6 +5,7 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { db } from "../../../firebase";
 import {
     assertUserActive,
+    checkUserBlocked,
     fetchCommentById,
     fetchPostById,
 } from "../../../utils/firestoreHelpers";
@@ -21,10 +22,10 @@ comment count and its base comment's reply count.
     2. Validate user account
     3. Fetch and validate data to store in reply documnt
     4. Ensure post is not pending deletion
-    5. Calculate base comment ID
-    6. Ensure base comment is not pending deletion
-    7. Create reply comment document
-    8. Increment post comment count and base comment reply count
+    5. Validate user is not blocked by post or replyingToComment owners
+    6. Calculate base comment ID
+    7. Ensure base comment is not pending deletion
+    8. Create reply comment document
 */
 export const uploadReplyComment = onCall(async (request) => {
     if (!request.auth) {
@@ -67,8 +68,12 @@ export const uploadReplyComment = onCall(async (request) => {
             );
         }
 
+        // 5. Validate user is not blocked by post or replyingToComment owners
+        await checkUserBlocked(uid, post.user_data.user_id);
+        await checkUserBlocked(uid, replyingTo.user_data.user_id);
+
         /*
-        5. Calculate base comment ID
+        6. Calculate base comment ID
         If the base_comment_id exists then the comment being replied to is a reply and its
         base_comment's reply count should be incremented. If it does not exists then the comment 
         being replied to is a base comment and its reply count should be incremented. 
@@ -82,7 +87,7 @@ export const uploadReplyComment = onCall(async (request) => {
             .collection("comments")
             .doc(replyingToBaseCommentId);
 
-        // 6. Ensure base comment is not pending deletion
+        // 7. Ensure base comment is not pending deletion
         const baseCommentSnap = await baseCommentRef.get();
         if (!baseCommentSnap) {
             throw new HttpsError(
@@ -99,7 +104,7 @@ export const uploadReplyComment = onCall(async (request) => {
 
         const batch = db.batch();
 
-        // 7. Create reply comment document
+        // 8. Create reply comment document
         const commentRef = db
             .collection("posts")
             .doc(post_id)
@@ -128,16 +133,6 @@ export const uploadReplyComment = onCall(async (request) => {
                 owner_username: replyingTo.user_data.username,
             },
         });
-
-        // 8. Increment counters
-        // batch.update(baseCommentRef, {
-        //     reply_count: FieldValue.increment(1),
-        // });
-
-        // const postRef = db.collection("posts").doc(post_id);
-        // batch.update(postRef, {
-        //     comment_count: FieldValue.increment(1),
-        // });
 
         await batch.commit();
 

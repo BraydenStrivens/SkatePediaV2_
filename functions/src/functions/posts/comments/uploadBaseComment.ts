@@ -5,6 +5,7 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { db } from "../../../firebase";
 import {
     assertUserActive,
+    checkUserBlocked,
     fetchPostById,
 } from "../../../utils/firestoreHelpers";
 import {
@@ -18,8 +19,8 @@ import {
     2. Validate user account
     3. Fetch and validate data to be stored in base comment document
     4. Ensure post is not pending deletion
-    5. Create base comment document
-    6. Increment post comment count
+    5. Validate user is not blocked by post owner
+    6. Create base comment document
 */
 export const uploadBaseComment = onCall(async (request) => {
     if (!request.auth) {
@@ -54,9 +55,12 @@ export const uploadBaseComment = onCall(async (request) => {
             );
         }
 
+        // 5. Validate user is not blocked by post owner
+        await checkUserBlocked(uid, post.user_data.user_id);
+
         const batch = db.batch();
 
-        // 5. Create base comment document
+        // 6. Create base comment document
         const commentRef = db
             .collection("posts")
             .doc(post_id)
@@ -85,12 +89,6 @@ export const uploadBaseComment = onCall(async (request) => {
             },
             reply_count: 0,
         });
-
-        // 6. Increment post comment count
-        // const postRef = db.collection("posts").doc(post_id);
-        // batch.update(postRef, {
-        //     comment_count: FieldValue.increment(1),
-        // });
 
         await batch.commit();
 

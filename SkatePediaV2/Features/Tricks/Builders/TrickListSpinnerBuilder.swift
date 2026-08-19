@@ -11,22 +11,24 @@ import Foundation
 ///
 /// Creates and configures `TrickListSpinnerView` along with its internal view model,
 /// ensuring required dependencies are properly injected.
-@MainActor
 struct TrickListSpinnerBuilder {
     
     /// Builds the `TrickListSpinnerView` with its required dependencies.
     ///
     /// - Parameters:
-    ///   - trickListStore: Store managing trick list data used by the spinner.
+    ///   - appEnv: Class containing global stores and services.
     ///   - trickSpinnerPresetsVM: View model managing spinner preset configurations.
     ///
     /// - Returns: A fully configured `TrickListSpinnerView`.
+    @MainActor
     static func build(
-        trickListStore: TrickListStore,
+        appEnv: AppEnvironment,
         trickSpinnerPresetsVM: TrickSpinnerPresetsViewModel
     ) -> TrickListSpinnerView {
         
-        let viewModel = TrickListSpinnerViewModel(trickListStore: trickListStore)
+        let viewModel = TrickListSpinnerViewModel(
+            appEnv: appEnv
+        )
         return TrickListSpinnerView(
             viewModel: viewModel,
             trickSpinnerPresetsVM: trickSpinnerPresetsVM

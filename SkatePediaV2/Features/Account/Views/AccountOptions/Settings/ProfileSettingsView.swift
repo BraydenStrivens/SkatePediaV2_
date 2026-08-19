@@ -18,6 +18,7 @@ struct ProfileSettingsView: View {
     }
     
     let user: User
+    let userService = UserService.shared
     
     init(user: User) {
         self.user = user
@@ -47,10 +48,11 @@ struct ProfileSettingsView: View {
                     let newSettings = getUpdatedSetting()
                     Task {
                         do {
-                            try await UserManager.shared.updateUserSettings(
-                                userId: user.userId,
-                                newSettings: newSettings
+                            try await userService.updateUserSettings(
+                                newSettings,
+                                for: user.userId
                             )
+
                             currentProfileSettings = newSettings.profileSettings
                         } catch {
                             errorStore.present(error, title: "Error Updating Settings")
